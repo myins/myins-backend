@@ -1,0 +1,115 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["selectRelationCount", "referentialActions", "orderByRelation"]
+}
+
+model User {
+  id                  String  @id @default(uuid())
+  phoneNumber         String  @unique
+  phoneNumberVerified Boolean @default(false)
+  password            String
+  firstName           String
+  lastName            String
+  profilePicture      String?
+  refreshToken        String?
+
+  pushToken    String? // APNS for iOS, FCM for Android
+  sandboxToken Boolean? // Check if token is sandbox for iOS
+
+  posts    Post[]
+  comments Comment[] @relation(name: "author")
+
+  notifications        Notification[] @relation(name: "target")
+  createdNotifications Notification[] @relation(name: "notifAuthor")
+
+  likedComments Comment[] @relation(name: "liked")
+  likedPosts    Post[]    @relation(name: "likes")
+
+  inses INS[]
+  //pendingINses INS[]
+}
+
+model PostContent {
+  id String @id @default(uuid())
+
+  isVideo Boolean
+  content String // Link to raw file
+
+  post   Post   @relation(name: "post", fields: [postId], references: [id])
+  postId String
+}
+
+model Post {
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  edited       Boolean       @default(false)
+  content      String
+  mediaContent PostContent[] @relation(name: "post")
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId     String
+  comments     Comment[]
+
+  notifications Notification[] // Some notifications have a post
+  likes         User[]         @relation(name: "likes")
+  inses         INS[]
+}
+
+model Comment {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  edited         Boolean  @default(false)
+  content        String
+
+  //The author is the one who created the comment
+  author   User   @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId String
+
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
+
+  notifications Notification[]
+
+  likes User[] @relation(name: "liked")
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  createdAt DateTime           @default(now())
+  source    NotificationSource
+  target    User               @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  targetId  String
+
+  // Some notifications come from the ether, others from the user
+  author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId String
+
+  //Some notifications have a related post / comment, sometimes both
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId String?
+
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  commentId String?
+}
+
+model INS { 
+  id        String @id @default(uuid())
+  name      String
+  cover String
+  shareCode String
+
+  members User[]
+  //pendingMembers User[]
+  posts   Post[]
+}
+
+enum NotificationSource {
+  LIKE_POST
+  COMMENT
+  LIKE_COMMENT
+  SHARED_POST
+}
