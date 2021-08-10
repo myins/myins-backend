@@ -1,0 +1,6 @@
+[
+    {
+        "name": "sample-app",
+        "imageUri": "145070974046.dkr.ecr.us-east-1.amazonaws.com/myinsdocker:latest"
+    }
+]

@@ -1,6 +1,7 @@
 version: '3'
 services:
   backend:
+    image: 145070974046.dkr.ecr.us-east-1.amazonaws.com/myinsdocker
     build:
       context: .
       dockerfile: Dockerfile

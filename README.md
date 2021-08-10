@@ -19,7 +19,6 @@ To build docker image for prod: docker compose build
 Environment variables;
 - DATABASE_URL: PostgresSQL database url
 - JWT_SIGNING_KEY: Signing key used for JWT auth
-- FRONTEND_BASE_URL: the URL of the frontend, used in mails to send links that activate your account.
 
 -S3_KEY_ID
 -S3_SECRET_ACCESS_KEY

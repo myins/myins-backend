@@ -205,8 +205,8 @@ export class NotificationService {
       body: body,
       badge: 1,
       topic: target.sandboxToken
-        ? 'com.adonis.myins'
-        : 'com.adonis.myins',
+        ? 'com.squid40.dev.myins'
+        : 'com.squid40.dev.myins',
       custom: {
         ...clean(source),
       },

@@ -1,4 +1,4 @@
-FROM node:14 as builder
+FROM public.ecr.aws/bitnami/node:latest as builder
 ENV NODE_ENV=${NODE_ENV}
 
 RUN mkdir -p /app/backend
@@ -16,7 +16,7 @@ RUN yarn run prisma generate
 ADD ./ /app/backend
 RUN yarn run build
 
-FROM node:13.7
+FROM public.ecr.aws/bitnami/node:latest
 
 COPY --from=builder /app/backend/node_modules ./node_modules
 COPY --from=builder /app/backend/package.json ./
@@ -25,4 +25,4 @@ COPY --from=builder /app/backend/runProd.sh ./
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/prisma ./prisma
 
-CMD ["sh", "runProd.sh"]
+#CMD ["sh", "runProd.sh"]

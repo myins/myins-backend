@@ -86,6 +86,7 @@ export class PostController {
         x,
         StorageContainer.posts,
       );
+
       return await this.postService.createPost({
         content: postData.content,
         author: {
