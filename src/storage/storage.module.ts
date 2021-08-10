@@ -11,7 +11,7 @@ import { StorageService } from './storage.service';
       config: {
         accessKeyId: process.env["S3_KEY_ID"],
         secretAccessKey: process.env["S3_SECRET_ACCESS_KEY"],
-        endpoint: process.env["S3_ENDPOINT"],
+        region: process.env["S3_REGION"],
         s3ForcePathStyle: true,
         signatureVersion: 'v4',
       },

@@ -14,16 +14,16 @@ To build docker image for prod: docker compose build
 
 # Big To-DO list
 
-- Add SMS
+- Add SMS(Twilio)
+- Make S3 actually work
+- After S3 works, add cloutfront for images: https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-s3-amazon-cloudfront-a-match-made-in-the-cloud/
 
 Environment variables;
 - DATABASE_URL: PostgresSQL database url
 - JWT_SIGNING_KEY: Signing key used for JWT auth
-
--S3_KEY_ID
--S3_SECRET_ACCESS_KEY
--S3_ENDPOINT
-
+- S3_KEY_ID
+- S3_SECRET_ACCESS_KEY
+- S3_ENDPOINT
 - APNS_AUTH_KEY: Auth key for APNS
 - APNS_AUTH_KEY_ID: See above
 - APNS_AUTH_KEY_TEAM_ID: See above

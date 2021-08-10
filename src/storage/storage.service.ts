@@ -3,8 +3,8 @@ import { InjectS3, S3 } from 'nestjs-s3';
 import { Readable } from 'stream';
 
 export enum StorageContainer {
-  profilepictures = 'profilepictures',
-  posts = 'posts',
+  profilepictures = 'myins-backend-profilepictures',
+  posts = 'myins-backend-posts',
 }
 
 @Injectable()
