@@ -9,6 +9,8 @@ import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
+import { InjectTwilio, TwilioClient } from 'nestjs-twilio';
+import fetch from 'node-fetch'
 
 @Injectable()
 export class AuthService {
@@ -16,7 +18,8 @@ export class AuthService {
     private usersService: UserService,
     private jwtService: SjwtService,
     private smsService: SmsService,
-  ) {}
+    @InjectTwilio() private readonly twilioClient: TwilioClient
+  ) { }
 
   async resendConfirmation(phone: string) {
     const user = await this.usersService.user({
@@ -44,6 +47,38 @@ export class AuthService {
     return this.smsService.sendForgotPasswordCode(user);
   }
 
+  async checkIfCodeCorrect(phone: string, code: string) {
+    const sid = process.env.TWILIO_SERVICE_SID ?? ""
+    // const res = await this.twilioClient.verify.v2.services(sid)
+    //   .verificationChecks
+    //   .create({ to: phone, code: code })
+    // This is not working for some inane reason, patch it using fetch for now
+
+    const details: any = {
+      'Code': code,
+      'To': phone,
+    };
+
+    let formBody = [];
+    for (var property in details) {
+      var encodedKey = encodeURIComponent(property);
+      var encodedValue = encodeURIComponent(details[property]);
+      formBody.push(encodedKey + "=" + encodedValue);
+    }
+    const finalForm = formBody.join("&");
+
+    const res = await fetch(`https://verify.twilio.com/v2/Services/${process.env.TWILIO_SERVICE_SID}/VerificationCheck`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: finalForm,
+      method: "POST"
+    })
+    const resData = await res.json()
+    return resData.status === "approved"
+  }
+
   async confirmResetPassword(phone: string, code: string, newPassword: string) {
     const user = await this.usersService.user({
       phoneNumber: phone
@@ -51,7 +86,7 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (user.phoneNumberCode != code) {
+    if (!this.checkIfCodeCorrect(phone, code)) {
       throw new BadRequestException('Invalid code!');
     }
     const saltOrRounds = 10;
@@ -74,7 +109,8 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (user.phoneNumberCode != code) {
+    const res = await this.checkIfCodeCorrect(phone, code)
+    if (!res) {
       throw new BadRequestException('Invalid code!');
     }
     await this.usersService.updateUser({
@@ -82,7 +118,6 @@ export class AuthService {
         id: user.id
       },
       data: {
-        phoneNumberCode: null,
         phoneNumberVerified: true
       }
     })

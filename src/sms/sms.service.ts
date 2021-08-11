@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { InjectTwilio, TwilioClient } from 'nestjs-twilio';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { randomCode } from 'src/util/random';
 
 const randomArray = [
     "Taking pictures of all the people that stop by",
@@ -15,45 +14,33 @@ const randomArray = [
 
 @Injectable()
 export class SmsService {
-    constructor(private readonly prismaService: PrismaService, @InjectTwilio() private readonly client: TwilioClient) { }
+    constructor(@InjectTwilio() private readonly client: TwilioClient) { }
 
-    async sendVerificationCode(user: User) {
+    async sendVerificationCode(user: { phoneNumberVerified: boolean, id: string, phoneNumber: string }) {
         if (user.phoneNumberVerified) {
             return
         }
-        const newCode = randomCode()
-        await this.prismaService.user.update({
-            where: { id: user.id }, data: {
-                phoneNumberCode: newCode
-            }
-        })
 
-        const randomText = randomArray[Math.floor(Math.random() * randomArray.length)];
-        await this.sendSMS(user.phoneNumber, `${newCode} ${randomText}`)
+        const toRet = await this.sendSMS(user.phoneNumber)
+        console.log("Got answer:")
+        console.log(toRet)
+        return toRet
     }
 
 
-    async sendSMS(target: string, body: string) {
+    async sendSMS(target: string) {
         try {
-            return await this.client.messages.create({
-                body: body,
-                to: target,
-            });
+            const toRet = await this.client.verify.services(process.env.TWILIO_SERVICE_SID ?? "")
+                .verifications
+                .create({ to: target, channel: 'sms' })
+            return toRet
         } catch (e) {
             return e;
         }
     }
 
     async sendForgotPasswordCode(user: User) {
-        const newCode = randomCode()
-        await this.prismaService.user.update({
-            where: { id: user.id }, data: {
-                phoneNumberCode: newCode
-            }
-        })
-        const randomText = randomArray[Math.floor(Math.random() * randomArray.length)];
-        await this.sendSMS(user.phoneNumber, `${newCode} ${randomText}`)
-
+        await this.sendSMS(user.phoneNumber)
     }
 
 }

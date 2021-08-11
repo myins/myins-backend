@@ -7,12 +7,11 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { UserService } from 'src/user/user.service';
 import { Prisma } from '@prisma/client';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -125,8 +124,11 @@ export class UserController {
       lastName: userData.lastName,
       password: hashedPassword,
     };
-
-    return await this.userService.createUser(toCreate);
+    try {
+    return this.userService.createUser(toCreate); // This calls sendVerificationCode
+    } catch(error) {
+      throw new BadRequestException("Could not create user, maybe it already exists?")
+    }
   }
 
   @Post('deleteUser')

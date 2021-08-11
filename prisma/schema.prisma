@@ -11,7 +11,7 @@ generator client {
 model User {
   id                  String  @id @default(uuid())
   phoneNumber         String  @unique
-  phoneNumberCode     String? 
+  //phoneNumberCode     String? 
   phoneNumberVerified Boolean @default(false)
   password            String
   firstName           String
