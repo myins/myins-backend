@@ -8,6 +8,7 @@ import { StorageModule } from 'src/storage/storage.module';
 import { UserModule } from 'src/user/user.module';
 import { PostCommentsController } from './post.comments.controller';
 import { PostController } from './post.controller';
+import { PostCreateController } from './post.create.controller';
 import { PostFeedController } from './post.feed.controller';
 import { PostFeedService } from './post.feed.service';
 import { PostLikeController } from './post.like.controller';
@@ -22,7 +23,7 @@ import { PostService } from './post.service';
     NotificationModule,
     FfmpegModule,
   ],
-  controllers: [PostFeedController, PostCommentsController, PostLikeController, PostController],
+  controllers: [PostFeedController, PostCommentsController, PostLikeController, PostController, PostCreateController],
   providers: [PostService, PostFeedService],
   exports: [PostService],
 })

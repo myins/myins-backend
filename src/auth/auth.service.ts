@@ -30,7 +30,7 @@ export class AuthService {
     }
     await this.smsService.sendVerificationCode(user);
     return {
-      message: 'Successfully sent confirmation phone!',
+      message: 'Successfully sent confirmation sms!',
     };
   }
 
@@ -42,6 +42,53 @@ export class AuthService {
       throw new BadRequestException('Could not find user with that phone!');
     }
     return this.smsService.sendForgotPasswordCode(user);
+  }
+
+  async confirmResetPassword(phone: string, code: string, newPassword: string) {
+    const user = await this.usersService.user({
+      phoneNumber: phone
+    });
+    if (user == null) {
+      throw new BadRequestException('Could not find user with that phone!');
+    }
+    if (user.phoneNumberCode != code) {
+      throw new BadRequestException('Invalid code!');
+    }
+    const saltOrRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
+
+    await this.usersService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+  }
+
+  async verifyUser(phone: string, code: string) {
+    const user = await this.usersService.user({
+      phoneNumber: phone
+    });
+    if (user == null) {
+      throw new BadRequestException('Could not find user with that phone!');
+    }
+    if (user.phoneNumberCode != code) {
+      throw new BadRequestException('Invalid code!');
+    }
+    await this.usersService.updateUser({
+      where: {
+        id: user.id
+      },
+      data: {
+        phoneNumberCode: null,
+        phoneNumberVerified: true
+      }
+    })
+    return {
+      message: "User verified!"
+    }
   }
 
   async phoneExists(phone: string) {
@@ -111,47 +158,5 @@ export class AuthService {
       throw new NotFoundException();
     }
     return this.usersService.logoutUser(userModel);
-  }
-  
-  async completeResetPassword(token: string, newPassword: string) {
-    const decrypted: any = await this.jwtService.decrypt(token);
-    if (!decrypted) {
-      throw new BadRequestException();
-    }
-    const current_time = Date.now() / 1000;
-    if (decrypted.exp < current_time) {
-      throw new BadRequestException('Token expired!');
-    }
-    const phone = <string>decrypted.phone;
-    const userID = <string>decrypted.sub;
-    const purpose = <string>decrypted.purpose;
-
-    if (purpose !== 'reset-password') {
-      throw new BadRequestException("This isn't a verify code token!");
-    }
-
-    const unverifiedUser = await this.usersService.user({
-      id: userID,
-    });
-
-    if (!unverifiedUser) {
-      throw new BadRequestException('Could not find user!');
-    }
-    if (unverifiedUser.phoneNumber !== phone) {
-      throw new BadRequestException('Nice try bro ;)');
-    }
-    const saltOrRounds = 10;
-    const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
-
-    console.log(`Updating hash ${newPassword} to ${hashedPassword}`);
-
-    await this.usersService.updateUser({
-      where: {
-        id: userID,
-      },
-      data: {
-        password: hashedPassword,
-      },
-    });
   }
 }

@@ -41,6 +41,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "fs": "^0.0.1-security",
     "nestjs-s3": "^1.0.1",
+    "nestjs-twilio": "^1.2.1",
     "node-pushnotifications": "^1.7.1",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
@@ -51,6 +52,7 @@
     "rxjs": "^6.6.6",
     "swagger-ui-express": "^4.1.6",
     "tempy": "^1.0.1",
+    "twilio": "^3.66.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

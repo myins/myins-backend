@@ -16,7 +16,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @UseGuards(AuthGuard('local'))
   @ApiTags('auth')
@@ -43,15 +43,22 @@ export class AuthController {
     return this.authService.logout(user);
   }
 
+  @Post('verifyCode')
+  @ApiTags('auth-frontend')
+  async verifyUser(
+    @Body() accountData: { code: string; phone: string },
+  ) {
+    const { phone, code } = accountData
+    return this.authService.verifyUser(phone, code)
+  }
+
   @Post('verifyReset')
   @ApiTags('auth-frontend')
   async completeResetPassword(
-    @Body() accountData: { token: string; newPassword: string },
+    @Body() accountData: { code: string; newPassword: string, phone: string },
   ) {
-    return this.authService.completeResetPassword(
-      accountData.token,
-      accountData.newPassword,
-    );
+    const { phone, code, newPassword } = accountData
+    return this.authService.confirmResetPassword(phone, code, newPassword);
   }
 
   @Post('resend-confirmation')

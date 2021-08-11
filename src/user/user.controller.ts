@@ -113,7 +113,6 @@ export class UserController {
 
   @Post()
   @ApiTags('users')
-  @UseInterceptors(photoInterceptor)
   async signupUser(
     @Body() userData: CreateUserAPI,
   ) {
