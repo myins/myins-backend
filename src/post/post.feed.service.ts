@@ -19,6 +19,17 @@ export class PostFeedService {
       orderBy: {
         createdAt: 'desc'
       },
+      where: {
+        inses: {
+          some: {
+            members: {
+              some: {
+                id: userID
+              }
+            }
+          }
+        }
+      }
       // where: {
       //   author: {
       //     privateProfile: false
