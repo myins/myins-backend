@@ -44,7 +44,7 @@ export class AuthController {
   }
 
   @Post('verifyCode')
-  @ApiTags('auth-frontend')
+  @ApiTags('auth')
   async verifyUser(
     @Body() accountData: { code: string; phone: string },
   ) {
@@ -52,8 +52,8 @@ export class AuthController {
     return this.authService.verifyUser(phone, code)
   }
 
-  @Post('verifyReset')
-  @ApiTags('auth-frontend')
+  @Post('completeReset')
+  @ApiTags('auth')
   async completeResetPassword(
     @Body() accountData: { code: string; newPassword: string, phone: string },
   ) {
