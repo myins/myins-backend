@@ -26,6 +26,19 @@ export class PostController {
     private readonly postService: PostService,
   ) { }
 
+  @Get('pending')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async getPendingPosts(@Param('id') id: string, @UserID() userID: string) {
+    return this.postService.posts({
+      skip: 0,
+      take: 5,
+      where: {
+        authorId: userID,
+        pending: true,
+      }, includeUserInfo: false
+    })
+  }
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')

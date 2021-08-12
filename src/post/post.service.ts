@@ -23,10 +23,9 @@ export class PostService {
     });
   }
 
-  //FIXME: refactor this once no longer on holiday
   async injectedPost(
     postID: string,
-    asUserID: string | undefined,
+    asUserID: string,
   ) {
     let toRet = await this.prisma.post.findUnique({
       where: {
@@ -42,6 +41,11 @@ export class PostService {
             comments: true
           }
         },
+        likes: {
+          where: {
+            id: asUserID
+          }
+        }
       }
     });
     return toRet

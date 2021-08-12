@@ -23,7 +23,6 @@ export class UserService {
     });
   }
 
-  //FIXME: check this
   async firstUser(where: Prisma.UserWhereInput): Promise<User | null> {
     return this.prisma.user.findFirst({
       where: where,
