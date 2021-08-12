@@ -100,7 +100,7 @@ model Notification {
 model INS { 
   id        String @id @default(uuid())
   name      String
-  cover String
+  cover String?
   shareCode String
 
   members User[]

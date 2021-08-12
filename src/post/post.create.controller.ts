@@ -40,6 +40,13 @@ export class PostCreateController {
     @UseInterceptors(photoOrVideoInterceptor)
     async attachPhotoToPost(@UploadedFile() file: Express.Multer.File,
         @Param('id') postID: string, @UserID() userID: string, @Body() body: { setCover: boolean }) {
+
+        if (!file) {
+            throw new BadRequestException("No file!")
+        }
+        if (!file.buffer) {
+            throw new BadRequestException("No buffer!")
+        }
         const isVideoPost = isVideo(file.originalname);
         const { setCover } = body
 
@@ -82,9 +89,11 @@ export class PostCreateController {
             })
             if (setCover) {
                 for (const eachINS of post.inses) {
-                    await this.prismaService.iNS.update({where: eachINS, data: {
-                        cover: dataURL
-                    }})
+                    await this.prismaService.iNS.update({
+                        where: eachINS, data: {
+                            cover: dataURL
+                        }
+                    })
                 }
 
             }

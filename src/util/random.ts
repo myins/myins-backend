@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
 
 export const randomCode = (length: number = 2) => {
-    return crypto.randomBytes(length / 2).toString('hex');
+    return crypto.randomBytes(length / 2).toString('hex').toUpperCase();
 }
