@@ -55,6 +55,9 @@ model Post {
   authorId     String
   comments     Comment[]
 
+  pending Boolean @default(false)
+  totalMediaContent Int
+
   notifications Notification[] // Some notifications have a post
   likes         User[]         @relation(name: "likes")
   inses         INS[]

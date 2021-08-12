@@ -57,6 +57,11 @@ export class PostCreateController {
                         select: {
                             id: true
                         }
+                    },
+                    _count: {
+                        select: {
+                            mediaContent: true
+                        }
                     }
                 }
             })
@@ -66,6 +71,11 @@ export class PostCreateController {
             if (post.authorId != userID) {
                 throw new BadRequestException("That's not your post!")
             }
+            const existingContent = (post._count?.mediaContent ?? 0)
+            if (post.totalMediaContent >= existingContent) {
+                throw new BadRequestException("There are too many medias attached already!")
+            }
+            const willBeReadyAfter = existingContent + 1 == post.totalMediaContent
 
             const ext = path.extname(file.originalname);
             const randomUUID = uuid.v4();
@@ -87,6 +97,18 @@ export class PostCreateController {
                     postId: postID,
                 }
             })
+            await this.prismaService.post.update({
+                where: {
+                    id: post.id
+                },
+                data: {
+                    totalMediaContent: {
+                        increment: 1
+                    },
+                    pending: willBeReadyAfter ? false : undefined
+                }
+            })
+
             if (setCover) {
                 for (const eachINS of post.inses) {
                     await this.prismaService.iNS.update({
@@ -138,6 +160,8 @@ export class PostCreateController {
                     id: userID,
                 },
             },
+            pending: true,
+            totalMediaContent: postData.totalMediaContent,
             inses: {
                 connect: postData.ins.map(each => { return { id: each } })
             }
