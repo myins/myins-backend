@@ -31,6 +31,12 @@ export class SjwtService {
     });
   }
 
+  async signWithVeryQuickExpiration(toSign: JwtStrategyPayload) {
+    return this.jwtService.sign(toSign, {
+      expiresIn: '5m',
+    });
+  }
+
   async decrypt(token: string) {
     return this.jwtService.decode(token);
   }

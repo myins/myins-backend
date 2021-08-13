@@ -18,7 +18,7 @@ export class AuthService {
     private usersService: UserService,
     private jwtService: SjwtService,
     private smsService: SmsService,
-    @InjectTwilio() private readonly twilioClient: TwilioClient
+    //@InjectTwilio() private readonly twilioClient: TwilioClient
   ) { }
 
   async resendConfirmation(phone: string) {
@@ -44,11 +44,14 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    return this.smsService.sendForgotPasswordCode(user);
+    await this.smsService.sendForgotPasswordCode(user);
+    return {
+      message: "Code sent successfully!"
+    }
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
-    const sid = process.env.TWILIO_SERVICE_SID ?? ""
+    //const sid = process.env.TWILIO_SERVICE_SID ?? ""
     // const res = await this.twilioClient.verify.v2.services(sid)
     //   .verificationChecks
     //   .create({ to: phone, code: code })
@@ -76,18 +79,23 @@ export class AuthService {
       method: "POST"
     })
     const resData = await res.json()
+    console.log(resData)
     return resData.status === "approved"
   }
 
-  async confirmResetPassword(phone: string, code: string, newPassword: string) {
+  async confirmResetPassword(phone: string, resetToken: string, newPassword: string) {
     const user = await this.usersService.user({
       phoneNumber: phone
     });
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (!this.checkIfCodeCorrect(phone, code)) {
-      throw new BadRequestException('Invalid code!');
+    const decrypted = await this.jwtService.decrypt(resetToken)
+    if (typeof decrypted == 'string') {
+      throw new BadRequestException('An error occured, please try again later!');
+    }
+    if (decrypted?.sub !== phone || decrypted?.phone !== phone) {
+      throw new BadRequestException('Nice try!')
     }
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
@@ -100,6 +108,9 @@ export class AuthService {
         password: hashedPassword,
       },
     });
+    return {
+      message: "Updated successfully!"
+    }
   }
 
   async verifyUser(phone: string, code: string) {
