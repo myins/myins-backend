@@ -1,28 +1,23 @@
 import {
     BadRequestException,
     Body,
-    Controller,
-    Get,
-    Param,
-    Post,
-    Query,
-    UploadedFile,
+    Controller, Param,
+    Post, UploadedFile,
     UseGuards,
-    UseInterceptors,
+    UseInterceptors
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { CreatePostAPI } from './post-api.entity';
-import * as fs from 'fs';
-import * as uuid from 'uuid';
-import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
-import { UserService } from 'src/user/user.service';
-import { StorageContainer, StorageService } from 'src/storage/storage.service';
-import * as path from 'path';
-import { PostService } from './post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageContainer, StorageService } from 'src/storage/storage.service';
+import { UserService } from 'src/user/user.service';
+import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
+import * as uuid from 'uuid';
+import { CreatePostAPI } from './post-api.entity';
+import { PostService } from './post.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -72,7 +67,9 @@ export class PostCreateController {
                 throw new BadRequestException("That's not your post!")
             }
             const existingContent = (post._count?.mediaContent ?? 0)
-            if (post.totalMediaContent >= existingContent) {
+            console.log("Existing content:")
+            console.log(existingContent)
+            if (existingContent + 1 > post.totalMediaContent) {
                 throw new BadRequestException("There are too many medias attached already!")
             }
             const willBeReadyAfter = existingContent + 1 == post.totalMediaContent
@@ -102,9 +99,6 @@ export class PostCreateController {
                     id: post.id
                 },
                 data: {
-                    totalMediaContent: {
-                        increment: 1
-                    },
                     pending: willBeReadyAfter ? false : undefined
                 }
             })
@@ -153,6 +147,10 @@ export class PostCreateController {
             );
         }
 
+        const mappedINSIDs = postData.ins.map(each => { return { id: each } })
+        //console.log(mappedINSIDs)
+        //console.log(userID)
+
         return await this.postService.createPost({
             content: postData.content,
             author: {
@@ -163,7 +161,7 @@ export class PostCreateController {
             pending: true,
             totalMediaContent: postData.totalMediaContent,
             inses: {
-                connect: postData.ins.map(each => { return { id: each } })
+                connect: mappedINSIDs
             }
         });
     }

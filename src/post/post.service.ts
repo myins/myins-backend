@@ -133,6 +133,14 @@ export class PostService {
             },
           }
           : false,
+        mediaContent: {
+        },
+        inses: {
+          select: {
+            name: true,
+            cover: true
+          }
+        },
         author: {
           select: ShallowUserSelect,
         },
