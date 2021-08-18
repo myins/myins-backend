@@ -146,6 +146,7 @@ export class UserController {
 
 
   @Post('updateToken')
+  @ApiTags('users')
   @UseGuards(JwtAuthGuard)
   async updateToken(@Body() dataModel: UpdatePushTokenAPI, @UserID() userID: string) {
     await this.userService.updateUser({

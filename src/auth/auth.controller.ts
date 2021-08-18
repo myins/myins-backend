@@ -11,7 +11,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { UserID } from 'src/decorators/user-id.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
-import { PhoneBodyAPI, RefreshTokenBodyAPI } from './auth-api.entity';
+import { CodePhoneAPI, PhoneBodyAPI, RefreshTokenBodyAPI, ResetPasswordAPI } from './auth-api.entity';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategyPayload } from './jwt.strategy';
@@ -48,7 +48,7 @@ export class AuthController {
   @Post('verifyCode')
   @ApiTags('auth')
   async verifyUser(
-    @Body() accountData: { code: string; phone: string },
+    @Body() accountData: CodePhoneAPI,
   ) {
     const { phone, code } = accountData
     return this.authService.verifyUser(phone, code)
@@ -57,7 +57,7 @@ export class AuthController {
   @Post('checkResetCode')
   @ApiTags('auth')
   async checkResetCode(
-    @Body() accountData: { code: string; phone: string },
+    @Body() accountData: CodePhoneAPI,
   ) {
     const { phone, code } = accountData
 
@@ -77,7 +77,7 @@ export class AuthController {
   @Post('completeReset')
   @ApiTags('auth')
   async completeResetPassword(
-    @Body() accountData: { resetToken: string; newPassword: string, phone: string },
+    @Body() accountData: ResetPasswordAPI,
   ) {
     const { phone, resetToken, newPassword } = accountData
     return this.authService.confirmResetPassword(phone, resetToken, newPassword);

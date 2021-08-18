@@ -4,6 +4,7 @@ import { Readable } from 'stream';
 
 export enum StorageContainer {
   profilepictures = 'myins-backend-profilepictures',
+  inscovers = 'myins-backend-inscovers',
   posts = 'myins-backend-posts',
 }
 

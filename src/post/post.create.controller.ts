@@ -148,8 +148,25 @@ export class PostCreateController {
         }
 
         const mappedINSIDs = postData.ins.map(each => { return { id: each } })
-        //console.log(mappedINSIDs)
-        //console.log(userID)
+
+        const inses = (await this.prismaService.iNS.findMany({
+            where: {
+                members: {
+                    some: {
+                        id: userID
+                    }
+                },
+            },
+            select: {
+                id: true
+            }
+        })).map(each => each.id)
+        
+        for (const each of mappedINSIDs) {
+            if (!inses.includes(each.id)) {
+                throw { message: "You're not allowed to post to that INS!" }
+            }
+        }
 
         return await this.postService.createPost({
             content: postData.content,

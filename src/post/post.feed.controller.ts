@@ -38,4 +38,24 @@ export class PostFeedController {
     }
     return this.postFeedService.getFeed(skip, take, userID);
   }
+
+  @Get('stories-feed')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async getStoriesFeed(
+    @UserID() userID: string,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
+  ) {
+    if (take < 0 || take > 20) {
+      throw new BadRequestException('Take must be between 0 and 20!');
+    }
+    if (skip < 0 || skip > 1000) {
+      throw new BadRequestException('Skip must be between 0 and 1000!');
+    }
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      throw new BadRequestException('Invalid skip / take!');
+    }
+    return this.postFeedService.getStoriesFeed(userID);
+  }
 }

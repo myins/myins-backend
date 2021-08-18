@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { INS, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
@@ -26,6 +27,21 @@ export class InsService {
                 }
             }
         })
+    }
+
+    async ins(where: Prisma.INSWhereUniqueInput) {
+        return this.prismaService.iNS.findUnique({where: where})
+    }
+
+    async update(params: {
+      where: Prisma.INSWhereUniqueInput;
+      data: Prisma.INSUpdateInput;
+    }): Promise<INS> {
+      const { where, data } = params;
+      return this.prismaService.iNS.update({
+        data,
+        where,
+      });
     }
 
 }

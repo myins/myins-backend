@@ -52,6 +52,7 @@ export class ShareController {
     }
 
     @Get('search')
+    @ApiTags('share')
     @UseGuards(JwtAuthGuard)
     @Throttle(60, 60) // limit, ttl. limit = cate request-uri pana crapa,  ttl = cat tine minte un request
     async getFeed(
