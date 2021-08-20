@@ -43,6 +43,9 @@ model PostContent {
 
   post   Post   @relation(name: "post", fields: [postId], references: [id])
   postId String
+
+  width Int
+  height Int
 }
 
 model Post {

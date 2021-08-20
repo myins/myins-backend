@@ -16,7 +16,7 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { UserService } from 'src/user/user.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import * as uuid from 'uuid';
-import { CreatePostAPI } from './post-api.entity';
+import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
 import { PostService } from './post.service';
 
 @Controller('post')
@@ -34,7 +34,7 @@ export class PostCreateController {
     @ApiTags('posts')
     @UseInterceptors(photoOrVideoInterceptor)
     async attachPhotoToPost(@UploadedFile() file: Express.Multer.File,
-        @Param('id') postID: string, @UserID() userID: string, @Body() body: { setCover: boolean }) {
+        @Param('id') postID: string, @UserID() userID: string, @Body() body: AttachMediaAPI) {
 
         if (!file) {
             throw new BadRequestException("No file!")
@@ -43,7 +43,13 @@ export class PostCreateController {
             throw new BadRequestException("No buffer!")
         }
         const isVideoPost = isVideo(file.originalname);
-        const { setCover } = body
+        
+        const setCover = (body.setCover === 'true');
+        const width = parseInt(body.width)
+        const height = parseInt(body.height)
+        if (!width || !height) {
+            throw new BadRequestException("Invalid width / height!")
+        }
 
         try {
             const post = await this.prismaService.post.findUnique({
@@ -67,8 +73,8 @@ export class PostCreateController {
                 throw new BadRequestException("That's not your post!")
             }
             const existingContent = (post._count?.mediaContent ?? 0)
-            console.log("Existing content:")
-            console.log(existingContent)
+            //console.log("Existing content:")
+            //console.log(existingContent)
             if (existingContent + 1 > post.totalMediaContent) {
                 throw new BadRequestException("There are too many medias attached already!")
             }
@@ -92,6 +98,8 @@ export class PostCreateController {
                     isVideo: isVideoPost,
                     content: dataURL,
                     postId: postID,
+                    width: width,
+                    height: height
                 }
             })
             await this.prismaService.post.update({
@@ -103,7 +111,7 @@ export class PostCreateController {
                 }
             })
 
-            if (setCover) {
+            if (setCover && !isVideoPost) {
                 for (const eachINS of post.inses) {
                     await this.prismaService.iNS.update({
                         where: eachINS, data: {
