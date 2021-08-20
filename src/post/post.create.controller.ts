@@ -43,7 +43,7 @@ export class PostCreateController {
             throw new BadRequestException("No buffer!")
         }
         const isVideoPost = isVideo(file.originalname);
-        
+
         const setCover = (body.setCover === 'true');
         const width = parseInt(body.width)
         const height = parseInt(body.height)
@@ -73,12 +73,9 @@ export class PostCreateController {
                 throw new BadRequestException("That's not your post!")
             }
             const existingContent = (post._count?.mediaContent ?? 0)
-            //console.log("Existing content:")
-            //console.log(existingContent)
             if (existingContent + 1 > post.totalMediaContent) {
                 throw new BadRequestException("There are too many medias attached already!")
             }
-            const willBeReadyAfter = existingContent + 1 == post.totalMediaContent
 
             const ext = path.extname(file.originalname);
             const randomUUID = uuid.v4();
@@ -102,13 +99,45 @@ export class PostCreateController {
                     height: height
                 }
             })
-            await this.prismaService.post.update({
-                where: {
-                    id: post.id
-                },
-                data: {
-                    pending: willBeReadyAfter ? false : undefined
+
+            // Time to update the post's pending state. This is a transaction in case we add async loading
+            // And 2 pictures get uploaded at aprox the same time.
+            await this.prismaService.$transaction(async (prisma) => {
+                // Find an available ticket
+
+                const transactionPost = await this.prismaService.post.findUnique({
+                    where: { id: post.id },
+                    include: {
+                        _count: {
+                            select: {
+                                mediaContent: true
+                            }
+                        }
+                    }
+                })
+
+                if (!transactionPost) {
+                    throw new BadRequestException('Could not find the post for some reason!')
                 }
+                if (!transactionPost.pending) {
+                    return // Nothing to do here, looks like the other thread 
+                }
+
+
+                const isReady = transactionPost.totalMediaContent >= (transactionPost._count?.mediaContent ?? 0)
+
+                if (!isReady) {
+                    return // Nothing to do here, it's not ready yet
+                }
+
+                return prisma.post.update({
+                    data: {
+                        pending: isReady
+                    },
+                    where: {
+                        id: post.id,
+                    },
+                })
             })
 
             if (setCover && !isVideoPost) {
@@ -169,7 +198,7 @@ export class PostCreateController {
                 id: true
             }
         })).map(each => each.id)
-        
+
         for (const each of mappedINSIDs) {
             if (!inses.includes(each.id)) {
                 throw { message: "You're not allowed to post to that INS!" }
