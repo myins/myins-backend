@@ -54,8 +54,8 @@ model Post {
   edited       Boolean       @default(false)
   content      String
   mediaContent PostContent[] @relation(name: "post")
-  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  authorId     String
+  author       User?          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId     String? // Optional because of guest posts, see onboarding service
   comments     Comment[]
 
   pending Boolean @default(false)

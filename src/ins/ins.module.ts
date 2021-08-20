@@ -7,6 +7,7 @@ import { InsService } from './ins.service';
 @Module({
   imports: [PrismaModule, StorageModule],
   controllers: [InsController],
-  providers: [InsService]
+  providers: [InsService],
+  exports: [InsService],
 })
 export class InsModule {}

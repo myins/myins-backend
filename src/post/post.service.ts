@@ -1,7 +1,7 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
 import { ShallowUserSelect } from 'src/util/shallow-user';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PostService {

@@ -27,7 +27,7 @@ export class PostLikeController {
       },
       false,
     );
-    if (post == null) {
+    if (post == null || !post.authorId) {
       throw new NotFoundException('Could not find this post!');
     }
     const user = await this.userService.user({ id: userID });

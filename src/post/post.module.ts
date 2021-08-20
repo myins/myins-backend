@@ -12,6 +12,7 @@ import { PostCreateController } from './post.create.controller';
 import { PostFeedController } from './post.feed.controller';
 import { PostFeedService } from './post.feed.service';
 import { PostLikeController } from './post.like.controller';
+import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
 
 @Module({
@@ -24,7 +25,7 @@ import { PostService } from './post.service';
     FfmpegModule,
   ],
   controllers: [PostFeedController, PostCommentsController, PostLikeController, PostController, PostCreateController],
-  providers: [PostService, PostFeedService],
-  exports: [PostService],
+  providers: [PostMediaService, PostService, PostFeedService],
+  exports: [PostService, PostMediaService],
 })
 export class PostModule {}

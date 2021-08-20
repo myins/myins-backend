@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsBoolean, IsNumber, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
 
 export class CreatePostAPI {
 
@@ -6,7 +6,7 @@ export class CreatePostAPI {
 
   @IsNumber()
   @Min(1)
-  @Max(100)
+  @Max(20)
   totalMediaContent: number;
 
   @ArrayNotEmpty()
@@ -14,6 +14,9 @@ export class CreatePostAPI {
 }
 
 export class AttachMediaAPI {
+
+  @IsString()
+  postID: string;
 
   //@IsBoolean()
   setCover: string
