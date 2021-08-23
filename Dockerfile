@@ -5,7 +5,7 @@ RUN mkdir -p /app/backend
 
 WORKDIR /app/backend
 
-COPY ./package*.json /app/backend
+COPY ./package*.json /app/backend/
 COPY ./yarn.lock /app/backend
 COPY ./runProd.sh /app/backend
 RUN yarn install
