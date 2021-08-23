@@ -37,6 +37,7 @@ model User {
 
 model PostContent {
   id String @id @default(uuid())
+  createdAt    DateTime      @default(now())
 
   isVideo Boolean
   content String // Link to raw file
@@ -107,7 +108,7 @@ model INS {
   id        String @id @default(uuid())
   name      String
   cover String?
-  shareCode String
+  shareCode String @unique
 
   members User[]
   //pendingMembers User[]

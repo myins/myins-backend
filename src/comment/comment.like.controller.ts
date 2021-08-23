@@ -1,8 +1,10 @@
 import {
   Controller,
+  Get,
   NotFoundException,
   Param,
   Post,
+  Query,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -70,4 +72,24 @@ export class CommentLikeController {
       message: 'Unliked comment successfully!',
     };
   }
+
+  // @Get(':id/likes')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiTags('posts')
+  // async getLikesForComment(@Param('id') commentID: string, @Query('skip') skip: number, @Query('take') take: number) {
+  //   return this.userService.users({
+  //     where: {
+  //       likedComments: {
+  //         some: {
+  //           id: commentID
+  //         }
+  //       }
+  //     },
+  //     skip: skip,
+  //     take: take,
+  //     orderBy: {
+  //       firstName: 'desc'
+  //     }
+  //   })
+  // }
 }

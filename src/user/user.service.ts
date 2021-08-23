@@ -4,6 +4,7 @@ import { User, Prisma } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
+import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
 export class UserService {
@@ -60,6 +61,25 @@ export class UserService {
       cursor,
       where,
       orderBy,
+    });
+  }
+
+  //FIXME: also figure out type returns to allow select
+  async shallowUsers(params: {
+    skip?: number;
+    take?: number;
+    cursor?: Prisma.UserWhereUniqueInput;
+    where?: Prisma.UserWhereInput;
+    orderBy?: Prisma.UserOrderByWithRelationInput;
+  }) {
+    const { skip, take, cursor, where, orderBy } = params;
+    return this.prisma.user.findMany({
+      skip,
+      take,
+      cursor,
+      where,
+      orderBy,
+      select: ShallowUserSelect,
     });
   }
 

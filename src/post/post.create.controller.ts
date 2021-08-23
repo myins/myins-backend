@@ -9,8 +9,8 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
+import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
@@ -24,7 +24,7 @@ export class PostCreateController {
         private readonly userService: UserService,
         private readonly postService: PostService,
         private readonly postMediaService: PostMediaService,
-        private readonly prismaService: PrismaService,
+        private readonly insService: InsService,
     ) { }
 
     @Post(':id')
@@ -91,16 +91,11 @@ export class PostCreateController {
 
         const mappedINSIDs = postData.ins.map(each => { return { id: each } })
 
-        const inses = (await this.prismaService.iNS.findMany({
-            where: {
-                members: {
-                    some: {
-                        id: userID
-                    }
-                },
-            },
-            select: {
-                id: true
+        const inses = (await this.insService.insesSelectIDs({
+            members: {
+                some: {
+                    id: userID
+                }
             }
         })).map(each => each.id)
 

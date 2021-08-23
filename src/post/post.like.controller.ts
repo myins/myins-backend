@@ -1,4 +1,4 @@
-import { Controller, NotFoundException, Param, Post, UnauthorizedException, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Query, UnauthorizedException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
@@ -15,6 +15,47 @@ export class PostLikeController {
     private readonly userService: UserService,
     private readonly notificationsService: NotificationService,
   ) {}
+
+  @Get(':id/likes')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async getLikesForPost(@UserID() userID: string, @Param('id') postID: string, @Query('skip') skip: number, @Query('take') take: number) {
+    const postIfValid = await this.postService.posts({
+      where: {
+        id: postID,
+        inses: {
+          some: {
+            members: {
+              some: {
+                id: userID
+              }
+            }
+          }
+        }
+      },
+      includeUserInfo: false
+    })
+
+    if (!postIfValid || postIfValid.length == 0) {
+      throw new BadRequestException("Could not find post!")
+    }
+    
+    return this.userService.users({
+      where: {
+        likedPosts: {
+          some: {
+            id: postID
+          }
+        }
+      },
+      skip: skip,
+      take: take,
+      orderBy: {
+        firstName: 'desc'
+      }
+    })
+  }
+  
 
 
   @Post(':id/like')

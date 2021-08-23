@@ -53,6 +53,7 @@
     "rxjs": "^6.6.6",
     "swagger-ui-express": "^4.1.6",
     "tempy": "^1.0.1",
+    "ts-retry-promise": "^0.6.0",
     "twilio": "^3.66.1",
     "uuid": "^8.3.2"
   },

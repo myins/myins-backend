@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { INS, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
+import { retry } from 'ts-retry-promise';
 
 @Injectable()
 export class InsService {
@@ -16,7 +17,9 @@ export class InsService {
         if (!user?.phoneNumberVerified && userID) {
             throw new UnauthorizedException("You're not allowed to do this!")
         }
-        return this.prismaService.iNS.create({
+        // Retry it a couple of times in case the code is taken
+
+        return retry(() => this.prismaService.iNS.create({
             data: {
                 name: data.name,
                 shareCode: randomCode(6),
@@ -26,22 +29,120 @@ export class InsService {
                     }
                 } : undefined
             }
+        }), { retries: 3 })
+    }
+
+    async insList(userID: string, skip: number, take: number, filter: string) {
+        return this.prismaService.iNS.findMany({
+            where: {
+                members: {
+                    some: {
+                        id: userID
+                    }
+                },
+                name: (filter && filter.length > 0) ? {
+                    contains: filter,
+                    mode: 'insensitive'
+                } : undefined
+            },
+            skip: skip,
+            take: take,
+            orderBy: {
+                name: 'asc'
+            }
         })
     }
 
-    async ins(where: Prisma.INSWhereUniqueInput) {
-        return this.prismaService.iNS.findUnique({where: where})
+    async mediaForIns(insID: string, skip: number, take: number) {
+        if (!insID || insID.length == 0) {
+            throw new BadRequestException("Invalid ins ID!")
+        }
+        return this.prismaService.postContent.findMany({
+            where: {
+                post: {
+                    inses: {
+                        some: {
+                            id: insID
+                        }
+                    }
+                }
+            },
+            skip: skip,
+            take: take,
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+    }
+
+    async membersForIns(insID: string, skip: number, take: number, filter: string) {
+        return this.prismaService.user.findMany({
+            where: {
+                inses: {
+                    some: {
+                        id: insID
+                    }
+                },
+                OR: (filter && filter.length > 0) ? {
+                    firstName: {
+                        contains: filter,
+                        mode: 'insensitive'
+                    },
+                    lastName: {
+                        contains: filter,
+                        mode: 'insensitive'
+                    }
+                } : undefined
+            },
+            skip: skip,
+            take: take,
+            orderBy: {
+                firstName: 'desc'
+            }
+        })
+    }
+
+    async ins(where: Prisma.INSWhereUniqueInput, include?: Prisma.INSInclude) {
+        return this.prismaService.iNS.findUnique({ where: where, include: include })
+    }
+
+
+    async inses(params: {
+        skip?: number;
+        take?: number;
+        where?: Prisma.INSWhereInput;
+        orderBy?: Prisma.INSOrderByInput;
+        include?: Prisma.INSInclude
+    }): Promise<INS[]> {
+        const { skip, take, where, orderBy, include } = params;
+        return this.prismaService.iNS.findMany({
+            skip,
+            take,
+            where,
+            orderBy,
+            include: include,
+        });
+    }
+
+    //FIXME: figure out type safety with select statements
+    async insesSelectIDs(where: Prisma.INSWhereInput) {
+        const toRet = await this.prismaService.iNS.findMany({
+            where: where, select: {
+                id: true
+            }
+        })
+        return toRet
     }
 
     async update(params: {
-      where: Prisma.INSWhereUniqueInput;
-      data: Prisma.INSUpdateInput;
+        where: Prisma.INSWhereUniqueInput;
+        data: Prisma.INSUpdateInput;
     }): Promise<INS> {
-      const { where, data } = params;
-      return this.prismaService.iNS.update({
-        data,
-        where,
-      });
+        const { where, data } = params;
+        return this.prismaService.iNS.update({
+            data,
+            where,
+        });
     }
 
 }

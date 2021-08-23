@@ -15,6 +15,7 @@ import { FirebaseAdminModule } from '@aginix/nestjs-firebase-admin'
 import { SmsModule } from './sms/sms.module';
 import { InsModule } from './ins/ins.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { InviteModule } from './invite/invite.module';
 import * as admin from 'firebase-admin';
 
 @Module({
@@ -49,6 +50,7 @@ import * as admin from 'firebase-admin';
     SmsModule,
     InsModule,
     OnboardingModule,
+    InviteModule,
   ],
   providers: [
     {

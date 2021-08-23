@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
@@ -7,10 +7,10 @@ import { InsService } from 'src/ins/ins.service';
 import { AttachMediaAPI } from 'src/post/post-api.entity';
 import { PostMediaService } from 'src/post/post.media.service';
 import { PostService } from 'src/post/post.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import { ClaimINSAPI, CreateGuestPostAPI } from './onboarding-api.entity';
+import { OnboardingService } from './onboarding.service';
 
 @Controller('onboarding')
 export class OnboardingController {
@@ -18,7 +18,7 @@ export class OnboardingController {
         private readonly insService: InsService,
         private readonly postService: PostService,
         private readonly signService: SjwtService,
-        private readonly prismaService: PrismaService,
+        private readonly onboardingService: OnboardingService,
         private readonly postMediaService: PostMediaService) { }
 
 
@@ -33,51 +33,8 @@ export class OnboardingController {
             throw new BadRequestException("Unrecognized claim token!")
         }
         const insID: string = decrypted.sub
-        const ins = await this.prismaService.iNS.findUnique({
-            where: {
-                id: insID
-            },
-            include: {
-                _count: {
-                    select: {
-                        members: true
-                    }
-                }
-            }
-        })
-        if (!ins || ins._count?.members != 0) {
-            throw new BadRequestException("Could not find INS!")
-        }
 
-        await this.prismaService.$transaction(async (prisma) => {
-            // First we connect the user to that INS
-            await prisma.iNS.update({
-                where: {
-                    id: insID
-                },
-                data: {
-                    members: {
-                        connect: {
-                            id: userID
-                        }
-                    }
-                }
-            })
-            //Then we also make him the owner of all the posts (should be one post)
-            await this.prismaService.post.updateMany({
-                where: {
-                    inses: {
-                        some: {
-                            id: ins.id
-                        }
-                    },
-                    authorId: null
-                },
-                data: {
-                    authorId: userID
-                }
-            })
-        })
+        await this.onboardingService.claimINS(insID, userID)
 
         return {
             message: "Claimed successfully!"
@@ -91,6 +48,9 @@ export class OnboardingController {
         const ins = await this.insService.createINS(null, {
             name: name
         })
+        if (!ins) {
+            throw new BadRequestException("Could not create ins! Please try again later!")
+        }
         const post = await this.postService.createPost({
             content: content,
             totalMediaContent: totalMediaContent,
