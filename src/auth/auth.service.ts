@@ -2,15 +2,15 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
+  UnauthorizedException
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
+import fetch from 'node-fetch';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
-import { InjectTwilio, TwilioClient } from 'nestjs-twilio';
-import fetch from 'node-fetch'
+import { UserService } from 'src/user/user.service';
+import { isTestNumber } from 'src/util/test-numbers';
 
 @Injectable()
 export class AuthService {
@@ -56,6 +56,9 @@ export class AuthService {
     //   .verificationChecks
     //   .create({ to: phone, code: code })
     // This is not working for some inane reason, patch it using fetch for now
+    if (isTestNumber(phone)) {
+      return code === "1234"
+    }
 
     const details: any = {
       'Code': code,
@@ -119,6 +122,9 @@ export class AuthService {
     });
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
+    }
+    if (user.phoneNumberVerified) {
+      throw new BadRequestException("User already verified!");
     }
     const res = await this.checkIfCodeCorrect(phone, code)
     if (!res) {

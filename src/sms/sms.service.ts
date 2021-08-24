@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { InjectTwilio, TwilioClient } from 'nestjs-twilio';
+import { isTestNumber } from 'src/util/test-numbers';
 
 @Injectable()
 export class SmsService {
@@ -23,6 +24,9 @@ export class SmsService {
 
 
     async sendVerificationSMS(target: string) {
+        if (isTestNumber(target)) {
+            return
+        }
         try {
             const toRet = await this.client.verify.services(process.env.TWILIO_SERVICE_SID ?? "")
                 .verifications
