@@ -24,8 +24,8 @@ export class InsService {
                 name: data.name,
                 shareCode: randomCode(6),
                 members: userID ? {
-                    connect: {
-                        id: userID
+                    create: {
+                        userId: userID
                     }
                 } : undefined
             }
@@ -37,7 +37,7 @@ export class InsService {
             where: {
                 members: {
                     some: {
-                        id: userID
+                        userId: userID
                     }
                 },
                 name: (filter && filter.length > 0) ? {
@@ -80,7 +80,7 @@ export class InsService {
             where: {
                 inses: {
                     some: {
-                        id: insID
+                        userId: insID
                     }
                 },
                 OR: (filter && filter.length > 0) ? {

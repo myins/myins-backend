@@ -2,6 +2,7 @@ import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Q
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
+import { InsInteractionService } from 'src/ins/ins.interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
@@ -14,6 +15,7 @@ export class PostLikeController {
     private readonly postService: PostService,
     private readonly userService: UserService,
     private readonly notificationsService: NotificationService,
+    private readonly insInteractionService: InsInteractionService,
   ) {}
 
   @Get(':id/likes')
@@ -27,7 +29,7 @@ export class PostLikeController {
           some: {
             members: {
               some: {
-                id: userID
+                userId: userID
               }
             }
           }
@@ -87,6 +89,7 @@ export class PostLikeController {
         },
       },
     });
+    await this.insInteractionService.interact(userID, toRet.id)
 
     if (post.authorId !== userID) {
       this.notificationsService.createNotification({

@@ -30,8 +30,8 @@ export class OnboardingService {
                 },
                 data: {
                     members: {
-                        connect: {
-                            id: userID
+                        create: {
+                            userId: userID
                         }
                     }
                 }

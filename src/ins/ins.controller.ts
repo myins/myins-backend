@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserID } from 'src/decorators/user-id.decorator';
+import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { photoInterceptor } from 'src/util/multer';
 import { CreateINSAPI } from './ins-api.entity';
@@ -23,6 +24,7 @@ export class InsController {
   @Get('code/:code')
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
+  @UseInterceptors(NotFoundInterceptor)
   //@UseGuards(JwtAuthGuard)
   async getInsByCode(@Param('code') insCode: string) {
     if (insCode.length <= 0) {
@@ -47,7 +49,7 @@ export class InsController {
         id: id,
         members: {
           some: {
-            id: userID
+            userId: userID
           }
         }
       }
@@ -67,7 +69,7 @@ export class InsController {
         id: id,
         members: {
           some: {
-            id: userID
+            userId: userID
           }
         }
       }
@@ -88,7 +90,7 @@ export class InsController {
         id: id,
         members: {
           some: {
-            id: userID
+            userId: userID
           }
         }
       }
@@ -117,8 +119,8 @@ export class InsController {
     await this.insService.update({
       where: { id: theINS.id }, data: {
         members: {
-          connect: {
-            id: userID
+          create: {
+            userId: userID
           }
         }
       }

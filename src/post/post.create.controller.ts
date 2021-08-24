@@ -94,7 +94,7 @@ export class PostCreateController {
         const inses = (await this.insService.insesSelectIDs({
             members: {
                 some: {
-                    id: userID
+                    userId: userID
                 }
             }
         })).map(each => each.id)

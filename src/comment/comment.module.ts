@@ -7,6 +7,7 @@ import { PostModule } from 'src/post/post.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { CommentLikeService } from './comment.like.service';
 import { CommentLikeController } from './comment.like.controller';
+import { InsModule } from 'src/ins/ins.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CommentLikeController } from './comment.like.controller';
     forwardRef(() => UserModule),
     forwardRef(() => PostModule),
     NotificationModule,
+    InsModule,
   ],
   providers: [CommentService, CommentLikeService],
   exports: [CommentService],

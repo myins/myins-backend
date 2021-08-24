@@ -1,12 +1,8 @@
 import {
-  Controller,
-  Get,
-  NotFoundException,
+  Controller, NotFoundException,
   Param,
-  Post,
-  Query,
-  UnauthorizedException,
-  UseGuards,
+  Post, UnauthorizedException,
+  UseGuards
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';

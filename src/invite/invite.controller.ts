@@ -47,6 +47,7 @@ export class InviteController {
     @Throttle(60, 60) // limit, ttl. limit = cate request-uri pana crapa,  ttl = cat tine minte un request
     async getUserSearch(
         @UserID() userID: string,
+        @Query('all') allNumber: number,
         @Query('skip') skip: number,
         @Query('take') take: number,
         @Query('search') search: string,
@@ -54,6 +55,11 @@ export class InviteController {
         if (Number.isNaN(skip) || Number.isNaN(take)) {
             throw new BadRequestException('Invalid skip / take values!');
         }
+        if (allNumber != 0 && allNumber != 1) {
+            throw new BadRequestException("Invalid all param!")
+        }
+
+        const isAll = allNumber == 1
 
         const profileInfo: Prisma.UserWhereInput = {
             OR: (search && search.length > 0) ? [
@@ -73,11 +79,13 @@ export class InviteController {
             id: {
                 not: userID
             },
-            inses: {
+            inses: isAll ? undefined : {
                 some: {
-                    members: {
-                        some: {
-                            id: userID
+                    ins: {
+                        members: {
+                            some: {
+                                userId: userID
+                            }
                         }
                     }
                 }

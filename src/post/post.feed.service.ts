@@ -51,7 +51,7 @@ export class PostFeedService {
           some: {
             members: {
               some: {
-                id: userID
+                userId: userID
               }
             }
           }
@@ -64,7 +64,7 @@ export class PostFeedService {
       where: {
         members: {
           some: {
-            id: userID
+            userId: userID
           }
         }
       },

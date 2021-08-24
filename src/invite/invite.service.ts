@@ -14,15 +14,15 @@ export class InviteService {
             include: {
                 members: {
                     where: {
-                        id: userID
+                        userId: userID
                     },
                     select: {
-                        id: true
+                        userId: true
                     }
                 }
             }
         })
-        if (!theINS || !theINS.members.includes({ id: userID })) {
+        if (!theINS || !theINS.members.includes({ userId: userID })) {
             throw new BadRequestException("Could not find that INS!")
         }
         await this.smsService.sendSMS(otherUserPhoneNumber, `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS.shareCode}`)
@@ -37,15 +37,15 @@ export class InviteService {
             include: {
                 members: {
                     where: {
-                        id: userID
+                        userId: userID
                     },
                     select: {
-                        id: true
+                        userId: true
                     }
                 }
             }
         })
-        if (!theINS || !theINS.members.includes({ id: userID })) {
+        if (!theINS || !theINS.members.includes({ userId: userID })) {
             throw new BadRequestException("Could not find that INS!")
         }
         await this.prismaService.iNS.update({
@@ -54,8 +54,8 @@ export class InviteService {
             },
             data: {
                 members: {
-                    connect: {
-                        id: otherUser
+                    create: {
+                        userId: otherUser
                     }
                 }
             }
