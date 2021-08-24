@@ -33,24 +33,38 @@ export class InsService {
     }
 
     async insList(userID: string, skip: number, take: number, filter: string) {
-        return this.prismaService.iNS.findMany({
+        // First we get all the user's ins connections, ordered by his interaction count
+        const connectionQuery = await this.prismaService.userInsConnection.findMany({
             where: {
-                members: {
-                    some: {
-                        userId: userID
+                userId: userID,
+                ins: (filter && filter.length > 0) ? {
+                    name: {
+                        contains: filter,
+                        mode: 'insensitive'
                     }
-                },
-                name: (filter && filter.length > 0) ? {
-                    contains: filter,
-                    mode: 'insensitive'
                 } : undefined
             },
-            skip: skip,
-            take: take,
             orderBy: {
-                name: 'asc'
+                interactions: 'desc'
             }
         })
+        const onlyIDs = connectionQuery.map(each => each.insId)
+
+        // Now get all the inses, using the in query
+        const toRet = await this.prismaService.iNS.findMany({
+            where: {
+                id: {
+                    in: onlyIDs
+                }
+            },
+        })
+
+        // And finally sort the received inses by their position in the onlyIDs array
+        const orderedByIDs = onlyIDs.map(each => {
+            return toRet.find(each2 => each2.id == each)
+        }).filter(each => { return each !== undefined })
+        
+        return orderedByIDs
     }
 
     async mediaForIns(insID: string, skip: number, take: number) {

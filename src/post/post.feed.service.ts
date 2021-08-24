@@ -60,16 +60,12 @@ export class PostFeedService {
     })
   }
   async getStoriesFeed(userID: string) {
-    const allINS = await this.prisma.iNS.findMany({
+    const allINS = await this.prisma.userInsConnection.findMany({
       where: {
-        members: {
-          some: {
-            userId: userID
-          }
-        }
+        userId: userID
       },
-      select: {
-        id: true
+      orderBy: {
+        interactions: 'desc'
       }
     })
 
@@ -79,7 +75,7 @@ export class PostFeedService {
         where: {
           inses: {
             some: {
-              id: each.id
+              id: each.insId
             }
           }
         },
