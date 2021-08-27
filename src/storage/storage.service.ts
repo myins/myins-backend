@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectS3, S3 } from 'nestjs-s3';
 import { Readable } from 'stream';
 

@@ -32,7 +32,7 @@ export class PostCreateController {
     @ApiTags('posts')
     @UseInterceptors(photoOrVideoInterceptor)
     async attachPhotoToPost(@UploadedFile() file: Express.Multer.File,
-        @Param('id') postID: string, @UserID() userID: string, @Body() body: AttachMediaAPI) {
+        @Param('id') postID2: string, @UserID() userID: string, @Body() body: AttachMediaAPI) {
 
         if (!file) {
             throw new BadRequestException("No file!")
@@ -50,7 +50,7 @@ export class PostCreateController {
         }
 
         try {
-            return this.postMediaService.attachMediaToPost(file, postID, userID, {
+            return this.postMediaService.attachMediaToPost(file, postID2, userID, {
                 width: width,
                 height: height,
                 isVideo: isVideoPost,

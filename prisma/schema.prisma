@@ -41,6 +41,7 @@ model PostContent {
 
   isVideo Boolean
   content String // Link to raw file
+  thumbnail String? // Thumbnail, if it's a video
 
   post   Post   @relation(name: "post", fields: [postId], references: [id])
   postId String

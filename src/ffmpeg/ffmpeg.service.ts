@@ -14,20 +14,23 @@ if (pathToFfmpeg) {
 @Injectable()
 export class FfmpegService {
 
-
-  private uploadFile(file: Express.Multer.File) {
+  private async uploadFile(file: Express.Multer.File) {
 
     const getRandomInt = (max: number) => {
       return Math.floor(Math.random() * max);
     }
 
     const tempDir = tempy.directory();
+    const ourTempFilename = `${file.filename}_${getRandomInt(100000)}.jpg`;
+    const fullTempPath = `${tempDir}/${ourTempFilename}`
+    fs.writeFileSync(fullTempPath, file.buffer)
+
+
     const ourFilename = `${file.filename}_${getRandomInt(100000)}.jpg`;
 
-    //console.log(`Writing file to ${tempDir}, filename is ${ourFilename}`)
 
     return new Promise<Buffer>((resolve, reject) => {
-      ffmpeg(file.path)
+      ffmpeg(fullTempPath)
         .format('mp4')
         .takeScreenshots({
           timestamps: [0],

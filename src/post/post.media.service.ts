@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import path from 'path';
+import * as path from 'path';
+import { FfmpegService } from 'src/ffmpeg/ffmpeg.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PostMediaService {
-  constructor(private prismaService: PrismaService, private readonly storageService: StorageService) { }
+  constructor(
+      private prismaService: PrismaService,
+      private readonly storageService: StorageService,
+      private readonly ffmpegService: FfmpegService) { }
 
 
   async attachMediaToPost(file: Express.Multer.File, postID: string, userID: string | null, postInfo: PostInformation) {
@@ -35,13 +39,27 @@ export class PostMediaService {
         throw new BadRequestException("There are too many medias attached already!")
     }
 
+    let thumbnail: string | undefined = undefined
+
     const ext = path.extname(file.originalname);
     const randomUUID = uuid.v4();
+    const postName = `post_${postID}_${randomUUID}${ext}`
+
+    if (postInfo.isVideo) {
+        const thumbnailName = `post_${postID}_thumb_${randomUUID}.jpg`
+        const thumbnailFile = await this.ffmpegService.generateThumbnail(file)
+
+        thumbnail = await this.storageService.uploadBuffer(
+            thumbnailFile,
+            thumbnailName,
+            StorageContainer.posts,
+        );
+    }
 
     let x = file;
     x = {
         ...x,
-        originalname: `post_${postID}_${randomUUID}${ext}`,
+        originalname: postName,
     };
     const dataURL = await this.storageService.uploadFile(
         x,
@@ -54,7 +72,8 @@ export class PostMediaService {
             content: dataURL,
             postId: postID,
             width: postInfo.width,
-            height: postInfo.height
+            height: postInfo.height,
+            thumbnail: thumbnail
         }
     })
 
