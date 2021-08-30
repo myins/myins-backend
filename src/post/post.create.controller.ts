@@ -2,6 +2,7 @@ import {
     BadRequestException,
     Body,
     Controller, Param,
+    Patch,
     Post, UploadedFile,
     UseGuards,
     UseInterceptors
@@ -13,7 +14,7 @@ import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
-import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
+import { AttachCoverAPI, AttachMediaAPI, CreatePostAPI } from './post-api.entity';
 import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
 
@@ -118,6 +119,51 @@ export class PostCreateController {
                 connect: mappedINSIDs
             }
         });
+    }
+
+    @Patch(':id/cover')
+    @UseGuards(JwtAuthGuard)
+    @ApiTags('posts')
+    @UseInterceptors(photoOrVideoInterceptor)
+    async attachCoverToPost(@UploadedFile() file: Express.Multer.File,
+        @Param('id') insID: string, @UserID() userID: string, @Body() body: AttachCoverAPI) {
+
+        if (!file) {
+            throw new BadRequestException("No file!")
+        }
+        if (!file.buffer) {
+            throw new BadRequestException("No buffer!")
+        }
+        const isVideoPost = isVideo(file.originalname);
+
+        if (isVideoPost) {
+            throw new BadRequestException("No videos allowed!!");
+        }
+
+        const validINS = await this.insService.inses({
+            where: {
+                id: insID,
+                members: {
+                    some: {
+                        userId: userID
+                    }
+                }
+            }
+        })
+        if (!validINS || validINS.length == 0) {
+            throw new BadRequestException("Not your ins!!");
+        }
+
+        try {
+            return this.postMediaService.attachCoverToPost(file, insID)
+        } catch (err) {
+            if (err instanceof BadRequestException) {
+                throw err; // If it's a bad request, just forward it
+            } else {
+                console.log(err);
+                throw new BadRequestException(`Error creating post! ${err}`);
+            }
+        }
     }
 
 }
