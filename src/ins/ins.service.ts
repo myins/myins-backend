@@ -63,7 +63,7 @@ export class InsService {
         const orderedByIDs = onlyIDs.map(each => {
             return toRet.find(each2 => each2.id == each)
         }).filter(each => { return each !== undefined })
-        
+
         return orderedByIDs
     }
 
@@ -90,7 +90,7 @@ export class InsService {
     }
 
     async membersForIns(insID: string, skip: number, take: number, filter: string) {
-        //console.log(`Members for ins: ${insID}`)
+        //console.log(`Filter: ${filter}`)
         return this.prismaService.user.findMany({
             where: {
                 inses: {
@@ -98,16 +98,20 @@ export class InsService {
                         insId: insID
                     }
                 },
-                OR: (filter && filter.length > 0) ? {
-                    firstName: {
-                        contains: filter,
-                        mode: 'insensitive'
+                OR: (filter && filter.length > 0) ? [
+                    {
+                        firstName: {
+                            contains: filter,
+                            mode: 'insensitive'
+                        },
                     },
-                    lastName: {
-                        contains: filter,
-                        mode: 'insensitive'
+                    {
+                        lastName: {
+                            contains: filter,
+                            mode: 'insensitive'
+                        }
                     }
-                } : undefined
+                ] : undefined
             },
             skip: skip,
             take: take,

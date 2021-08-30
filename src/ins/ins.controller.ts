@@ -93,6 +93,13 @@ export class InsController {
             userId: userID
           }
         }
+      },
+      include: {
+        _count: {
+          select: {
+            members: true
+          }
+        }
       }
     })
     if (!toRet || toRet.length !== 1) {
