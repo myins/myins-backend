@@ -7,9 +7,10 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { SjwtModule } from 'src/sjwt/sjwt.module';
 import { SmsModule } from 'src/sms/sms.module';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports: [UserModule, PassportModule, SjwtModule, SmsModule],
+  imports: [UserModule, PassportModule, SjwtModule, SmsModule, PrismaModule],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
 })

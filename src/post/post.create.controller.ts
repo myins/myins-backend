@@ -8,8 +8,9 @@ import {
     UseInterceptors
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
@@ -33,7 +34,7 @@ export class PostCreateController {
     @ApiTags('posts')
     @UseInterceptors(photoOrVideoInterceptor)
     async attachPhotoToPost(@UploadedFile() file: Express.Multer.File,
-        @Param('id') postID2: string, @UserID() userID: string, @Body() body: AttachMediaAPI) {
+        @Param('id') postID2: string, @PrismaUser('id') userID: string, @Body() body: AttachMediaAPI) {
 
         if (!file) {
             throw new BadRequestException("No file!")
@@ -72,17 +73,13 @@ export class PostCreateController {
     @ApiTags('posts')
     async createPost(
         @Body() postData: CreatePostAPI,
-        @UserID() userID: string,
+        @PrismaUser() user: User,
     ) {
         if (postData.content == null || postData.content == undefined) {
             throw new BadRequestException("Content must be empty, not missing!")
         }
         if (postData.ins.length == 0) {
             throw new BadRequestException("No inses? How did you even get this far?")
-        }
-        const user = await this.userService.user({ id: userID });
-        if (!user) {
-            throw new BadRequestException('Could not find your user!');
         }
         if (!user.phoneNumberVerified) {
             throw new BadRequestException(
@@ -95,7 +92,7 @@ export class PostCreateController {
         const inses = (await this.insService.insesSelectIDs({
             members: {
                 some: {
-                    userId: userID
+                    userId: user.id
                 }
             }
         })).map(each => each.id)
@@ -110,7 +107,7 @@ export class PostCreateController {
             content: postData.content,
             author: {
                 connect: {
-                    id: userID,
+                    id: user.id,
                 },
             },
             pending: true,
@@ -126,7 +123,7 @@ export class PostCreateController {
     @ApiTags('posts')
     @UseInterceptors(photoOrVideoInterceptor)
     async attachCoverToPost(@UploadedFile() file: Express.Multer.File,
-        @Param('id') insID: string, @UserID() userID: string, @Body() body: AttachCoverAPI) {
+        @Param('id') insID: string, @PrismaUser('id') userID: string, @Body() body: AttachCoverAPI) {
 
         if (!file) {
             throw new BadRequestException("No file!")

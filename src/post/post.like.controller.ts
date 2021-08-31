@@ -1,7 +1,8 @@
 import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Query, UnauthorizedException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsInteractionService } from 'src/ins/ins.interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
@@ -21,7 +22,7 @@ export class PostLikeController {
   @Get(':id/likes')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getLikesForPost(@UserID() userID: string, @Param('id') postID: string, @Query('skip') skip: number, @Query('take') take: number) {
+  async getLikesForPost(@PrismaUser('id') userID: string, @Param('id') postID: string, @Query('skip') skip: number, @Query('take') take: number) {
     const postIfValid = await this.postService.posts({
       where: {
         id: postID,
@@ -63,7 +64,7 @@ export class PostLikeController {
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async likePost(@UserID() userID: string, @Param('id') postID: string) {
+  async likePost(@PrismaUser() user: User, @Param('id') postID: string) {
     const post = await this.postService.post(
       {
         id: postID,
@@ -73,8 +74,7 @@ export class PostLikeController {
     if (post == null || !post.authorId) {
       throw new NotFoundException('Could not find this post!');
     }
-    const user = await this.userService.user({ id: userID });
-    if (!user?.phoneNumberVerified) {
+    if (!user.phoneNumberVerified) {
       throw new UnauthorizedException(
         'You must verify your phone before liking posts!',
       );
@@ -84,14 +84,14 @@ export class PostLikeController {
       data: {
         likes: {
           connect: {
-            id: userID,
+            id: user.id,
           },
         },
       },
     });
-    await this.insInteractionService.interact(userID, toRet.id)
+    await this.insInteractionService.interact(user.id, toRet.id)
 
-    if (post.authorId !== userID) {
+    if (post.authorId !== user.id) {
       this.notificationsService.createNotification({
         source: 'LIKE_POST',
         target: {
@@ -101,7 +101,7 @@ export class PostLikeController {
         },
         author: {
           connect: {
-            id: userID,
+            id: user.id,
           },
         },
         post: {
@@ -117,7 +117,7 @@ export class PostLikeController {
   @Post(':id/unlike')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async unlikePost(@UserID() userID: string, @Param('id') postID: string) {
+  async unlikePost(@PrismaUser() user: User, @Param('id') postID: string) {
     const post = await this.postService.post(
       {
         id: postID,
@@ -127,8 +127,7 @@ export class PostLikeController {
     if (post == null) {
       throw new NotFoundException('Could not find this post!');
     }
-    const user = await this.userService.user({ id: userID });
-    if (!user?.phoneNumberVerified) {
+    if (!user.phoneNumberVerified) {
       throw new UnauthorizedException(
         'You must verify your phone before liking posts!',
       );
@@ -138,7 +137,7 @@ export class PostLikeController {
       data: {
         likes: {
           disconnect: {
-            id: userID,
+            id: user.id,
           },
         },
       },

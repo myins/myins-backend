@@ -204,11 +204,7 @@ export class AuthService {
     return res;
   }
 
-  async logout(user: string) {
-    const userModel = await this.usersService.user({ id: user });
-    if (userModel == null) {
-      throw new NotFoundException();
-    }
-    return this.usersService.logoutUser(userModel);
+  async logout(user: User) {
+    return this.usersService.logoutUser(user);
   }
 }

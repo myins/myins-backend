@@ -3,9 +3,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { UserService } from 'src/user/user.service';
-import { InviteUserToINSAPI } from './invite-api.entity';
+import { InviteExternalUserToINSAPI, InviteUserToINSAPI } from './invite-api.entity';
 import { InviteService } from './invite.service';
 
 @Controller('invite')
@@ -18,7 +18,7 @@ export class InviteController {
     @Post('ins-user')
     @UseGuards(JwtAuthGuard)
     async inviteInsUser(
-        @UserID() userID: string,
+        @PrismaUser('id') userID: string,
         @Body() body: InviteUserToINSAPI,
     ) {
         await this.inviteService.inviteINSUser(userID, body.userID, body.ins)
@@ -31,10 +31,10 @@ export class InviteController {
     @Post('external-user')
     @UseGuards(JwtAuthGuard)
     async inviteExternalUser(
-        @UserID() userID: string,
-        @Body() body: InviteUserToINSAPI,
+        @PrismaUser('id') userID: string,
+        @Body() body: InviteExternalUserToINSAPI,
     ) {
-        await this.inviteService.inviteINSUser(userID, body.userID, body.ins)
+        await this.inviteService.inviteINSUser(userID, body.phoneNumber, body.ins)
 
         return {
             message: "Invited successfully!"
@@ -46,7 +46,7 @@ export class InviteController {
     @UseGuards(JwtAuthGuard)
     @Throttle(60, 60) // limit, ttl. limit = cate request-uri pana crapa,  ttl = cat tine minte un request
     async getUserSearch(
-        @UserID() userID: string,
+        @PrismaUser('id') userID: string,
         @Query('all') allNumber: number,
         @Query('skip') skip: number,
         @Query('take') take: number,

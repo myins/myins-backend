@@ -5,8 +5,9 @@ import {
   UseGuards
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { UserService } from 'src/user/user.service';
 import { CommentLikeService } from './comment.like.service';
 import { CommentService } from './comment.service';
@@ -22,21 +23,20 @@ export class CommentLikeController {
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
   @ApiTags('comments')
-  async likeComment(@UserID() userID: string, @Param('id') commentID: string) {
+  async likeComment(@PrismaUser() user: User, @Param('id') commentID: string) {
     const comment = await this.commentService.comment({
       id: commentID,
     });
     if (comment == null) {
       throw new NotFoundException('Could not find this comment!');
     }
-    const user = await this.userService.user({ id: userID });
-    if (!user?.phoneNumberVerified) {
+    if (!user.phoneNumberVerified) {
       throw new UnauthorizedException(
         'You must verify your phone before liking posts!',
       );
     }
 
-    await this.commentLikeService.likeComment(userID, comment);
+    await this.commentLikeService.likeComment(user.id, comment);
 
     return {
       message: 'Liked comment successfully!',
@@ -47,7 +47,7 @@ export class CommentLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('comments')
   async unlikeComment(
-    @UserID() userID: string,
+    @PrismaUser() user: User,
     @Param('id') commentID: string,
   ) {
     const comment = await this.commentService.comment({
@@ -56,13 +56,12 @@ export class CommentLikeController {
     if (comment == null) {
       throw new NotFoundException('Could not find this comment!');
     }
-    const user = await this.userService.user({ id: userID });
-    if (!user?.phoneNumberVerified) {
+    if (!user.phoneNumberVerified) {
       throw new UnauthorizedException(
         'You must verify your phone before liking posts!',
       );
     }
-    this.commentLikeService.unlikeComment(userID, comment);
+    this.commentLikeService.unlikeComment(user.id, comment);
 
     return {
       message: 'Unliked comment successfully!',

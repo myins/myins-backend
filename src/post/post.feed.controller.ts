@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostFeedService } from './post.feed.service';
 
@@ -23,7 +23,7 @@ export class PostFeedController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async getFeed(
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
   ) {
@@ -43,7 +43,7 @@ export class PostFeedController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async getStoriesFeed(
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
   ) {

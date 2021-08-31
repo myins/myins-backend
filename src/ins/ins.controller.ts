@@ -3,7 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { photoInterceptor } from 'src/util/multer';
@@ -17,7 +17,7 @@ export class InsController {
   @Post()
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async createINS(@UserID() userID: string, @Body() data: CreateINSAPI) {
+  async createINS(@PrismaUser('id') userID: string, @Body() data: CreateINSAPI) {
     return this.insService.createINS(userID, data)
   }
 
@@ -37,13 +37,13 @@ export class InsController {
 
   @Get('list')
   @UseGuards(JwtAuthGuard)
-  async getINSList(@UserID() userID: string, @Query('skip') skip: number, @Query('take') take: number, @Query('filter') filter: string) {
+  async getINSList(@PrismaUser('id') userID: string, @Query('skip') skip: number, @Query('take') take: number, @Query('filter') filter: string) {
     return this.insService.insList(userID, skip, take, filter);
   }
 
   @Get(':id/media')
   @UseGuards(JwtAuthGuard)
-  async getMediaByID(@Param('id') id: string, @UserID() userID: string, @Query('skip') skip: number, @Query('take') take: number) {
+  async getMediaByID(@Param('id') id: string, @PrismaUser('id') userID: string, @Query('skip') skip: number, @Query('take') take: number) {
     const toRet = await this.insService.inses({
       where: {
         id: id,
@@ -63,7 +63,7 @@ export class InsController {
 
   @Get(':id/members')
   @UseGuards(JwtAuthGuard)
-  async getINSMembers(@Param('id') id: string, @UserID() userID: string, @Query('skip') skip: number, @Query('take') take: number, @Query('filter') filter: string) {
+  async getINSMembers(@Param('id') id: string, @PrismaUser('id') userID: string, @Query('skip') skip: number, @Query('take') take: number, @Query('filter') filter: string) {
     const toRet = await this.insService.inses({
       where: {
         id: id,
@@ -84,7 +84,7 @@ export class InsController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getByID(@Param('id') id: string, @UserID() userID: string) {
+  async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
     const toRet = await this.insService.inses({
       where: {
         id: id,
@@ -113,7 +113,7 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async joinInsByCode(@Param('code') insCode: string, @UserID() userID: string) {
+  async joinInsByCode(@Param('code') insCode: string, @PrismaUser('id') userID: string) {
     if (insCode.length <= 0) {
       throw new BadRequestException("Invalid code!")
     }
@@ -143,7 +143,7 @@ export class InsController {
   @ApiTags('ins')
   @UseInterceptors(photoInterceptor)
   async updateCover(
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
     @Param('id') insID: string,
     @UploadedFile()
     file: Express.Multer.File,

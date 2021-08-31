@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { CreateINSAPI } from 'src/ins/ins-api.entity';
 import { InsService } from 'src/ins/ins.service';
 import { AttachCoverAPI, AttachMediaAPI } from 'src/post/post-api.entity';
@@ -25,7 +25,7 @@ export class OnboardingController {
     @UseGuards(JwtAuthGuard)
     @Post('claim')
     @ApiTags('onboarding')
-    async claimINS(@Body() body: ClaimINSAPI, @UserID() userID: string) {
+    async claimINS(@Body() body: ClaimINSAPI, @PrismaUser('id') userID: string) {
         const { claimToken } = body
 
         const decrypted = await this.signService.decrypt(claimToken)

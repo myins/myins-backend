@@ -9,7 +9,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { CodePhoneAPI, PhoneBodyAPI, RefreshTokenBodyAPI, ResetPasswordAPI } from './auth-api.entity';
 import { AuthService } from './auth.service';
@@ -41,7 +41,7 @@ export class AuthController {
   @Get('logout')
   @ApiTags('auth')
   @ApiBearerAuth()
-  async logout(@UserID() user: string) {
+  async logout(@PrismaUser() user: User) {
     return this.authService.logout(user);
   }
 

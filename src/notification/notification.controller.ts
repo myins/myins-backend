@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from './notification.service';
 
 @Controller('notification')
@@ -18,7 +18,7 @@ export class NotificationController {
   @ApiTags('notification')
   @UseGuards(JwtAuthGuard)
   async getFeed(
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {

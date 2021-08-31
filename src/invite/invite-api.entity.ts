@@ -13,6 +13,6 @@ export class InviteExternalUserToINSAPI {
     ins: string;
 
     @IsPhoneNumber()
-    userID: string;
+    phoneNumber: string;
 }
 

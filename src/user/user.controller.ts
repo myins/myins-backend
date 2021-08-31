@@ -2,28 +2,26 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
-  NotFoundException,
-  Param,
+  Get, Param,
   Patch,
   Post,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { UserService } from 'src/user/user.service';
-import { Prisma } from '@prisma/client';
-import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { UserID } from 'src/decorators/user-id.decorator';
-import { CreateUserAPI, DeleteUserAPI, UpdatePushTokenAPI, UpdateUserAPI } from './user-api.entity';
 import * as crypto from 'crypto';
 import * as path from 'path';
-import { StorageContainer, StorageService } from 'src/storage/storage.service';
-import { photoInterceptor } from 'src/util/multer';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PrismaUser } from 'src/decorators/user.decorator';
+import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { SmsService } from 'src/sms/sms.service';
+import { StorageContainer, StorageService } from 'src/storage/storage.service';
+import { UserService } from 'src/user/user.service';
+import { photoInterceptor } from 'src/util/multer';
+import { CreateUserAPI, DeleteUserAPI, UpdatePushTokenAPI, UpdateUserAPI } from './user-api.entity';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -46,16 +44,12 @@ export class UserController {
   @ApiTags('users')
   @UseInterceptors(photoInterceptor)
   async updateUserProfilePic(
-    @UserID() userID: string,
+    @PrismaUser() user: User,
     @UploadedFile()
     file: Express.Multer.File,
   ) {
     if (!file) {
       throw new BadRequestException('Could not find picture file!');
-    }
-    const userToRet = await this.userService.user({ id: userID });
-    if (!userToRet) {
-      throw new NotFoundException('Could not find user :(');
     }
     const randomString = crypto.randomBytes(16).toString('hex');
     //FIXME: delete the old picture here if it exists!
@@ -63,20 +57,20 @@ export class UserController {
     const ext = path.extname(file.originalname);
     file = {
       ...file,
-      originalname: `photo_${userToRet.id}_${randomString}${ext}`,
+      originalname: `photo_${user.id}_${randomString}${ext}`,
     };
     const resLink = await this.storageService.uploadFile(
       file,
       StorageContainer.profilepictures,
     );
-    const user = await this.userService.updateUser({
-      where: { id: userID },
+    await this.userService.updateUser({
+      where: { id: user.id },
       data: {
         profilePicture: resLink,
       },
     });
 
-    return this.getUser(userID)
+    return this.getUser(user.id)
   }
 
   @Patch()
@@ -84,17 +78,17 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateUserProfile(
     @Body() data: UpdateUserAPI,
-    @UserID() userID: string,
+    @PrismaUser() user: User,
   ) {
     try {
-      const existingPhoneNumber = (await this.userService.user({ id: userID }))?.phoneNumber;
+      const existingPhoneNumber = user.phoneNumber;
       if (existingPhoneNumber == undefined) {
         throw new BadRequestException("Could not find your user!")
       }
       const didChangePhone = data.phone != existingPhoneNumber
       const toRet = await this.userService.updateUser({
         where: {
-          id: userID,
+          id: user.id,
         },
         data: {
           phoneNumberVerified: didChangePhone ? false : undefined,
@@ -104,7 +98,7 @@ export class UserController {
       if (didChangePhone) {
         this.smsService.sendVerificationCode(toRet)
       }
-      return this.getUser(userID)
+      return this.getUser(user.id)
     } catch (err) {
       throw new BadRequestException('That username / phone is already taken!');
     }
@@ -148,7 +142,7 @@ export class UserController {
   @Post('updateToken')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
-  async updateToken(@Body() dataModel: UpdatePushTokenAPI, @UserID() userID: string) {
+  async updateToken(@Body() dataModel: UpdatePushTokenAPI, @PrismaUser('id') userID: string) {
     await this.userService.updateUser({
       where: {
         id: userID

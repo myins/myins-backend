@@ -14,10 +14,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { Post as PostModel } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
+import { PrismaUser } from 'src/decorators/user.decorator';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -29,7 +29,7 @@ export class PostController {
   @Get('pending')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getPendingPosts(@Param('id') id: string, @UserID() userID: string) {
+  async getPendingPosts(@Param('id') id: string, @PrismaUser('id') userID: string) {
     return this.postService.posts({
       skip: 0,
       take: 5,
@@ -42,7 +42,7 @@ export class PostController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getPostById(@Param('id') id: string, @UserID() userID: string): Promise<PostModel | null> {
+  async getPostById(@Param('id') id: string, @PrismaUser('id') userID: string): Promise<PostModel | null> {
     return this.postService.injectedPost(id, userID)
   }
 
@@ -52,7 +52,7 @@ export class PostController {
   async patchPost(
     @Param('id') commentID: string,
     @Body() postData: PatchCommentAPI,
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
   ) {
     const { content } = postData;
     if (content == null || content == undefined) {
@@ -87,7 +87,7 @@ export class PostController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async deletePost(@Param('id') postID: string, @UserID() userID: string) {
+  async deletePost(@Param('id') postID: string, @PrismaUser('id') userID: string) {
     const comment = await this.postService.post(
       {
         id: postID,

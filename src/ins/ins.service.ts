@@ -44,6 +44,8 @@ export class InsService {
                     }
                 } : undefined
             },
+            skip: skip,
+            take: take,
             orderBy: {
                 interactions: 'desc'
             }

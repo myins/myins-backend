@@ -11,9 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserID } from 'src/decorators/user-id.decorator';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
 import { UserService } from 'src/user/user.service';
@@ -35,7 +35,7 @@ export class CommentController {
   async patchComment(
     @Param('id') commentID: string,
     @Body() postData: PatchCommentAPI,
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
   ) {
     const { content } = postData;
 
@@ -66,7 +66,7 @@ export class CommentController {
   @ApiTags('comments')
   async deleteComment(
     @Param('id') commentID: string,
-    @UserID() userID: string,
+    @PrismaUser('id') userID: string,
   ) {
     const comment = await this.commentService.comment({
       id: commentID,
@@ -87,14 +87,10 @@ export class CommentController {
   @ApiTags('comments')
   async createComment(
     @Body() postData: CreateCommentAPI,
-    @UserID() userID: string,
+    @PrismaUser() user: User,
   ) {
     const { content, postID } = postData;
 
-    const user = await this.userService.user({ id: userID });
-    if (!user) {
-      throw new BadRequestException('Could not find your user!');
-    }
     if (!user.phoneNumberVerified) {
       throw new BadRequestException(
         'Please verify your phone before leaving comments!',
@@ -116,7 +112,7 @@ export class CommentController {
       content: content,
       author: {
         connect: {
-          id: userID,
+          id: user.id,
         },
       },
       post: {
@@ -136,7 +132,7 @@ export class CommentController {
       },
       author: {
         connect: {
-          id: userID,
+          id: user.id,
         },
       },
       comment: {
