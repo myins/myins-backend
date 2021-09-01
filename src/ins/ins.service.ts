@@ -32,7 +32,7 @@ export class InsService {
         }), { retries: 3 })
     }
 
-    async insList(userID: string, skip: number, take: number, filter: string) {
+    async insList(userID: string, filter: string) {
         // First we get all the user's ins connections, ordered by his interaction count
         const connectionQuery = await this.prismaService.userInsConnection.findMany({
             where: {
@@ -44,8 +44,6 @@ export class InsService {
                     }
                 } : undefined
             },
-            skip: skip,
-            take: take,
             orderBy: {
                 interactions: 'desc'
             }

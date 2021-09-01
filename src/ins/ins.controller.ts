@@ -38,7 +38,7 @@ export class InsController {
   @Get('list')
   @UseGuards(JwtAuthGuard)
   async getINSList(@PrismaUser('id') userID: string, @Query('skip') skip: number, @Query('take') take: number, @Query('filter') filter: string) {
-    return this.insService.insList(userID, skip, take, filter);
+    return this.insService.insList(userID, filter);
   }
 
   @Get(':id/media')
