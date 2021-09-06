@@ -127,6 +127,13 @@ model UserInsConnection {
   @@id([userId, insId])
 }
 
+model CurrentVersions {
+  id                          String @id @default(uuid())
+  updatedAt                   DateTime @default(now())
+  termsAndConditionsVersion   DateTime @default(now())
+  privacyPolicyVersion        DateTime @default(now())
+}
+
 enum NotificationSource {
   LIKE_POST
   COMMENT

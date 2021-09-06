@@ -16,6 +16,7 @@ import { SmsModule } from './sms/sms.module';
 import { InsModule } from './ins/ins.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { InviteModule } from './invite/invite.module';
+import { CurrentVersionsModule } from './current-versions/current-versions.module';
 import * as admin from 'firebase-admin';
 
 @Module({
@@ -51,6 +52,7 @@ import * as admin from 'firebase-admin';
     InsModule,
     OnboardingModule,
     InviteModule,
+    CurrentVersionsModule,
   ],
   providers: [
     {
