@@ -12,13 +12,6 @@ export class CurrentVersionsController {
         private readonly currentVersionsService: CurrentVersionsService,
     ) { }
     
-    @Get()
-    @UseGuards(JwtAuthGuard)
-    @ApiTags('current-versions')
-    async getPostById(@Param('id') id: string, @PrismaUser('id') userID: string): Promise<CurrentVersionsModel | null> {
-        return this.currentVersionsService.get()
-    }
-    
     @Post()
     @UseGuards(JwtAuthGuard)
     @ApiTags('current-versions')

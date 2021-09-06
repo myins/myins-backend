@@ -15,6 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CurrentVersionsService } from 'src/current-versions/current-versions.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { SmsService } from 'src/sms/sms.service';
@@ -29,15 +30,9 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly storageService: StorageService,
-    private readonly smsService: SmsService
+    private readonly smsService: SmsService,
+    private readonly currentVersionsService: CurrentVersionsService
   ) {}
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('users')
-  async getUser(@Param('id') id: string) {
-    return this.userService.getUserProfile(id)
-  }
 
   @UseGuards(JwtAuthGuard)
   @Post('updatePicture')
@@ -155,5 +150,72 @@ export class UserController {
     return {
       message: "Updated token successfully!"
     }
+  }
+
+  @Patch('update-terms-and-conditions-version')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async updateTermsAndConsitionsVersion(@PrismaUser('id') userID: string) {
+    const currentVersions = await this.currentVersionsService.get()
+    await this.userService.updateUser({
+      where: {
+        id: userID
+      },
+      data: {
+        lastAcceptedTermsAndConditionsVersion: currentVersions?.termsAndConditionsVersion
+      }
+    })
+    return {
+      message: "Updated accepted terms and conditions version successfully!"
+    }
+  }
+
+  @Patch('update-privacy-policy-version')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async updatePrivacyPolicyVersion(@PrismaUser('id') userID: string) {
+    const currentVersions = await this.currentVersionsService.get()
+    await this.userService.updateUser({
+      where: {
+        id: userID
+      },
+      data: {
+        lastAcceptedPrivacyPolicyVersion: currentVersions?.privacyPolicyVersion
+      }
+    })
+    return {
+      message: "Updated accepted privacy policy version successfully!"
+    }
+  }
+
+  @Get('is-terms-and-conditions-accepted')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async isTermsAndConditionsAccepted(@PrismaUser('lastAcceptedTermsAndConditionsVersion') lastAcceptedTermsAndConditionsVersion: Date) {
+    const currentVersions = await this.currentVersionsService.get()
+    const isTermsAndConditionsAccepted = currentVersions ? 
+      (lastAcceptedTermsAndConditionsVersion?.getTime() === currentVersions.termsAndConditionsVersion.getTime()) : false
+    return {
+      isTermsAndConditionsAccepted: isTermsAndConditionsAccepted
+    }
+  }
+
+  @Get('is-privacy-policy-accepted')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async isPrivacyPolicyAccepted(@PrismaUser('lastAcceptedPrivacyPolicyVersion') lastAcceptedPrivacyPolicyVersion: Date) {
+    const currentVersions = await this.currentVersionsService.get()
+    const isPrivacyPolicyAccepted = currentVersions ? 
+      (lastAcceptedPrivacyPolicyVersion?.getTime() === currentVersions.privacyPolicyVersion.getTime()) : false
+    return {
+      isPrivacyPolicyAccepted: isPrivacyPolicyAccepted
+    }
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('users')
+  async getUser(@Param('id') id: string) {
+    return this.userService.getUserProfile(id)
   }
 }

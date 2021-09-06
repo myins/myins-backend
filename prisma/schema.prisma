@@ -33,6 +33,9 @@ model User {
 
   inses UserInsConnection[]
   //pendingINses INS[]
+
+  lastAcceptedTermsAndConditionsVersion   DateTime?
+  lastAcceptedPrivacyPolicyVersion        DateTime?
 }
 
 model PostContent {

@@ -6,6 +6,7 @@ import { CurrentVersionsService } from './current-versions.service';
 @Module({
     imports: [PrismaModule],
     controllers: [CurrentVersionsController],
-    providers: [CurrentVersionsService]
+    providers: [CurrentVersionsService],
+    exports: [CurrentVersionsService],
 })
 export class CurrentVersionsModule {}
