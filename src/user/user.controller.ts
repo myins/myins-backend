@@ -15,7 +15,6 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentVersionsService } from 'src/current-versions/current-versions.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { SmsService } from 'src/sms/sms.service';
@@ -31,7 +30,6 @@ export class UserController {
     private readonly userService: UserService,
     private readonly storageService: StorageService,
     private readonly smsService: SmsService,
-    private readonly currentVersionsService: CurrentVersionsService
   ) {}
 
   @Get(':id')
