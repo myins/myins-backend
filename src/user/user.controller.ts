@@ -29,7 +29,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly storageService: StorageService,
-    private readonly smsService: SmsService,
+    private readonly smsService: SmsService
   ) {}
 
   @Get(':id')
