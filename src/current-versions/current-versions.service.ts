@@ -1,5 +1,4 @@
-import { CurrentVersions } from '.prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 
@@ -7,22 +6,29 @@ import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 export class CurrentVersionsService {
     constructor(private prisma: PrismaService) { }
 
-    async get(): Promise<CurrentVersions | null> {
-        return this.prisma.currentVersions.findFirst({
+    async get(isChanged?: boolean) {
+        const currentVersionsValues = await this.prisma.currentVersions.findFirst({
             orderBy: {
                 updatedAt: 'desc'
             },
         });
+        if (!isChanged && currentVersionsValues == null) {
+            throw new InternalServerErrorException('There is no current versions!');
+        }
+        return currentVersionsValues
     }
 
     async changeTermsAndConditionsVersion(valuesVersions: ChangeCurrentVersionsAPI) {
-        const lastVersions = await this.get()
-        const data = lastVersions ? {
+        const lastVersions = await this.get(true)
+        const data = {
             termsAndConditionsVersion: 
-                valuesVersions.isTermsAndConditionsVersionChanged ? undefined : lastVersions.termsAndConditionsVersion,
+                valuesVersions.isTermsAndConditionsVersionChanged ? undefined : lastVersions?.termsAndConditionsVersion,
             privacyPolicyVersion:
-                valuesVersions.isPrivacyPolicyVersionChanged ? undefined : lastVersions.privacyPolicyVersion,
-        } : {}
+                valuesVersions.isPrivacyPolicyVersionChanged ? undefined : lastVersions?.privacyPolicyVersion,
+        }
         await this.prisma.currentVersions.create({data})
+        return {
+            message: "Terms and conditions version successfully changed."
+        }
     }
 }

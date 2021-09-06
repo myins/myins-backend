@@ -7,6 +7,7 @@ import { SmsModule } from 'src/sms/sms.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { UserVersionsController } from './user.versions.controller';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { UserService } from './user.service';
     CurrentVersionsModule,
     forwardRef(() => PostModule),
   ],
-  controllers: [UserController],
+  controllers: [UserController, UserVersionsController],
   providers: [UserService],
   exports: [UserService],
 })

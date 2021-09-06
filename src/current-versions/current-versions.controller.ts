@@ -1,8 +1,6 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { PrismaUser } from 'src/decorators/user.decorator';
-import { CurrentVersions as CurrentVersionsModel } from '@prisma/client';
 import { CurrentVersionsService } from './current-versions.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 
@@ -16,10 +14,6 @@ export class CurrentVersionsController {
     @UseGuards(JwtAuthGuard)
     @ApiTags('current-versions')
     async changeCurrentVersions(@Body() body: ChangeCurrentVersionsAPI) {
-        this.currentVersionsService.changeTermsAndConditionsVersion(body)
-
-        return {
-            message: "Terms and conditions version successfully changed."
-        }
+        return this.currentVersionsService.changeTermsAndConditionsVersion(body)
     }
 }
