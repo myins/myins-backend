@@ -15,6 +15,6 @@ export class UpdateINSAdminAPI {
 
     @IsString()
     @IsNotEmpty()
-    newAdminID: string;
+    memberID: string;
 }
   

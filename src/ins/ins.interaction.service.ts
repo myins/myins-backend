@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { INS, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomCode } from 'src/util/random';
@@ -9,8 +9,24 @@ import { retry } from 'ts-retry-promise';
 export class InsInteractionService {
     constructor(private readonly prismaService: PrismaService) { }
 
+    async checkConnection(userId: string, insId: string)  {
+        const connection = await this.prismaService.userInsConnection.findUnique({
+            where: {
+                userId_insId: {
+                    userId: userId,
+                    insId: insId
+                }
+            }
+        })
+        if(!connection) {
+            throw new NotFoundException('Connection between user and INS not found')
+        }
+
+        return connection
+    }
+
     async interact(userId: string, insId: string) {
-        this.prismaService.userInsConnection.update({
+        await this.prismaService.userInsConnection.update({
             where: {
                 userId_insId: {
                     userId: userId,
