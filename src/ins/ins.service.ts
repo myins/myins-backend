@@ -25,7 +25,8 @@ export class InsService {
                 shareCode: randomCode(6),
                 members: userID ? {
                     create: {
-                        userId: userID
+                        userId: userID,
+                        isAdmin: true
                     }
                 } : undefined
             }

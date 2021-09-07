@@ -127,6 +127,8 @@ model UserInsConnection {
   
   interactions Int @default(0)
 
+  isAdmin      Boolean @default(false)
+
   @@id([userId, insId])
 }
 
