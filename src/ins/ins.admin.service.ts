@@ -16,6 +16,7 @@ export class InsAdminService {
     }
 
     async changeAdmin(userId: string, insId: string, newAdminId: string) {
+        await this.insInteractionService.checkConnection(newAdminId, insId)
         await this.prismaService.userInsConnection.update({
             where: {
                 userId_insId: {
