@@ -127,7 +127,7 @@ model UserInsConnection {
   
   interactions Int @default(0)
 
-  isAdmin      Boolean @default(false)
+  role         UserRole @default(MEMBER)
 
   @@id([userId, insId])
 }
@@ -144,4 +144,9 @@ enum NotificationSource {
   COMMENT
   LIKE_COMMENT
   SHARED_POST
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
 }

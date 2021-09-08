@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserRole } from '.prisma/client';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InsInteractionService } from './ins.interaction.service';
 
@@ -11,7 +12,7 @@ export class InsAdminService {
 
     async checkIfAdmin(userId: string, insId: string) {
         const connection = await this.insInteractionService.checkConnection(userId, insId)
-        return connection?.isAdmin
+        return connection?.role === UserRole.ADMIN
     }
 
     async changeAdmin(userId: string, insId: string, newAdminId: string) {
@@ -23,7 +24,7 @@ export class InsAdminService {
                 }
             },
             data: {
-                isAdmin: false
+                role: UserRole.MEMBER
             }
         })
         await this.prismaService.userInsConnection.update({
@@ -34,7 +35,7 @@ export class InsAdminService {
                 }
             },
             data: {
-                isAdmin: true
+                role: UserRole.ADMIN
             }
         })
         return {

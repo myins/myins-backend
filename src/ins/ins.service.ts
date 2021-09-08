@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { INS, Prisma } from '@prisma/client';
+import { INS, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
@@ -26,7 +26,7 @@ export class InsService {
                 members: userID ? {
                     create: {
                         userId: userID,
-                        isAdmin: true
+                        role: UserRole.ADMIN
                     }
                 } : undefined
             }
