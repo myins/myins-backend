@@ -133,10 +133,13 @@ model UserInsConnection {
 }
 
 model CurrentVersions {
-  id                          String @id @default(uuid())
+  type                          DocumentType @id
   updatedAt                   DateTime @default(now())
-  termsAndConditionsVersion   DateTime @default(now())
-  privacyPolicyVersion        DateTime @default(now())
+}
+
+enum DocumentType {
+  PRIVACY_POLICY
+  TERMS_AND_CONDITIONS
 }
 
 enum NotificationSource {

@@ -1,3 +1,4 @@
+import { DocumentType } from '.prisma/client';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
@@ -6,27 +7,30 @@ import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 export class CurrentVersionsService {
     constructor(private prisma: PrismaService) { }
 
-    async get(isChanged?: boolean) {
-        const currentVersionsValues = await this.prisma.currentVersions.findFirst({
-            orderBy: {
-                updatedAt: 'desc'
-            },
+    async get(type: DocumentType) {
+        const currentVersionsValues = await this.prisma.currentVersions.findUnique({
+            where: {
+                type: type
+            }
         });
-        if (!isChanged && currentVersionsValues == null) {
-            throw new InternalServerErrorException('There is no current versions!');
+        if (currentVersionsValues == null) {
+            throw new InternalServerErrorException('There is no current version!');
         }
         return currentVersionsValues
     }
 
-    async changeTermsAndConditionsVersion(valuesVersions: ChangeCurrentVersionsAPI) {
-        const lastVersions = await this.get(true)
-        const data = {
-            termsAndConditionsVersion: 
-                valuesVersions.isTermsAndConditionsVersionChanged ? undefined : lastVersions?.termsAndConditionsVersion,
-            privacyPolicyVersion:
-                valuesVersions.isPrivacyPolicyVersionChanged ? undefined : lastVersions?.privacyPolicyVersion,
-        }
-        await this.prisma.currentVersions.create({data})
+    async changeDocumentVersion(valuesVersions: ChangeCurrentVersionsAPI) {
+        await this.prisma.currentVersions.upsert({
+            where: {
+                type: valuesVersions.documentType
+            },
+            create: {
+                type: valuesVersions.documentType,
+            },
+            update: {
+                updatedAt: (new Date())
+            }
+        })
         return {
             message: "Terms and conditions version successfully changed."
         }
