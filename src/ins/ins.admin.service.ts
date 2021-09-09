@@ -15,25 +15,27 @@ export class InsAdminService {
         if (notInIns) {
             throw new BadRequestException("Can't set a non-member as admin!")
         }
-        await this.prismaService.userInsConnection.updateMany({
-            where: {
-                role: UserRole.ADMIN
-            },
-            data: {
-                role: UserRole.MEMBER
-            }
-        })
-        await this.prismaService.userInsConnection.update({
-            where: {
-                userId_insId: {
-                    userId: newAdminId,
-                    insId: insId
+        await this.prismaService.$transaction([
+            this.prismaService.userInsConnection.updateMany({
+                where: {
+                    role: UserRole.ADMIN
+                },
+                data: {
+                    role: UserRole.MEMBER
                 }
-            },
-            data: {
-                role: UserRole.ADMIN
-            }
-        })
+            }),
+            this.prismaService.userInsConnection.update({
+                where: {
+                    userId_insId: {
+                        userId: newAdminId,
+                        insId: insId
+                    }
+                },
+                data: {
+                    role: UserRole.ADMIN
+                }
+            }),
+          ])
         return {
             message: "Admin changed!"
         }
