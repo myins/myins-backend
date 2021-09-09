@@ -17,19 +17,19 @@ export class InsAdminController {
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
   async changeINSAdmin(@PrismaUser('id') userID: string, @Body() data: UpdateINSAdminAPI) {
-    const isAdmin = await this.insAdminService.checkIfAdmin(userID, data.insID)
+    const isAdmin = await this.insAdminService.isAdmin(userID, data.insID)
     if(!isAdmin) {
       throw new UnauthorizedException("You're not allowed to change INS admin!");
     }
 
-    return this.insAdminService.changeAdmin(userID, data.insID, data.memberID)
+    return this.insAdminService.changeAdmin(data.insID, data.memberID)
   }
 
   @Delete('/remove-member')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
   async removeMemberFromINS(@PrismaUser('id') userID: string, @Body() data: UpdateINSAdminAPI) {
-    const isAdmin = await this.insAdminService.checkIfAdmin(userID, data.insID)
+    const isAdmin = await this.insAdminService.isAdmin(userID, data.insID)
     if(!isAdmin) {
       throw new UnauthorizedException("You're not allowed to remove members from INS!");
     }

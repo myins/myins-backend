@@ -1,28 +1,23 @@
 import { UserRole } from '.prisma/client';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { InsInteractionService } from './ins.interaction.service';
+import { InsService } from './ins.service';
 
 @Injectable()
 export class InsAdminService {
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly insInteractionService: InsInteractionService
+        private readonly insService: InsService
     ) { }
 
-    async checkIfAdmin(userId: string, insId: string) {
-        const connection = await this.insInteractionService.checkConnection(userId, insId)
-        return connection?.role === UserRole.ADMIN
-    }
-
-    async changeAdmin(userId: string, insId: string, newAdminId: string) {
-        await this.insInteractionService.checkConnection(newAdminId, insId)
-        await this.prismaService.userInsConnection.update({
+    async changeAdmin(insId: string, newAdminId: string) {
+        const notInIns = !(await this.insService.getConnection(newAdminId, insId))
+        if (notInIns) {
+            throw new BadRequestException("Can't set a non-member as admin!")
+        }
+        await this.prismaService.userInsConnection.updateMany({
             where: {
-                userId_insId: {
-                    userId: userId,
-                    insId: insId
-                }
+                role: UserRole.ADMIN
             },
             data: {
                 role: UserRole.MEMBER
@@ -45,7 +40,6 @@ export class InsAdminService {
     }
 
     async removeMember(insId: string, removeMemberId: string) {
-        await this.insInteractionService.checkConnection(removeMemberId, insId)
         await this.prismaService.userInsConnection.delete({
             where: {
                 userId_insId: {
@@ -57,5 +51,10 @@ export class InsAdminService {
         return {
             message: "Member removed from INS!"
         }
+    }
+
+    async isAdmin(userId: string, insId: string) {
+        const connection = await this.insService.getConnection(userId, insId)
+        return connection?.role === UserRole.ADMIN
     }
 }

@@ -165,4 +165,15 @@ export class InsService {
         });
     }
 
+    async getConnection(userId: string, insId: string)  {
+        const connection = await this.prismaService.userInsConnection.findUnique({
+            where: {
+                userId_insId: {
+                    userId: userId,
+                    insId: insId
+                }
+            }
+        })
+        return connection
+    }
 }
