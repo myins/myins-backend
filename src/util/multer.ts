@@ -20,7 +20,7 @@ export const photoInterceptor = FileInterceptor('file', photoOptions);
 export const photoOrVideoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg' || ext === '.heic'
+    const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg'
     const isVideo = videoExtensions.includes(ext)
     if (!isImage && !isVideo) {
       return callback(new Error('The file is not in a supported format'), false);
