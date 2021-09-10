@@ -138,7 +138,7 @@ export class InsService {
         skip?: number;
         take?: number;
         where?: Prisma.INSWhereInput;
-        orderBy?: Prisma.INSOrderByInput;
+        orderBy?: Prisma.INSOrderByWithRelationInput;
         include?: Prisma.INSInclude
     }): Promise<INS[]> {
         const { skip, take, where, orderBy, include } = params;

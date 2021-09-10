@@ -55,7 +55,7 @@ export class PostService {
     skip?: number;
     take?: number;
     where?: Prisma.PostWhereInput;
-    orderBy?: Prisma.PostOrderByInput;
+    orderBy?: Prisma.PostOrderByWithRelationInput;
     includeRelatedInfo: boolean;
   }): Promise<Post[]> {
     const { skip, take, where, orderBy, includeRelatedInfo } = params;

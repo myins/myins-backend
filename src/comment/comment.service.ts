@@ -24,7 +24,7 @@ export class CommentService {
     skip?: number;
     take?: number;
     where?: Prisma.CommentWhereInput;
-    orderBy?: Prisma.CommentOrderByInput;
+    orderBy?: Prisma.CommentOrderByWithRelationInput;
     include?: Prisma.CommentInclude;
   }) {
     const { skip, take, where, orderBy, include } = params;
