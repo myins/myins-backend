@@ -64,8 +64,12 @@ export class InsService {
         })
 
         // And finally sort the received inses by their position in the onlyIDs array
-        const orderedByIDs = onlyIDs.map(each => {
-            return toRet.find(each2 => each2.id == each)
+        const orderedByIDs = connectionQuery.map(each => {
+            const theRightINS = toRet.find(each2 => each2.id == each.insId)
+            return {
+                ...theRightINS,
+                userRole: each.role
+            }
         }).filter(each => { return each !== undefined })
 
         return orderedByIDs

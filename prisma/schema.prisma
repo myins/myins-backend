@@ -152,4 +152,5 @@ enum NotificationSource {
 enum UserRole {
   ADMIN
   MEMBER
+  PENDING
 }
