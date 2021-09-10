@@ -179,7 +179,7 @@ export class OnboardingController {
         }
 
         try {
-            return this.postMediaService.attachCoverToPost(file, insID)
+            return this.insService.attachCoverToPost(file, insID)
         } catch (err) {
             if (err instanceof BadRequestException) {
                 throw err; // If it's a bad request, just forward it

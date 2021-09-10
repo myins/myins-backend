@@ -132,32 +132,6 @@ export class PostMediaService {
         return toRet
     }
 
-    async attachCoverToPost(file: Express.Multer.File, insID: string) {
-        const ext = path.extname(file.originalname);
-        const randomUUID = uuid.v4();
-        const postName = `cover_${insID}_${randomUUID}${ext}`
-        let x = file;
-        x = {
-            ...x,
-            originalname: postName,
-        };
-        const dataURL = await this.storageService.uploadFile(
-            x,
-            StorageContainer.posts,
-        );
-        await this.prismaService.iNS.update({
-            where: {
-                id: insID
-            },
-            data: {
-                cover: dataURL
-            }
-        })
-        return {
-            message: "Cover set successfully!"
-        }
-    }
-
 }
 
 interface PostInformation {

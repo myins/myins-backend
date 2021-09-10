@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -151,29 +151,22 @@ export class InsController {
     if (!file) {
       throw new BadRequestException('Could not find picture file!');
     }
-    const insToRet = await this.insService.ins({ id: insID })
-    if (!insToRet) {
-      throw new NotFoundException('Could not find user :(');
+    const validINS = await this.insService.inses({
+      where: {
+          id: insID,
+          members: {
+              some: {
+                  userId: userID
+              }
+          }
+      }
+    })
+    
+    if (!validINS || validINS.length != 1) {
+      throw new BadRequestException("Not your ins!!");
     }
-    const randomString = crypto.randomBytes(16).toString('hex');
-    //FIXME: delete the old picture here if it exists!
+    const theINS = validINS[0]
 
-    const ext = path.extname(file.originalname);
-    file = {
-      ...file,
-      originalname: `photo_${insToRet.id}_${randomString}${ext}`,
-    };
-    const resLink = await this.storageService.uploadFile(
-      file,
-      StorageContainer.inscovers,
-    );
-    await this.insService.update({
-      where: { id: userID },
-      data: {
-        cover: resLink
-      },
-    });
-
-    return { success: true }
+    return this.insService.attachCoverToPost(file, theINS.id)
   }
 }

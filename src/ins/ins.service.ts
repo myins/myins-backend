@@ -4,10 +4,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
 import { retry } from 'ts-retry-promise';
+import * as path from 'path';
+import { StorageContainer, StorageService } from 'src/storage/storage.service';
+import * as uuid from 'uuid';
 
 @Injectable()
 export class InsService {
-    constructor(private readonly prismaService: PrismaService) { }
+    constructor(private readonly prismaService: PrismaService, private readonly storageService: StorageService) { }
 
     async createINS(userID: string | null, data: CreateINSAPI) {
         const user = userID ? await this.prismaService.user.findUnique({ where: { id: userID } }) : null
@@ -165,7 +168,7 @@ export class InsService {
         });
     }
 
-    async getConnection(userId: string, insId: string)  {
+    async getConnection(userId: string, insId: string) {
         const connection = await this.prismaService.userInsConnection.findUnique({
             where: {
                 userId_insId: {
@@ -175,5 +178,31 @@ export class InsService {
             }
         })
         return connection
+    }
+
+    async attachCoverToPost(file: Express.Multer.File, insID: string) {
+        const ext = path.extname(file.originalname);
+        const randomUUID = uuid.v4();
+        const postName = `cover_${insID}_${randomUUID}${ext}`
+        let x = file;
+        x = {
+            ...x,
+            originalname: postName,
+        };
+        const dataURL = await this.storageService.uploadFile(
+            x,
+            StorageContainer.posts,
+        );
+        await this.prismaService.iNS.update({
+            where: {
+                id: insID
+            },
+            data: {
+                cover: dataURL
+            }
+        })
+        return {
+            message: "Cover set successfully!"
+        }
     }
 }
