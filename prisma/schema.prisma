@@ -46,7 +46,7 @@ model PostContent {
   content String // Link to raw file
   thumbnail String? // Thumbnail, if it's a video
 
-  post   Post   @relation(name: "post", fields: [postId], references: [id])
+  post   Post   @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade)
   postId String
 
   width Int
@@ -59,7 +59,7 @@ model Post {
   edited       Boolean       @default(false)
   content      String
   mediaContent PostContent[] @relation(name: "post")
-  author       User?          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author       User?          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId     String? // Optional because of guest posts, see onboarding service
   comments     Comment[]
 
