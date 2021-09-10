@@ -55,7 +55,8 @@ export class PostFeedService {
               }
             }
           }
-        }
+        },
+        pending: false,
       }
     })
   }
