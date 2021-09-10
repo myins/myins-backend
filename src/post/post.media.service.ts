@@ -73,7 +73,9 @@ export class PostMediaService {
                 content: dataURL,
                 postId: postID,
                 thumbnail: thumbnail,
-                ...postInfo
+                width: postInfo.width,
+                height: postInfo.height,
+                isVideo: postInfo.isVideo,
             }
         })
 
