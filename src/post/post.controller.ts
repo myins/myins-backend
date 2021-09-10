@@ -29,14 +29,12 @@ export class PostController {
   @Get('pending')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getPendingPosts(@Param('id') id: string, @PrismaUser('id') userID: string) {
+  async getPendingPosts(@PrismaUser('id') userID: string) {
     return this.postService.posts({
-      skip: 0,
-      take: 5,
       where: {
         authorId: userID,
         pending: true,
-      }, includeUserInfo: false
+      }, includeRelatedInfo: true
     })
   }
   @Get(':id')

@@ -116,7 +116,7 @@ export class OnboardingController {
                 },
                 id: body.postID
             },
-            includeUserInfo: false,
+            includeRelatedInfo: false,
         })
 
         if (!post || post.length == 0) {
@@ -125,10 +125,10 @@ export class OnboardingController {
 
         try {
             return this.postMediaService.attachMediaToPost(file, body.postID, null, {
-                width: width,
-                height: height,
+                width,
+                height,
                 isVideo: isVideoPost,
-                setCover: setCover
+                setCover,
             })
         } catch (err) {
             if (err instanceof BadRequestException) {

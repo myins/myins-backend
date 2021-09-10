@@ -70,12 +70,10 @@ export class PostMediaService {
 
         const toRet = await this.prismaService.postContent.create({
             data: {
-                isVideo: postInfo.isVideo,
                 content: dataURL,
                 postId: postID,
-                width: postInfo.width,
-                height: postInfo.height,
-                thumbnail: thumbnail
+                thumbnail: thumbnail,
+                ...postInfo
             }
         })
 
@@ -138,5 +136,5 @@ interface PostInformation {
     width: number,
     height: number,
     isVideo: boolean,
-    setCover: boolean
+    setCover: boolean,
 }

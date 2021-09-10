@@ -36,7 +36,7 @@ export class PostLikeController {
           }
         }
       },
-      includeUserInfo: false
+      includeRelatedInfo: false
     })
 
     if (!postIfValid || postIfValid.length == 0) {

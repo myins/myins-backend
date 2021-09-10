@@ -56,19 +56,20 @@ export class PostService {
     take?: number;
     where?: Prisma.PostWhereInput;
     orderBy?: Prisma.PostOrderByInput;
-    includeUserInfo: boolean;
+    includeRelatedInfo: boolean;
   }): Promise<Post[]> {
-    const { skip, take, where, orderBy, includeUserInfo } = params;
+    const { skip, take, where, orderBy, includeRelatedInfo } = params;
     return this.prisma.post.findMany({
       skip,
       take,
       where,
       orderBy,
-      include: includeUserInfo
+      include: includeRelatedInfo
         ? {
           author: {
             select: ShallowUserSelect,
           },
+          mediaContent: true
         }
         : null,
     });

@@ -49,10 +49,10 @@ export class PostCreateController {
 
         try {
             return this.postMediaService.attachMediaToPost(file, postID2, userID, {
-                width: width,
-                height: height,
+                width,
+                height,
                 isVideo: isVideoPost,
-                setCover: setCover
+                setCover,
             })
         } catch (err) {
             if (err instanceof BadRequestException) {
