@@ -1,18 +1,15 @@
 import { BadRequestException, Body, Controller, Get, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import * as crypto from 'crypto';
-import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { photoInterceptor } from 'src/util/multer';
 import { CreateINSAPI } from './ins-api.entity';
 import { InsService } from './ins.service';
 
 @Controller('ins')
 export class InsController {
-  constructor(private readonly insService: InsService, private readonly storageService: StorageService) { }
+  constructor(private readonly insService: InsService) { }
 
   @Post()
   @ApiTags('ins')
