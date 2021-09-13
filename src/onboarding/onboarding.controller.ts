@@ -4,7 +4,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { CreateINSAPI } from 'src/ins/ins-api.entity';
 import { InsService } from 'src/ins/ins.service';
-import { AttachCoverAPI, AttachMediaAPI } from 'src/post/post-api.entity';
+import { AttachCoverAPI, AttachMediaAPI, AttachMediaWithClaimTokenAPI } from 'src/post/post-api.entity';
 import { PostMediaService } from 'src/post/post.media.service';
 import { PostService } from 'src/post/post.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
@@ -79,7 +79,7 @@ export class OnboardingController {
     @ApiTags('onboarding')
     @UseInterceptors(photoOrVideoInterceptor)
     async attachPhotoToPost(@UploadedFile() file: Express.Multer.File,
-        @Body() body: AttachMediaAPI) {
+        @Body() body: AttachMediaWithClaimTokenAPI) {
 
         if (!file) {
             throw new BadRequestException("No file!")
