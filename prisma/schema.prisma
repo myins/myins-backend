@@ -135,6 +135,7 @@ model UserInsConnection {
 model CurrentVersions {
   type                          DocumentType @id
   updatedAt                   DateTime @default(now())
+  link String @default("")
 }
 
 enum DocumentType {
