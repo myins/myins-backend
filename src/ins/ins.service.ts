@@ -205,8 +205,5 @@ export class InsService {
                 cover: dataURL
             }
         })
-        return {
-            message: "Cover set successfully!"
-        }
     }
 }

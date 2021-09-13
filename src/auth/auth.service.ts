@@ -32,9 +32,6 @@ export class AuthService {
       throw new BadRequestException('Phone already verified!');
     }
     await this.smsService.sendVerificationCode(user);
-    return {
-      message: 'Successfully sent confirmation sms!',
-    };
   }
 
   async resetPassword(phone: string) {
@@ -45,9 +42,6 @@ export class AuthService {
       throw new BadRequestException('Could not find user with that phone!');
     }
     await this.smsService.sendForgotPasswordCode(user);
-    return {
-      message: "Code sent successfully!"
-    }
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
@@ -111,9 +105,6 @@ export class AuthService {
         password: hashedPassword,
       },
     });
-    return {
-      message: "Updated successfully!"
-    }
   }
 
   async verifyUser(phone: string, code: string) {
@@ -138,9 +129,6 @@ export class AuthService {
         phoneNumberVerified: true
       }
     })
-    return {
-      message: "User verified!"
-    }
   }
 
   async phoneExists(phone: string) {

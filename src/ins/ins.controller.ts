@@ -167,6 +167,9 @@ export class InsController {
     }
     const theINS = validINS[0]
 
-    return this.insService.attachCoverToPost(file, theINS.id)
+    await this.insService.attachCoverToPost(file, theINS.id)
+    return {
+        message: "Cover set successfully!"
+    }
   }
 }

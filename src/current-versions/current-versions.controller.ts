@@ -14,6 +14,9 @@ export class CurrentVersionsController {
     @UseGuards(JwtAuthGuard)
     @ApiTags('current-versions')
     async changeCurrentVersions(@Body() body: ChangeCurrentVersionsAPI) {
-        return this.currentVersionsService.changeDocumentVersion(body)
+        await this.currentVersionsService.changeDocumentVersion(body)
+        return {
+            message: "Terms and conditions version successfully changed."
+        }
     }
 }

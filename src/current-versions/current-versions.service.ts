@@ -31,8 +31,5 @@ export class CurrentVersionsService {
                 updatedAt: (new Date())
             }
         })
-        return {
-            message: "Terms and conditions version successfully changed."
-        }
     }
 }

@@ -179,7 +179,10 @@ export class OnboardingController {
         }
 
         try {
-            return this.insService.attachCoverToPost(file, insID)
+            await this.insService.attachCoverToPost(file, insID)
+            return {
+                message: "Cover set successfully!"
+            }
         } catch (err) {
             if (err instanceof BadRequestException) {
                 throw err; // If it's a bad request, just forward it
