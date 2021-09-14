@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import { FfmpegService } from 'src/ffmpeg/ffmpeg.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
@@ -12,6 +12,8 @@ export class PostMediaService {
     private readonly storageService: StorageService,
     private readonly ffmpegService: FfmpegService,
   ) {}
+
+  private readonly logger = new Logger(PostMediaService.name);
 
   async attachMediaToPost(
     file: Express.Multer.File,
@@ -76,6 +78,8 @@ export class PostMediaService {
       StorageContainer.posts,
     );
 
+    this.logger.debug('Uploading new post content...');
+
     const toRet = await this.prismaService.postContent.create({
       data: {
         content: dataURL,
@@ -86,6 +90,8 @@ export class PostMediaService {
         isVideo: postInfo.isVideo,
       },
     });
+
+    this.logger.debug('Done uploading, time to run transaction...');
 
     // Time to update the post's pending state. This is a transaction in case we add async loading
     // And 2 pictures get uploaded at aprox the same time.
@@ -102,6 +108,7 @@ export class PostMediaService {
           },
         },
       });
+      this.logger.debug(`Got post, ${transactionPost?.id}`);
 
       if (!transactionPost) {
         throw new BadRequestException(
@@ -116,13 +123,18 @@ export class PostMediaService {
         transactionPost.totalMediaContent >=
         (transactionPost._count?.mediaContent ?? 0);
 
+      this.logger.debug(`Is ready? ${isReady}`);
+      console.log(transactionPost);
+
       if (!isReady) {
         return; // Nothing to do here, it's not ready yet
       }
 
+      this.logger.debug(`Setting pending to false!`);
+
       return prisma.post.update({
         data: {
-          pending: isReady,
+          pending: false,
         },
         where: {
           id: post.id,
