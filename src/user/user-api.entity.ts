@@ -38,8 +38,6 @@ export class UpdateUserAPI {
 }
 
 export class DeleteUserAPI {
-  @Min(0)
-  @Max(1000)
   userID: string;
 }
 

@@ -36,9 +36,6 @@ export class InsAdminService {
         },
       }),
     ]);
-    return {
-      message: 'Admin changed!',
-    };
   }
 
   async removeMember(insId: string, removeMemberId: string) {
@@ -50,9 +47,6 @@ export class InsAdminService {
         },
       },
     });
-    return {
-      message: 'Member removed from INS!',
-    };
   }
 
   async isAdmin(userId: string, insId: string) {

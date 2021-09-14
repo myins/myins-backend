@@ -1,9 +1,8 @@
-import { IsNumber, Min } from 'class-validator';
+import { IsNumber } from 'class-validator';
 
 export class CreateCommentAPI {
   content: string;
 
-  @Min(1)
   postID: string;
 }
 

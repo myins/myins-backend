@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -43,6 +44,41 @@ export class UserController {
   @ApiTags('users')
   async getUser(@Param('id') id: string) {
     return this.userService.getUserProfile(id);
+  }
+
+  @Get('pending')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('users')
+  async getPendingUsers(
+    @PrismaUser('id') id: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,) {
+      return this.userService.users({
+        where: {
+          inses: {
+            some: {
+              ins: {
+                members: {
+                  some: {
+                    userId: id,
+                    OR: [
+                      {
+                        role: 'MEMBER',
+                      },
+                      {
+                        role: 'ADMIN'
+                      }
+                    ]
+                  }
+                }
+              },
+              role: 'PENDING'
+            }
+          }
+        },
+        skip: skip,
+        take: take
+      })
   }
 
   @UseGuards(JwtAuthGuard)

@@ -134,6 +134,7 @@ export class InsService {
     take: number,
     filter: string,
   ) {
+    //console.log(`Filter: ${filter}`)
     return this.prismaService.user.findMany({
       where: {
         inses: {
@@ -246,8 +247,5 @@ export class InsService {
         cover: dataURL,
       },
     });
-    return {
-      message: 'Cover set successfully!',
-    };
   }
 }

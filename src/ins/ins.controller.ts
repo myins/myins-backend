@@ -14,17 +14,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { StorageService } from 'src/storage/storage.service';
 import { photoInterceptor } from 'src/util/multer';
 import { CreateINSAPI } from './ins-api.entity';
 import { InsService } from './ins.service';
 
 @Controller('ins')
 export class InsController {
-  constructor(
-    private readonly insService: InsService,
-    private readonly storageService: StorageService,
-  ) {}
+  constructor(private readonly insService: InsService) {}
 
   @Post()
   @ApiTags('ins')
@@ -199,6 +195,9 @@ export class InsController {
     }
     const theINS = validINS[0];
 
-    return this.insService.attachCoverToPost(file, theINS.id);
+    await this.insService.attachCoverToPost(file, theINS.id);
+    return {
+      message: 'Cover set successfully!',
+    };
   }
 }

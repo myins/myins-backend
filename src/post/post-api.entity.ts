@@ -24,9 +24,13 @@ export class AttachMediaAPI {
 
   //@IsNumber({ maxDecimalPlaces: 0 })
   height: string;
+}
+
+export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
 
   @IsString()
   claimToken: string;
+
 }
 
 export class AttachCoverAPI {
