@@ -92,9 +92,9 @@ export class UserService {
       newUserModel.phoneNumber,
       newUserModel.id,
     );
-    
+
     // Get the new user profile, this includes following counts, etc.
-    const newUserProfile = await this.getUserProfile(newUserModel.id)
+    const newUserProfile = await this.getUserProfile(newUserModel.id);
     const addedTogether = { ...newUserProfile, ...authTokens };
 
     this.smsService.sendVerificationCode(newUserModel);
@@ -126,9 +126,8 @@ export class UserService {
       },
       data: {
         refreshToken: null,
-        pushToken: null
+        pushToken: null,
       },
     });
   }
 }
-

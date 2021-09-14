@@ -11,14 +11,22 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
-import { CodePhoneAPI, PhoneBodyAPI, RefreshTokenBodyAPI, ResetPasswordAPI } from './auth-api.entity';
+import {
+  CodePhoneAPI,
+  PhoneBodyAPI,
+  RefreshTokenBodyAPI,
+  ResetPasswordAPI,
+} from './auth-api.entity';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategyPayload } from './jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService, private readonly jwtService: SjwtService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: SjwtService,
+  ) {}
 
   @UseGuards(AuthGuard('local'))
   @ApiTags('auth')
@@ -47,40 +55,38 @@ export class AuthController {
 
   @Post('verifyCode')
   @ApiTags('auth')
-  async verifyUser(
-    @Body() accountData: CodePhoneAPI,
-  ) {
-    const { phone, code } = accountData
-    return this.authService.verifyUser(phone, code)
+  async verifyUser(@Body() accountData: CodePhoneAPI) {
+    const { phone, code } = accountData;
+    return this.authService.verifyUser(phone, code);
   }
 
   @Post('checkResetCode')
   @ApiTags('auth')
-  async checkResetCode(
-    @Body() accountData: CodePhoneAPI,
-  ) {
-    const { phone, code } = accountData
+  async checkResetCode(@Body() accountData: CodePhoneAPI) {
+    const { phone, code } = accountData;
 
-    const res = await this.authService.checkIfCodeCorrect(phone, code)
+    const res = await this.authService.checkIfCodeCorrect(phone, code);
     if (!res) {
       return {
-        correct: false
-      }
+        correct: false,
+      };
     }
     const payload: JwtStrategyPayload = { sub: phone, phone: phone };
     return {
       correct: true,
-      resetToken: await this.jwtService.signWithVeryQuickExpiration(payload)
-    }
+      resetToken: await this.jwtService.signWithVeryQuickExpiration(payload),
+    };
   }
 
   @Post('completeReset')
   @ApiTags('auth')
-  async completeResetPassword(
-    @Body() accountData: ResetPasswordAPI,
-  ) {
-    const { phone, resetToken, newPassword } = accountData
-    return this.authService.confirmResetPassword(phone, resetToken, newPassword);
+  async completeResetPassword(@Body() accountData: ResetPasswordAPI) {
+    const { phone, resetToken, newPassword } = accountData;
+    return this.authService.confirmResetPassword(
+      phone,
+      resetToken,
+      newPassword,
+    );
   }
 
   @Post('resend-confirmation')

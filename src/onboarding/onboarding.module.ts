@@ -9,6 +9,6 @@ import { OnboardingService } from './onboarding.service';
 @Module({
   imports: [InsModule, SjwtModule, PostModule, PrismaModule],
   controllers: [OnboardingController],
-  providers: [OnboardingService]
+  providers: [OnboardingService],
 })
 export class OnboardingModule {}

@@ -3,6 +3,6 @@ import { ShareController } from './share.controller';
 
 @Module({
   //imports: [NotificationModule],
-  controllers: [ShareController]
+  controllers: [ShareController],
 })
 export class ShareModule {}

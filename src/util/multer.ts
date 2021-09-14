@@ -20,12 +20,15 @@ export const photoInterceptor = FileInterceptor('file', photoOptions);
 export const photoOrVideoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg'
-    const isVideo = videoExtensions.includes(ext)
+    const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
+    const isVideo = videoExtensions.includes(ext);
     if (!isImage && !isVideo) {
-      return callback(new Error('The file is not in a supported format'), false);
+      return callback(
+        new Error('The file is not in a supported format'),
+        false,
+      );
     }
-    const sizeLimit = isImage ? (1024 * 1024 * 10) : (1024 * 1024 * 10)
+    const sizeLimit = isImage ? 1024 * 1024 * 10 : 1024 * 1024 * 10;
 
     if (sizeLimit < file.size) {
       return callback(new Error('The file is too large!'), false);
@@ -39,10 +42,13 @@ export const photoOrVideoOptions: MulterOptions = {
 };
 
 export const isVideo = (originalName: string) => {
-  const ext = path.extname(originalName)
-  return videoExtensions.includes(ext)
-}
+  const ext = path.extname(originalName);
+  return videoExtensions.includes(ext);
+};
 
-export const videoExtensions = ['.mp4']
+export const videoExtensions = ['.mp4'];
 
-export const photoOrVideoInterceptor = FileInterceptor('file', photoOrVideoOptions);
+export const photoOrVideoInterceptor = FileInterceptor(
+  'file',
+  photoOrVideoOptions,
+);

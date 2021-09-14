@@ -12,7 +12,7 @@ export class NotificationService {
     private readonly prisma: PrismaService,
     private readonly users: UserService,
     private readonly pushService: NotificationPushService,
-  ) { }
+  ) {}
 
   async getFeed(userID: string, skip: number, take: number) {
     const count = await this.prisma.notification.count({
@@ -34,7 +34,7 @@ export class NotificationService {
         post: {
           select: {
             content: true,
-            mediaContent: true
+            mediaContent: true,
           },
         },
       },
@@ -58,9 +58,9 @@ export class NotificationService {
 
   async createNotification(
     data: Prisma.NotificationCreateInput,
-    silent?: boolean
+    silent?: boolean,
   ): Promise<Notification> {
-    const sSilent = silent ?? false
+    const sSilent = silent ?? false;
     if (!sSilent) {
       this.pushSingleNotification(data);
     }
@@ -119,7 +119,7 @@ export class NotificationService {
         targetUser?.sandboxToken ?? false,
         this.constructNotificationBody(authorUser, targetUser, notif),
       );
-      return toRet
+      return toRet;
     }
   }
 
@@ -170,8 +170,8 @@ export class NotificationService {
     let body = '';
 
     const unreachable = (x: never) => {
-      throw new Error("This shouldn't be possible!");
-    }
+      throw new Error(`This shouldn't be possible! ${x}`);
+    };
 
     switch (source.source) {
       case 'LIKE_POST':
@@ -190,13 +190,13 @@ export class NotificationService {
         body = `${authorName} liked your comment!`;
         break;
       case 'REQUESTED_FOLLOW':
-        body = `${authorName} has asked to follow you!`
-        break
+        body = `${authorName} has asked to follow you!`;
+        break;
       case 'SHARED_POST':
-        body = `${authorName} has shared a post with you!`
-        break
+        body = `${authorName} has shared a post with you!`;
+        break;
       default:
-        unreachable(source.source)
+        unreachable(source.source);
         break;
     }
 
@@ -216,14 +216,19 @@ export class NotificationService {
 }
 
 interface NotificationEitherInterface {
-  source: NotificationSource | 'REQUESTED_FOLLOW' | 'REQUESTED_COMMENT' | 'REQUESTED_COMMENT_EDIT';
+  source:
+    | NotificationSource
+    | 'REQUESTED_FOLLOW'
+    | 'REQUESTED_COMMENT'
+    | 'REQUESTED_COMMENT_EDIT';
   postId?: string | null | undefined;
   commentId?: string | null | undefined;
   authorId?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function clean(obj: any) {
-  for (var propName in obj) {
+  for (const propName in obj) {
     if (obj[propName] === null || obj[propName] === undefined) {
       delete obj[propName];
     }
@@ -233,6 +238,5 @@ function clean(obj: any) {
 
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   if (value === null || value === undefined) return false;
-  const testDummy: TValue = value;
   return true;
 }

@@ -14,19 +14,17 @@ export class PhoneBodyAPI {
 }
 
 export class ResetPasswordAPI {
-
   @IsNotEmpty()
   resetToken: string;
-  
+
   @IsNotEmpty()
   newPassword: string;
-  
+
   @IsNotEmpty()
-  phone: string
+  phone: string;
 }
 
 export class CodePhoneAPI {
-
   @IsNotEmpty()
   code: string;
 

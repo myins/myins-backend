@@ -26,7 +26,13 @@ import { PostService } from './post.service';
     FfmpegModule,
     InsModule,
   ],
-  controllers: [PostFeedController, PostCommentsController, PostLikeController, PostController, PostCreateController],
+  controllers: [
+    PostFeedController,
+    PostCommentsController,
+    PostLikeController,
+    PostController,
+    PostCreateController,
+  ],
   providers: [PostMediaService, PostService, PostFeedService],
   exports: [PostService, PostMediaService],
 })

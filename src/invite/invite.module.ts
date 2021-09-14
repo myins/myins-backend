@@ -8,6 +8,6 @@ import { InviteService } from './invite.service';
 @Module({
   imports: [UserModule, PrismaModule, SmsModule],
   controllers: [InviteController],
-  providers: [InviteService]
+  providers: [InviteService],
 })
 export class InviteModule {}

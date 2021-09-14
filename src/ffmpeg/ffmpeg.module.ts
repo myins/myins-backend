@@ -3,6 +3,6 @@ import { FfmpegService } from './ffmpeg.service';
 
 @Module({
   providers: [FfmpegService],
-  exports: [FfmpegService]
+  exports: [FfmpegService],
 })
 export class FfmpegModule {}

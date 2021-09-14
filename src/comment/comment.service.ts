@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Post } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
@@ -11,7 +11,7 @@ export class CommentService {
     private prismaService: PrismaService,
     private postService: PostService,
     private notifsService: NotificationService,
-  ) { }
+  ) {}
 
   async createComment(data: Prisma.CommentCreateInput): Promise<Comment> {
     const toRet = await this.prismaService.comment.create({
@@ -102,6 +102,6 @@ export class CommentService {
         },
       },
     });
-    return toRet
+    return toRet;
   }
 }

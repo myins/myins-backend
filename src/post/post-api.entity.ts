@@ -1,7 +1,6 @@
-import { ArrayNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
 
 export class CreatePostAPI {
-
   content: string;
 
   @IsNumber()
@@ -14,12 +13,11 @@ export class CreatePostAPI {
 }
 
 export class AttachMediaAPI {
-
   @IsString()
   postID: string;
 
   //@IsBoolean()
-  setCover: string
+  setCover: string;
 
   //@IsNumber({ maxDecimalPlaces: 0 })
   width: string;
@@ -34,5 +32,4 @@ export class AttachMediaAPI {
 export class AttachCoverAPI {
   @IsString()
   claimToken: string;
-  
 }

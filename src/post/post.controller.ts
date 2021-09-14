@@ -22,9 +22,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostController {
-  constructor(
-    private readonly postService: PostService,
-  ) { }
+  constructor(private readonly postService: PostService) {}
 
   @Get('pending')
   @UseGuards(JwtAuthGuard)
@@ -34,14 +32,18 @@ export class PostController {
       where: {
         authorId: userID,
         pending: true,
-      }, includeRelatedInfo: true
-    })
+      },
+      includeRelatedInfo: true,
+    });
   }
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getPostById(@Param('id') id: string, @PrismaUser('id') userID: string): Promise<PostModel | null> {
-    return this.postService.injectedPost(id, userID)
+  async getPostById(
+    @Param('id') id: string,
+    @PrismaUser('id') userID: string,
+  ): Promise<PostModel | null> {
+    return this.postService.injectedPost(id, userID);
   }
 
   @Patch(':id')
@@ -54,7 +56,7 @@ export class PostController {
   ) {
     const { content } = postData;
     if (content == null || content == undefined) {
-      throw new BadRequestException("Content must be empty, not missing!")
+      throw new BadRequestException('Content must be empty, not missing!');
     }
 
     const post = await this.postService.post(
@@ -85,7 +87,10 @@ export class PostController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async deletePost(@Param('id') postID: string, @PrismaUser('id') userID: string) {
+  async deletePost(
+    @Param('id') postID: string,
+    @PrismaUser('id') userID: string,
+  ) {
     const comment = await this.postService.post(
       {
         id: postID,

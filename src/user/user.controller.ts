@@ -2,12 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get, Param,
+  Get,
+  Param,
   Patch,
   Post,
   UploadedFile,
   UseGuards,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Prisma, User } from '@prisma/client';
@@ -21,7 +22,12 @@ import { SmsService } from 'src/sms/sms.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
-import { CreateUserAPI, DeleteUserAPI, UpdatePushTokenAPI, UpdateUserAPI } from './user-api.entity';
+import {
+  CreateUserAPI,
+  DeleteUserAPI,
+  UpdatePushTokenAPI,
+  UpdateUserAPI,
+} from './user-api.entity';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -29,14 +35,14 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly storageService: StorageService,
-    private readonly smsService: SmsService
+    private readonly smsService: SmsService,
   ) {}
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')
   async getUser(@Param('id') id: string) {
-    return this.userService.getUserProfile(id)
+    return this.userService.getUserProfile(id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -70,7 +76,7 @@ export class UserController {
       },
     });
 
-    return this.getUser(user.id)
+    return this.getUser(user.id);
   }
 
   @Patch()
@@ -83,9 +89,9 @@ export class UserController {
     try {
       const existingPhoneNumber = user.phoneNumber;
       if (existingPhoneNumber == undefined) {
-        throw new BadRequestException("Could not find your user!")
+        throw new BadRequestException('Could not find your user!');
       }
-      const didChangePhone = data.phone != existingPhoneNumber
+      const didChangePhone = data.phone != existingPhoneNumber;
       const toRet = await this.userService.updateUser({
         where: {
           id: user.id,
@@ -96,9 +102,9 @@ export class UserController {
         },
       });
       if (didChangePhone) {
-        this.smsService.sendVerificationCode(toRet)
+        this.smsService.sendVerificationCode(toRet);
       }
-      return this.getUser(user.id)
+      return this.getUser(user.id);
     } catch (err) {
       throw new BadRequestException('That username / phone is already taken!');
     }
@@ -106,9 +112,7 @@ export class UserController {
 
   @Post()
   @ApiTags('users')
-  async signupUser(
-    @Body() userData: CreateUserAPI,
-  ) {
+  async signupUser(@Body() userData: CreateUserAPI) {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(userData.password, saltOrRounds);
 
@@ -119,9 +123,11 @@ export class UserController {
       password: hashedPassword,
     };
     try {
-    return this.userService.createUser(toCreate); // This calls sendVerificationCode
-    } catch(error) {
-      throw new BadRequestException("Could not create user, maybe it already exists?")
+      return this.userService.createUser(toCreate); // This calls sendVerificationCode
+    } catch (error) {
+      throw new BadRequestException(
+        'Could not create user, maybe it already exists?',
+      );
     }
   }
 
@@ -138,22 +144,24 @@ export class UserController {
     }
   }
 
-
   @Post('updateToken')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
-  async updateToken(@Body() dataModel: UpdatePushTokenAPI, @PrismaUser('id') userID: string) {
+  async updateToken(
+    @Body() dataModel: UpdatePushTokenAPI,
+    @PrismaUser('id') userID: string,
+  ) {
     await this.userService.updateUser({
       where: {
-        id: userID
+        id: userID,
       },
       data: {
         pushToken: dataModel.pushToken,
-        sandboxToken: dataModel.isSandbox
-      }
-    })
+        sandboxToken: dataModel.isSandbox,
+      },
+    });
     return {
-      message: "Updated token successfully!"
-    }
+      message: 'Updated token successfully!',
+    };
   }
 }

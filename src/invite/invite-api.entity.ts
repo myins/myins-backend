@@ -1,18 +1,17 @@
-import { IsNotEmpty, IsPhoneNumber } from "class-validator";
+import { IsNotEmpty, IsPhoneNumber } from 'class-validator';
 
 export class InviteUserToINSAPI {
-    @IsNotEmpty()
-    ins: string;
+  @IsNotEmpty()
+  ins: string;
 
-    @IsNotEmpty()
-    userID: string;
+  @IsNotEmpty()
+  userID: string;
 }
 
 export class InviteExternalUserToINSAPI {
-    @IsNotEmpty()
-    ins: string;
+  @IsNotEmpty()
+  ins: string;
 
-    @IsPhoneNumber()
-    phoneNumber: string;
+  @IsPhoneNumber()
+  phoneNumber: string;
 }
-

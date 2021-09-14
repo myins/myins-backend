@@ -6,14 +6,14 @@ import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 
 @Controller('current-versions')
 export class CurrentVersionsController {
-    constructor(
-        private readonly currentVersionsService: CurrentVersionsService,
-    ) { }
-    
-    @Post()
-    @UseGuards(JwtAuthGuard)
-    @ApiTags('current-versions')
-    async changeCurrentVersions(@Body() body: ChangeCurrentVersionsAPI) {
-        return this.currentVersionsService.changeDocumentVersion(body)
-    }
+  constructor(
+    private readonly currentVersionsService: CurrentVersionsService,
+  ) {}
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('current-versions')
+  async changeCurrentVersions(@Body() body: ChangeCurrentVersionsAPI) {
+    return this.currentVersionsService.changeDocumentVersion(body);
+  }
 }

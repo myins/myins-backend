@@ -1,4 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsPhoneNumber, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsPhoneNumber,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateUserAPI {
   @IsNotEmpty()

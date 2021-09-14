@@ -28,7 +28,6 @@ export class NotificationController {
     return this.notifService.getFeed(userID, skip, take);
   }
 
-
   // @Get('test')
   // async testFunction() {
   //   await this.notifService.pushSingleNotification({

@@ -20,10 +20,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtStrategyPayload) {
     const toRet = { userId: payload.sub, username: payload.phone };
-    const user = await this.prismaService.user.findUnique({where: {id: toRet.userId}})
+    const user = await this.prismaService.user.findUnique({
+      where: { id: toRet.userId },
+    });
     if (!user) {
-      throw new BadRequestException("Could not find user!")
+      throw new BadRequestException('Could not find user!');
     }
-    return user
+    return user;
   }
 }

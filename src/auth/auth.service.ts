@@ -2,7 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -17,9 +17,8 @@ export class AuthService {
   constructor(
     private usersService: UserService,
     private jwtService: SjwtService,
-    private smsService: SmsService,
-    //@InjectTwilio() private readonly twilioClient: TwilioClient
-  ) { }
+    private smsService: SmsService, //@InjectTwilio() private readonly twilioClient: TwilioClient
+  ) {}
 
   async resendConfirmation(phone: string) {
     const user = await this.usersService.user({
@@ -46,8 +45,8 @@ export class AuthService {
     }
     await this.smsService.sendForgotPasswordCode(user);
     return {
-      message: "Code sent successfully!"
-    }
+      message: 'Code sent successfully!',
+    };
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
@@ -57,47 +56,58 @@ export class AuthService {
     //   .create({ to: phone, code: code })
     // This is not working for some inane reason, patch it using fetch for now
     if (isTestNumber(phone)) {
-      return code === "1234"
+      return code === '1234';
     }
 
-    const details: any = {
-      'Code': code,
-      'To': phone,
+    const details: { [key: string]: string } = {
+      Code: code,
+      To: phone,
     };
 
-    let formBody = [];
-    for (var property in details) {
-      var encodedKey = encodeURIComponent(property);
-      var encodedValue = encodeURIComponent(details[property]);
-      formBody.push(encodedKey + "=" + encodedValue);
+    const formBody = [];
+    for (const property in details) {
+      const encodedKey = encodeURIComponent(property);
+      const encodedValue = encodeURIComponent(details[property]);
+      formBody.push(encodedKey + '=' + encodedValue);
     }
-    const finalForm = formBody.join("&");
+    const finalForm = formBody.join('&');
 
-    const res = await fetch(`https://verify.twilio.com/v2/Services/${process.env.TWILIO_SERVICE_SID}/VerificationCheck`, {
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
+    const res = await fetch(
+      `https://verify.twilio.com/v2/Services/${process.env.TWILIO_SERVICE_SID}/VerificationCheck`,
+      {
+        headers: {
+          Authorization: `Basic ${Buffer.from(
+            `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
+          ).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: finalForm,
+        method: 'POST',
       },
-      body: finalForm,
-      method: "POST"
-    })
-    const resData = await res.json()
-    return resData.status === "approved"
+    );
+    const resData = await res.json();
+    return resData.status === 'approved';
   }
 
-  async confirmResetPassword(phone: string, resetToken: string, newPassword: string) {
+  async confirmResetPassword(
+    phone: string,
+    resetToken: string,
+    newPassword: string,
+  ) {
     const user = await this.usersService.user({
-      phoneNumber: phone
+      phoneNumber: phone,
     });
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    const decrypted = await this.jwtService.decrypt(resetToken)
+    const decrypted = await this.jwtService.decrypt(resetToken);
     if (typeof decrypted == 'string') {
-      throw new BadRequestException('An error occured, please try again later!');
+      throw new BadRequestException(
+        'An error occured, please try again later!',
+      );
     }
     if (decrypted?.sub !== phone || decrypted?.phone !== phone) {
-      throw new BadRequestException('Nice try!')
+      throw new BadRequestException('Nice try!');
     }
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
@@ -111,35 +121,35 @@ export class AuthService {
       },
     });
     return {
-      message: "Updated successfully!"
-    }
+      message: 'Updated successfully!',
+    };
   }
 
   async verifyUser(phone: string, code: string) {
     const user = await this.usersService.user({
-      phoneNumber: phone
+      phoneNumber: phone,
     });
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified) {
-      throw new BadRequestException("User already verified!");
+      throw new BadRequestException('User already verified!');
     }
-    const res = await this.checkIfCodeCorrect(phone, code)
+    const res = await this.checkIfCodeCorrect(phone, code);
     if (!res) {
       throw new BadRequestException('Invalid code!');
     }
     await this.usersService.updateUser({
       where: {
-        id: user.id
+        id: user.id,
       },
       data: {
-        phoneNumberVerified: true
-      }
-    })
+        phoneNumberVerified: true,
+      },
+    });
     return {
-      message: "User verified!"
-    }
+      message: 'User verified!',
+    };
   }
 
   async phoneExists(phone: string) {
@@ -174,9 +184,7 @@ export class AuthService {
       user.phoneNumber,
       user.id,
     );
-    const userProfile = await this.usersService.getUserProfile(
-      user.id,
-    );
+    const userProfile = await this.usersService.getUserProfile(user.id);
     const addedTogether = { ...userProfile, ...authTokens };
 
     this.smsService.sendVerificationCode(user);

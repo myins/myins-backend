@@ -12,9 +12,8 @@ export class PatchCommentAPI {
 }
 
 export class SharePostAPI {
-
   postID: string;
 
-  @IsNumber({}, {each: true})
+  @IsNumber({}, { each: true })
   targetIDs: string[];
 }

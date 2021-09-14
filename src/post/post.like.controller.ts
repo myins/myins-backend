@@ -1,4 +1,15 @@
-import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Query, UnauthorizedException, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+  UnauthorizedException,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -22,7 +33,12 @@ export class PostLikeController {
   @Get(':id/likes')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
-  async getLikesForPost(@PrismaUser('id') userID: string, @Param('id') postID: string, @Query('skip') skip: number, @Query('take') take: number) {
+  async getLikesForPost(
+    @PrismaUser('id') userID: string,
+    @Param('id') postID: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
     const postIfValid = await this.postService.posts({
       where: {
         id: postID,
@@ -30,36 +46,34 @@ export class PostLikeController {
           some: {
             members: {
               some: {
-                userId: userID
-              }
-            }
-          }
-        }
+                userId: userID,
+              },
+            },
+          },
+        },
       },
-      includeRelatedInfo: false
-    })
+      includeRelatedInfo: false,
+    });
 
     if (!postIfValid || postIfValid.length == 0) {
-      throw new BadRequestException("Could not find post!")
+      throw new BadRequestException('Could not find post!');
     }
-    
+
     return this.userService.users({
       where: {
         likedPosts: {
           some: {
-            id: postID
-          }
-        }
+            id: postID,
+          },
+        },
       },
       skip: skip,
       take: take,
       orderBy: {
-        firstName: 'desc'
-      }
-    })
+        firstName: 'desc',
+      },
+    });
   }
-  
-
 
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
@@ -89,7 +103,7 @@ export class PostLikeController {
         },
       },
     });
-    await this.insInteractionService.interact(user.id, toRet.id)
+    await this.insInteractionService.interact(user.id, toRet.id);
 
     if (post.authorId !== user.id) {
       this.notificationsService.createNotification({

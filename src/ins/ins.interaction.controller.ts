@@ -6,12 +6,15 @@ import { InsInteractionService } from './ins.interaction.service';
 
 @Controller('ins')
 export class InsController {
-  constructor(private readonly insInteractionService: InsInteractionService) { }
+  constructor(private readonly insInteractionService: InsInteractionService) {}
 
   @Post(':id')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async interactWithIns(@PrismaUser() userID: string, @Param('id') insID: string) {
-      return this.insInteractionService.interact(userID, insID) 
+  async interactWithIns(
+    @PrismaUser() userID: string,
+    @Param('id') insID: string,
+  ) {
+    return this.insInteractionService.interact(userID, insID);
   }
 }

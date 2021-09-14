@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PostService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async post(
     postWhereUniqueInput: Prisma.PostWhereUniqueInput,
@@ -15,21 +15,18 @@ export class PostService {
       where: postWhereUniqueInput,
       include: includeUserInfo
         ? {
-          author: {
-            select: ShallowUserSelect,
-          },
-        }
+            author: {
+              select: ShallowUserSelect,
+            },
+          }
         : null,
     });
   }
 
-  async injectedPost(
-    postID: string,
-    asUserID: string,
-  ) {
-    let toRet = await this.prisma.post.findUnique({
+  async injectedPost(postID: string, asUserID: string) {
+    const toRet = await this.prisma.post.findUnique({
       where: {
-        id: postID
+        id: postID,
       },
       include: {
         author: {
@@ -38,17 +35,17 @@ export class PostService {
         _count: {
           select: {
             likes: true,
-            comments: true
-          }
+            comments: true,
+          },
         },
         likes: {
           where: {
-            id: asUserID
-          }
-        }
-      }
+            id: asUserID,
+          },
+        },
+      },
     });
-    return toRet
+    return toRet;
   }
 
   async posts(params: {
@@ -66,11 +63,11 @@ export class PostService {
       orderBy,
       include: includeRelatedInfo
         ? {
-          author: {
-            select: ShallowUserSelect,
-          },
-          mediaContent: true
-        }
+            author: {
+              select: ShallowUserSelect,
+            },
+            mediaContent: true,
+          }
         : null,
     });
   }
@@ -79,7 +76,7 @@ export class PostService {
     const toRet = await this.prisma.post.create({
       data,
     });
-    return toRet
+    return toRet;
   }
 
   async updatePost(params: {
@@ -91,7 +88,7 @@ export class PostService {
       data,
       where,
     });
-    return toRet
+    return toRet;
   }
 
   async deletePost(postId: string): Promise<Post> {
@@ -101,5 +98,4 @@ export class PostService {
       },
     });
   }
-
 }

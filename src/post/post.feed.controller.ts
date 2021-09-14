@@ -15,9 +15,7 @@ import { PostFeedService } from './post.feed.service';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostFeedController {
-  constructor(
-    private readonly postFeedService: PostFeedService
-  ) {}
+  constructor(private readonly postFeedService: PostFeedService) {}
 
   @Get('feed')
   @UseGuards(JwtAuthGuard)

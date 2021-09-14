@@ -9,9 +9,9 @@ import { StorageService } from './storage.service';
   imports: [
     S3Module.forRoot({
       config: {
-        accessKeyId: process.env["S3_KEY_ID"],
-        secretAccessKey: process.env["S3_SECRET_ACCESS_KEY"],
-        region: process.env["S3_REGION"],
+        accessKeyId: process.env['S3_KEY_ID'],
+        secretAccessKey: process.env['S3_SECRET_ACCESS_KEY'],
+        region: process.env['S3_REGION'],
         s3ForcePathStyle: true,
         signatureVersion: 'v4',
       },

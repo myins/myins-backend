@@ -26,8 +26,8 @@ export class CommentController {
     private readonly userService: UserService,
     private readonly postService: PostService,
     private readonly commentService: CommentService,
-    private readonly notificationService: NotificationService
-  ) { }
+    private readonly notificationService: NotificationService,
+  ) {}
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
@@ -123,30 +123,33 @@ export class CommentController {
     };
     const toRet = await this.commentService.createComment(toCreate);
 
-    await this.notificationService.createNotification({
-      source: 'COMMENT',
-      target: {
-        connect: {
-          id: post.authorId,
+    await this.notificationService.createNotification(
+      {
+        source: 'COMMENT',
+        target: {
+          connect: {
+            id: post.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+        comment: {
+          connect: {
+            id: toRet.id,
+          },
+        },
+        post: {
+          connect: {
+            id: post.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: user.id,
-        },
-      },
-      comment: {
-        connect: {
-          id: toRet.id,
-        },
-      },
-      post: {
-        connect: {
-          id: post.id,
-        },
-      },
-    }, false)
+      false,
+    );
 
-    return toRet
+    return toRet;
   }
 }

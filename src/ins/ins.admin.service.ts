@@ -5,58 +5,58 @@ import { InsService } from './ins.service';
 
 @Injectable()
 export class InsAdminService {
-    constructor(
-        private readonly prismaService: PrismaService,
-        private readonly insService: InsService
-    ) { }
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly insService: InsService,
+  ) {}
 
-    async changeAdmin(insId: string, newAdminId: string) {
-        const notInIns = !(await this.insService.getConnection(newAdminId, insId))
-        if (notInIns) {
-            throw new BadRequestException("Can't set a non-member as admin!")
-        }
-        await this.prismaService.$transaction([
-            this.prismaService.userInsConnection.updateMany({
-                where: {
-                    role: UserRole.ADMIN
-                },
-                data: {
-                    role: UserRole.MEMBER
-                }
-            }),
-            this.prismaService.userInsConnection.update({
-                where: {
-                    userId_insId: {
-                        userId: newAdminId,
-                        insId: insId
-                    }
-                },
-                data: {
-                    role: UserRole.ADMIN
-                }
-            }),
-          ])
-        return {
-            message: "Admin changed!"
-        }
+  async changeAdmin(insId: string, newAdminId: string) {
+    const notInIns = !(await this.insService.getConnection(newAdminId, insId));
+    if (notInIns) {
+      throw new BadRequestException("Can't set a non-member as admin!");
     }
+    await this.prismaService.$transaction([
+      this.prismaService.userInsConnection.updateMany({
+        where: {
+          role: UserRole.ADMIN,
+        },
+        data: {
+          role: UserRole.MEMBER,
+        },
+      }),
+      this.prismaService.userInsConnection.update({
+        where: {
+          userId_insId: {
+            userId: newAdminId,
+            insId: insId,
+          },
+        },
+        data: {
+          role: UserRole.ADMIN,
+        },
+      }),
+    ]);
+    return {
+      message: 'Admin changed!',
+    };
+  }
 
-    async removeMember(insId: string, removeMemberId: string) {
-        await this.prismaService.userInsConnection.delete({
-            where: {
-                userId_insId: {
-                    userId: removeMemberId,
-                    insId: insId
-                }
-            }
-        })
-        return {
-            message: "Member removed from INS!"
-        }
-    }
+  async removeMember(insId: string, removeMemberId: string) {
+    await this.prismaService.userInsConnection.delete({
+      where: {
+        userId_insId: {
+          userId: removeMemberId,
+          insId: insId,
+        },
+      },
+    });
+    return {
+      message: 'Member removed from INS!',
+    };
+  }
 
-    async isAdmin(userId: string, insId: string) {
-        const connection = await this.insService.getConnection(userId, insId)
-        return connection?.role === UserRole.ADMIN
-    }
+  async isAdmin(userId: string, insId: string) {
+    const connection = await this.insService.getConnection(userId, insId);
+    return connection?.role === UserRole.ADMIN;
+  }
 }

@@ -5,16 +5,14 @@ import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
 export class PostFeedService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   richPostInclude(userID: string): Prisma.PostInclude {
     return {
       _count: {
         select: {
           likes: true,
-          comments: true
+          comments: true,
         },
       },
       likes: {
@@ -29,13 +27,13 @@ export class PostFeedService {
       inses: {
         select: {
           name: true,
-          cover: true
-        }
+          cover: true,
+        },
       },
       author: {
         select: ShallowUserSelect,
       },
-    }
+    };
   }
 
   async getFeed(skip: number, take: number, userID: string) {
@@ -44,48 +42,50 @@ export class PostFeedService {
       take: take,
       include: this.richPostInclude(userID),
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       where: {
         inses: {
           some: {
             members: {
               some: {
-                userId: userID
-              }
-            }
-          }
+                userId: userID,
+              },
+            },
+          },
         },
         //pending: false,
-      }
-    })
+      },
+    });
   }
   async getStoriesFeed(userID: string) {
     const allINS = await this.prisma.userInsConnection.findMany({
       where: {
-        userId: userID
+        userId: userID,
       },
       orderBy: {
-        interactions: 'desc'
-      }
-    })
+        interactions: 'desc',
+      },
+    });
 
-    const richInclude = this.richPostInclude(userID)
-    const toRet = await Promise.all(allINS.map(each => {
-      return this.prisma.post.findFirst({
-        where: {
-          inses: {
-            some: {
-              id: each.insId
-            }
-          }
-        },
-        include: richInclude,
-        orderBy: {
-          createdAt: 'desc'
-        }
-      })
-    }))
-    return toRet.filter(each => each != null)
+    const richInclude = this.richPostInclude(userID);
+    const toRet = await Promise.all(
+      allINS.map((each) => {
+        return this.prisma.post.findFirst({
+          where: {
+            inses: {
+              some: {
+                id: each.insId,
+              },
+            },
+          },
+          include: richInclude,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      }),
+    );
+    return toRet.filter((each) => each != null);
   }
 }
