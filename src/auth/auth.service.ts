@@ -82,7 +82,6 @@ export class AuthService {
       method: "POST"
     })
     const resData = await res.json()
-    console.log(resData)
     return resData.status === "approved"
   }
 

@@ -105,7 +105,6 @@ export class InsService {
     }
 
     async membersForIns(insID: string, skip: number, take: number, filter: string) {
-        //console.log(`Filter: ${filter}`)
         return this.prismaService.user.findMany({
             where: {
                 inses: {

@@ -18,6 +18,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { InviteModule } from './invite/invite.module';
 import { CurrentVersionsModule } from './current-versions/current-versions.module';
 import * as admin from 'firebase-admin';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import * as admin from 'firebase-admin';
     OnboardingModule,
     InviteModule,
     CurrentVersionsModule,
+    ScheduleModule.forRoot()
   ],
   providers: [
     {

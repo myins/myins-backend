@@ -18,7 +18,7 @@ const sandboxSettings = {
   },
   isAlwaysUseFCM: false, // true all messages will be sent through node-gcm (which actually uses FCM)
 };
-//console.log(process.env)
+
 const prodSettings = {
   gcm: {
     id: '',
@@ -66,7 +66,7 @@ export class NotificationPushService {
       }
 
       if (!couldUnwrapAndSend) { // No data, send it without
-        //console.log(`Sending without! ${token}`)
+
         this.messagingService.sendToDevice(token, {
           notification: {
             title: data.title,
@@ -78,7 +78,7 @@ export class NotificationPushService {
       }
 
     } else {
-      console.log("Sending iOS!")
+      
       if (sandbox) {
         return sandboxPush.send(token, data);
       } else {

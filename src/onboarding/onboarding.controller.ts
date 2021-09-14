@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Logger, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
@@ -20,6 +20,8 @@ export class OnboardingController {
         private readonly signService: SjwtService,
         private readonly onboardingService: OnboardingService,
         private readonly postMediaService: PostMediaService) { }
+
+    private readonly logger = new Logger(OnboardingController.name)
 
 
     @UseGuards(JwtAuthGuard)
@@ -134,7 +136,8 @@ export class OnboardingController {
             if (err instanceof BadRequestException) {
                 throw err; // If it's a bad request, just forward it
             } else {
-                console.log(err);
+                this.logger.error('Error attaching media to post!')
+                this.logger.error(err);
                 throw new BadRequestException(`Error creating post! ${err}`);
             }
         }
@@ -184,7 +187,8 @@ export class OnboardingController {
             if (err instanceof BadRequestException) {
                 throw err; // If it's a bad request, just forward it
             } else {
-                console.log(err);
+                this.logger.error("Error attaching media to post!")
+                this.logger.error(err);
                 throw new BadRequestException(`Error creating post! ${err}`);
             }
         }

@@ -1,7 +1,7 @@
 import {
     BadRequestException,
     Body,
-    Controller, Param, Post, UploadedFile,
+    Controller, Logger, Param, Post, UploadedFile,
     UseGuards,
     UseInterceptors
 } from '@nestjs/common';
@@ -24,6 +24,7 @@ export class PostCreateController {
         private readonly postMediaService: PostMediaService,
         private readonly insService: InsService,
     ) { }
+    private readonly logger = new Logger(PostCreateController.name)
 
     @Post(':id')
     @UseGuards(JwtAuthGuard)
@@ -58,7 +59,9 @@ export class PostCreateController {
             if (err instanceof BadRequestException) {
                 throw err; // If it's a bad request, just forward it
             } else {
-                console.log(err);
+                this.logger.error("Error attaching media to post!")
+                this.logger.error(err)
+
                 throw new BadRequestException(`Error creating post! ${err}`);
             }
         }

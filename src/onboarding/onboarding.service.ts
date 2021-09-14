@@ -1,9 +1,32 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OnboardingService {
     constructor(private readonly prismaService: PrismaService) { }
+
+    private readonly logger = new Logger(OnboardingService.name);
+
+
+    @Cron('0 1 * * *')
+    async removeOldINS() {
+        this.logger.log("Removing old unclaimed INSes..")
+        var d = new Date();
+        d.setDate(d.getDate() - 2);
+
+        const res = await this.prismaService.iNS.deleteMany({
+            where: {
+                members: {
+                    none: {}
+                },
+                createdAt: {
+                    lt: d
+            }
+            }
+        })
+        this.logger.log(`Cleaned up ${res.count} unclaimed INSes!`)
+    }
 
     async claimINS(insID: string, userID: string) {
         const ins = await this.prismaService.iNS.findUnique({
