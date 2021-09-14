@@ -98,7 +98,7 @@ export class PostMediaService {
     await this.prismaService.$transaction(async (prisma) => {
       // Find an available ticket
 
-      const transactionPost = await this.prismaService.post.findUnique({
+      const transactionPost = await prisma.post.findUnique({
         where: { id: post.id },
         include: {
           _count: {
@@ -116,17 +116,18 @@ export class PostMediaService {
         );
       }
       if (!transactionPost.pending) {
+        this.logger.debug(`Post isn't pending, returning early!`);
         return; // Nothing to do here, looks like the other thread
       }
 
-      const isReady =
-        transactionPost.totalMediaContent >=
-        (transactionPost._count?.mediaContent ?? 0);
+      const realMediaCount = transactionPost._count?.mediaContent ?? 0;
+      const isReady = realMediaCount >= transactionPost.totalMediaContent;
 
       this.logger.debug(`Is ready? ${isReady}`);
       console.log(transactionPost);
 
       if (!isReady) {
+        this.logger.debug(`Post isn't ready, returning early!`);
         return; // Nothing to do here, it's not ready yet
       }
 
