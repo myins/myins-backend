@@ -61,6 +61,13 @@ export class InsService {
                     in: onlyIDs
                 }
             },
+            include: {
+                _count: {
+                    select: {
+                        members: true
+                    }
+                }
+            }
         })
 
         // And finally sort the received inses by their position in the onlyIDs array
