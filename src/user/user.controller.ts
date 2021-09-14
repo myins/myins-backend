@@ -52,33 +52,34 @@ export class UserController {
   async getPendingUsers(
     @PrismaUser('id') id: string,
     @Query('skip') skip: number,
-    @Query('take') take: number,) {
-      return this.userService.users({
-        where: {
-          inses: {
-            some: {
-              ins: {
-                members: {
-                  some: {
-                    userId: id,
-                    OR: [
-                      {
-                        role: 'MEMBER',
-                      },
-                      {
-                        role: 'ADMIN'
-                      }
-                    ]
-                  }
-                }
+    @Query('take') take: number,
+  ) {
+    return this.userService.users({
+      where: {
+        inses: {
+          some: {
+            ins: {
+              members: {
+                some: {
+                  userId: id,
+                  OR: [
+                    {
+                      role: 'MEMBER',
+                    },
+                    {
+                      role: 'ADMIN',
+                    },
+                  ],
+                },
               },
-              role: 'PENDING'
-            }
-          }
+            },
+            role: 'PENDING',
+          },
         },
-        skip: skip,
-        take: take
-      })
+      },
+      skip: skip,
+      take: take,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
