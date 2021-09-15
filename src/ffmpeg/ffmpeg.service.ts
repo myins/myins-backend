@@ -50,17 +50,13 @@ export class FfmpegService {
           function delay(ms: number) {
             return new Promise((resolve) => setTimeout(resolve, ms));
           }
-          logger.log('Thumbnail maybe done?');
-          logger.log(_firstVar);
-          logger.log('++');
-          logger.log(_secondVar);
-          logger.log('-000-');
-          logger.log(_thirdVar);
           logger.log('Attempting to read it multiple times...');
           retry(
             async () => {
+              logger.log(`Retrying!!`);
               await delay(100);
               try {
+                logger.log(`Trying to read`);
                 const toRes = fs.readFileSync(`${tempDir}/${ourFilename}`);
                 resolve(toRes);
               } catch (error) {

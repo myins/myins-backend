@@ -5,6 +5,7 @@ import {
   Logger,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,7 +21,12 @@ import {
 import { PostMediaService } from 'src/post/post.media.service';
 import { PostService } from 'src/post/post.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
-import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
+import {
+  isVideo,
+  photoInterceptor,
+  photoOrVideoInterceptor,
+  photoOrVideoInterceptorDeprecated,
+} from 'src/util/multer';
 import { ClaimINSAPI, CreateGuestPostAPI } from './onboarding-api.entity';
 import { OnboardingService } from './onboarding.service';
 
@@ -91,10 +97,96 @@ export class OnboardingController {
     };
   }
 
-  @Post('attach')
+  @Post('upload')
   @ApiTags('onboarding')
   @UseInterceptors(photoOrVideoInterceptor)
-  async attachPhotoToPost(
+  async attachMediaOnboarding(
+    @UploadedFiles()
+    files: {
+      file?: Express.Multer.File[];
+      thumbnail?: Express.Multer.File[];
+    },
+    @Body() body: AttachMediaWithClaimTokenAPI,
+  ) {
+    const firstFiles = files.file;
+    const thumbnailFiles = files.thumbnail;
+    if (!firstFiles) {
+      throw new BadRequestException('No file!');
+    }
+    const file = firstFiles[0];
+    const isVideoPost = isVideo(file.originalname);
+    if (!file.buffer) {
+      throw new BadRequestException('No buffer!');
+    }
+    if (
+      isVideoPost &&
+      (!thumbnailFiles || !thumbnailFiles.length || !thumbnailFiles[0].buffer)
+    ) {
+      throw new BadRequestException('No thumbnail!');
+    }
+
+    const setCover = body.setCover === 'true';
+    const width = parseInt(body.width);
+    const height = parseInt(body.height);
+    if (!width || !height) {
+      throw new BadRequestException('Invalid width / height!');
+    }
+
+    const { claimToken } = body;
+
+    const decrypted = await this.signService.decrypt(claimToken);
+    if (decrypted == null) {
+      throw new BadRequestException('Unrecognized claim token!');
+    }
+    const insID: string = decrypted.sub;
+    if (!insID) {
+      throw new BadRequestException('Nice try!');
+    }
+
+    const post = await this.postService.posts({
+      where: {
+        inses: {
+          some: {
+            id: insID,
+          },
+        },
+        id: body.postID,
+      },
+      includeRelatedInfo: false,
+    });
+
+    if (!post || post.length == 0) {
+      throw new BadRequestException('This is not your post!');
+    }
+
+    try {
+      return this.postMediaService.attachMediaToPost(
+        file,
+        thumbnailFiles ? thumbnailFiles[0] : undefined,
+        body.postID,
+        null,
+        {
+          width,
+          height,
+          isVideo: isVideoPost,
+          setCover,
+        },
+      );
+    } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err; // If it's a bad request, just forward it
+      } else {
+        this.logger.error('Error attaching media to post!');
+        this.logger.error(err);
+        throw new BadRequestException(`Error creating post! ${err}`);
+      }
+    }
+  }
+
+  @Post('attach')
+  @ApiTags('onboarding')
+  @UseInterceptors(photoOrVideoInterceptorDeprecated)
+  async attachMediaDeprecated(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
@@ -141,12 +233,17 @@ export class OnboardingController {
     }
 
     try {
-      return this.postMediaService.attachMediaToPost(file, body.postID, null, {
-        width,
-        height,
-        isVideo: isVideoPost,
-        setCover,
-      });
+      return this.postMediaService.attachMediaToPostDeprecated(
+        file,
+        body.postID,
+        null,
+        {
+          width,
+          height,
+          isVideo: isVideoPost,
+          setCover,
+        },
+      );
     } catch (err) {
       if (err instanceof BadRequestException) {
         throw err; // If it's a bad request, just forward it
@@ -160,7 +257,7 @@ export class OnboardingController {
 
   @Post('attach-cover')
   @ApiTags('onboarding')
-  @UseInterceptors(photoOrVideoInterceptor)
+  @UseInterceptors(photoInterceptor)
   async attachCover(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: AttachCoverAPI,

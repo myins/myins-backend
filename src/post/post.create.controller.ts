@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,7 +16,11 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
+import {
+  isVideo,
+  photoOrVideoInterceptorDeprecated,
+  photoOrVideoInterceptor,
+} from 'src/util/multer';
 import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
 import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
@@ -30,11 +35,74 @@ export class PostCreateController {
   ) {}
   private readonly logger = new Logger(PostCreateController.name);
 
-  @Post(':id')
+  @Post('media/:id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   @UseInterceptors(photoOrVideoInterceptor)
-  async attachPhotoToPost(
+  async attachMediaToPost(
+    @UploadedFiles()
+    files: {
+      file?: Express.Multer.File[];
+      thumbnail?: Express.Multer.File[];
+    },
+    @Param('id') postID2: string,
+    @PrismaUser('id') userID: string,
+    @Body() body: AttachMediaAPI,
+  ) {
+    const firstFiles = files.file;
+    const thumbnailFiles = files.thumbnail;
+    if (!firstFiles) {
+      throw new BadRequestException('No file!');
+    }
+    const file = firstFiles[0];
+    const isVideoPost = isVideo(file.originalname);
+    if (!file.buffer) {
+      throw new BadRequestException('No buffer!');
+    }
+    if (
+      isVideoPost &&
+      (!thumbnailFiles || !thumbnailFiles.length || !thumbnailFiles[0].buffer)
+    ) {
+      throw new BadRequestException('No thumbnail!');
+    }
+
+    const setCover = body.setCover === 'true';
+    const width = parseInt(body.width);
+    const height = parseInt(body.height);
+    if (!width || !height) {
+      throw new BadRequestException('Invalid width / height!');
+    }
+
+    try {
+      return this.postMediaService.attachMediaToPost(
+        file,
+        thumbnailFiles ? thumbnailFiles[0] : undefined,
+        postID2,
+        userID,
+        {
+          width,
+          height,
+          isVideo: isVideoPost,
+          setCover,
+        },
+      );
+    } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err; // If it's a bad request, just forward it
+      } else {
+        this.logger.error('Error attaching media to post!');
+        this.logger.error(err);
+
+        throw new BadRequestException(`Error creating post! ${err}`);
+      }
+    }
+  }
+
+  @Post(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  @UseInterceptors(photoOrVideoInterceptorDeprecated)
+  async attachMediaToPostDeprecated(
     @UploadedFile() file: Express.Multer.File,
     @Param('id') postID2: string,
     @PrismaUser('id') userID: string,
@@ -56,12 +124,17 @@ export class PostCreateController {
     }
 
     try {
-      return this.postMediaService.attachMediaToPost(file, postID2, userID, {
-        width,
-        height,
-        isVideo: isVideoPost,
-        setCover,
-      });
+      return this.postMediaService.attachMediaToPostDeprecated(
+        file,
+        postID2,
+        userID,
+        {
+          width,
+          height,
+          isVideo: isVideoPost,
+          setCover,
+        },
+      );
     } catch (err) {
       if (err instanceof BadRequestException) {
         throw err; // If it's a bad request, just forward it

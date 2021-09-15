@@ -1,12 +1,19 @@
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as path from 'path';
 
 export const photoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname);
-    if (ext !== '.webp') {
-      return callback(new Error('Only webp images are allowed'), false);
+    const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
+    if (!isImage) {
+      return callback(
+        new Error('Only webp jpg or jpeg images are allowed'),
+        false,
+      );
     }
     callback(null, true);
   },
@@ -48,7 +55,15 @@ export const isVideo = (originalName: string) => {
 
 export const videoExtensions = ['.mp4'];
 
-export const photoOrVideoInterceptor = FileInterceptor(
+export const photoOrVideoInterceptorDeprecated = FileInterceptor(
   'file',
+  photoOrVideoOptions,
+);
+
+export const photoOrVideoInterceptor = FileFieldsInterceptor(
+  [
+    { name: 'file', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+  ],
   photoOrVideoOptions,
 );
