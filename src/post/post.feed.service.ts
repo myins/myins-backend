@@ -85,6 +85,7 @@ export class PostFeedService {
                 id: each.insId,
               },
             },
+            pending: false,
           },
           include: richInclude,
           orderBy: {
