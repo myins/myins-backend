@@ -54,8 +54,11 @@ export class FfmpegService {
             try {
               const toRes = fs.readFileSync(`${tempDir}/${ourFilename}`);
               resolve(toRes);
-            } catch {
+            } catch (error) {
               logger.log('Generation crashed, please retry!');
+              logger.log(error);
+              logger.log('--');
+              logger.log(_res);
               return reject(new Error('Thumbnail generation crashed!'));
             }
           });
