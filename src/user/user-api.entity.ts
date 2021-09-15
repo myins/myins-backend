@@ -58,3 +58,11 @@ export class GetUserPostsAPI {
   @Max(20)
   take: number;
 }
+
+export class ApproveDenyUserAPI {
+  @IsNotEmpty()
+  userID: string;
+
+  @IsNotEmpty()
+  insID: string;
+}
