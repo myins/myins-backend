@@ -5,6 +5,7 @@ import * as pathToFfmpeg from 'ffmpeg-static';
 import * as stream from 'stream';
 import * as tempy from 'tempy';
 import * as fs from 'fs';
+import { retry } from 'ts-retry-promise';
 
 if (pathToFfmpeg) {
   ffmpeg.setFfmpegPath(pathToFfmpeg);
@@ -49,19 +50,27 @@ export class FfmpegService {
           function delay(ms: number) {
             return new Promise((resolve) => setTimeout(resolve, ms));
           }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          delay(100).then((_res) => {
-            try {
-              const toRes = fs.readFileSync(`${tempDir}/${ourFilename}`);
-              resolve(toRes);
-            } catch (error) {
-              logger.log('Generation crashed, please retry!');
-              logger.log(error);
-              logger.log('--');
-              logger.log(_res);
-              return reject(new Error('Thumbnail generation crashed!'));
-            }
-          });
+          logger.log('Thumbnail maybe done?');
+          logger.log(_firstVar);
+          logger.log('++');
+          logger.log(_secondVar);
+          logger.log('-000-');
+          logger.log(_thirdVar);
+          logger.log('Attempting to read it multiple times...');
+          retry(
+            async () => {
+              await delay(100);
+              try {
+                const toRes = fs.readFileSync(`${tempDir}/${ourFilename}`);
+                resolve(toRes);
+              } catch (error) {
+                logger.log('Generation crashed, please retry!');
+                logger.log(error);
+                return reject(new Error('Thumbnail generation crashed!'));
+              }
+            },
+            { retries: 3 },
+          );
         })
         .output('/dev/null')
         .run();
