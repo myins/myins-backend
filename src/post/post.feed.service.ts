@@ -54,14 +54,7 @@ export class PostFeedService {
             },
           },
         },
-        OR: [
-          {
-            pending: false,
-          },
-          {
-            authorId: userID,
-          },
-        ],
+        pending: false,
       },
     });
   }
