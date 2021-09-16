@@ -28,26 +28,30 @@ export class InviteController {
 
   // invite by phone number, invite by user id
 
-  @Post('ins-user')
+  @Post('ins-users')
   @UseGuards(JwtAuthGuard)
   async inviteInsUser(
     @PrismaUser('id') userID: string,
     @Body() body: InviteUserToINSAPI,
   ) {
-    await this.inviteService.inviteINSUser(userID, body.userID, body.ins);
+    await this.inviteService.inviteINSUser(userID, body.userIDs, body.ins);
 
     return {
       message: 'Invited successfully!',
     };
   }
 
-  @Post('external-user')
+  @Post('external-users')
   @UseGuards(JwtAuthGuard)
   async inviteExternalUser(
     @PrismaUser('id') userID: string,
     @Body() body: InviteExternalUserToINSAPI,
   ) {
-    await this.inviteService.inviteINSUser(userID, body.phoneNumber, body.ins);
+    await this.inviteService.inviteExternalUser(
+      userID,
+      body.phoneNumbers,
+      body.ins,
+    );
 
     return {
       message: 'Invited successfully!',

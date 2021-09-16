@@ -14,7 +14,7 @@ export class InviteService {
 
   async inviteExternalUser(
     userID: string,
-    otherUserPhoneNumber: string,
+    phoneNumbers: string[],
     ins: string,
   ) {
     const theINS = await this.prismaService.iNS.findMany({
@@ -32,20 +32,39 @@ export class InviteService {
       throw new BadRequestException('Could not find that INS!');
     }
 
-    const otherUser = await this.userService.user({
-      phoneNumber: otherUserPhoneNumber,
+    const existedUsers = await this.userService.users({
+      where: {
+        phoneNumber: {
+          in: phoneNumbers,
+        },
+      },
     });
-    if (otherUser) {
-      await this.inviteINSUser(userID, otherUser.id, ins);
-    } else {
-      await this.smsService.sendSMS(
-        otherUserPhoneNumber,
-        `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS[0].shareCode}`,
+    if (existedUsers.length) {
+      await this.inviteINSUser(
+        userID,
+        existedUsers.map((user) => user.id),
+        ins,
+      );
+    }
+
+    const existedPhoneNumbers = existedUsers.map((user) => user.phoneNumber);
+    const otherUsersPhoneNumbers = phoneNumbers.filter(
+      (phoneNumber) => !existedPhoneNumbers.includes(phoneNumber),
+    );
+    if (otherUsersPhoneNumbers.length) {
+      //FIXME: look into integrating twilio mass messaging tool to avoid multiple api calls
+      await Promise.all(
+        otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
+          await this.smsService.sendSMS(
+            otherUserPhoneNumer,
+            `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS[0].shareCode}`,
+          );
+        }),
       );
     }
   }
 
-  async inviteINSUser(userID: string, otherUser: string, ins: string) {
+  async inviteINSUser(userID: string, otherUsers: string[], ins: string) {
     const theINS = await this.prismaService.iNS.findMany({
       where: {
         id: ins,
@@ -58,7 +77,9 @@ export class InviteService {
       include: {
         members: {
           where: {
-            userId: otherUser,
+            userId: {
+              in: otherUsers,
+            },
           },
         },
       },
@@ -67,19 +88,26 @@ export class InviteService {
     if (!theINS.length) {
       throw new BadRequestException('Could not find that INS!');
     }
-    if (theINS[0].members.length > 0) {
-      throw new BadRequestException('The user is already in that INS!');
+    if (theINS[0].members.length === otherUsers.length) {
+      throw new BadRequestException('All users are already in that INS!');
     }
 
+    const memberIDs = theINS[0].members.map((member) => member.userId);
+    const usersNotInINS = otherUsers.filter(
+      (otherUser) => !memberIDs.includes(otherUser),
+    );
+    const data = usersNotInINS.map((otherUser) => ({
+      userId: otherUser,
+      role: UserRole.MEMBER,
+    }));
     await this.prismaService.iNS.update({
       where: {
         id: theINS[0].id,
       },
       data: {
         members: {
-          create: {
-            userId: otherUser,
-            role: UserRole.MEMBER,
+          createMany: {
+            data: data,
           },
         },
       },
