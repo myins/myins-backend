@@ -91,16 +91,16 @@ export class PostController {
     @Param('id') postID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const comment = await this.postService.post(
+    const post = await this.postService.post(
       {
         id: postID,
       },
       false,
     );
-    if (comment == null) {
+    if (!post) {
       throw new NotFoundException('Could not find this post!');
     }
-    if (comment.authorId != userID) {
+    if (post.authorId !== userID) {
       throw new UnauthorizedException(
         "You're not allowed to delete this post!",
       );

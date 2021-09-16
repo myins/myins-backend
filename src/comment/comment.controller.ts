@@ -71,10 +71,10 @@ export class CommentController {
     const comment = await this.commentService.comment({
       id: commentID,
     });
-    if (comment == null) {
+    if (!comment) {
       throw new NotFoundException('Could not find this comment!');
     }
-    if (comment.authorId != userID) {
+    if (comment.authorId !== userID) {
       throw new UnauthorizedException(
         "You're not allowed to delete this comment!",
       );

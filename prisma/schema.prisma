@@ -9,135 +9,137 @@ generator client {
 }
 
 model User {
-  id                  String  @id @default(uuid())
-  phoneNumber         String  @unique
-  //phoneNumberCode     String? 
-  phoneNumberVerified Boolean @default(false)
-  password            String
-  firstName           String
-  lastName            String
-  profilePicture      String?
-  refreshToken        String?
+  id                                      String  @id @default(uuid())
+  phoneNumber                             String  @unique
+  // phoneNumberCode                         String?
+  phoneNumberVerified                     Boolean  @default(false)
+  password                                String
+  firstName                               String
+  lastName                                String
+  profilePicture                          String?
+  refreshToken                            String?
 
-  pushToken    String? // APNS for iOS, FCM for Android
-  sandboxToken Boolean? // Check if token is sandbox for iOS
+  pushToken                               String? // APNS for iOS, FCM for Android
+  sandboxToken                            Boolean? // Check if token is sandbox for iOS
 
-  posts    Post[]
-  comments Comment[] @relation(name: "author")
+  posts                                   Post[]
+  comments                                Comment[]  @relation(name: "author")
 
-  notifications        Notification[] @relation(name: "target")
-  createdNotifications Notification[] @relation(name: "notifAuthor")
+  notifications                           Notification[]  @relation(name: "target")
+  createdNotifications                    Notification[]  @relation(name: "notifAuthor")
 
-  likedComments Comment[] @relation(name: "liked")
-  likedPosts    Post[]    @relation(name: "likes")
+  likedComments                           Comment[]  @relation(name: "liked")
+  likedPosts                              Post[]  @relation(name: "likes")
 
-  inses UserInsConnection[]
-  //pendingINses INS[]
+  inses                                   UserInsConnection[]
+  // pendingINses                            INS[]
 
   lastAcceptedTermsAndConditionsVersion   DateTime?
   lastAcceptedPrivacyPolicyVersion        DateTime?
 }
 
 model PostContent {
-  id String @id @default(uuid())
-  createdAt    DateTime      @default(now())
+  id            String  @id @default(uuid())
+  createdAt     DateTime  @default(now())
 
-  isVideo Boolean
-  content String // Link to raw file
-  thumbnail String? // Thumbnail, if it's a video
+  isVideo       Boolean
+  content       String // Link to raw file
+  thumbnail     String? // Thumbnail, if it's a video
 
-  post   Post   @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade)
-  postId String
+  post          Post  @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId        String
 
-  width Int
-  height Int
+  width         Int
+  height        Int
 }
 
 model Post {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  edited       Boolean       @default(false)
-  content      String
-  mediaContent PostContent[] @relation(name: "post")
-  author       User?          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId     String? // Optional because of guest posts, see onboarding service
-  comments     Comment[]
+  id                  String  @id @default(uuid())
+  createdAt           DateTime  @default(now())
+  edited              Boolean  @default(false)
+  content             String
+  mediaContent        PostContent[]  @relation(name: "post")
+  author              User?  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId            String? // Optional because of guest posts, see onboarding service
+  comments            Comment[]
 
-  pending Boolean @default(false)
-  totalMediaContent Int
+  pending             Boolean  @default(false)
+  totalMediaContent   Int
 
-  notifications Notification[] // Some notifications have a post
-  likes         User[]         @relation(name: "likes")
-  inses         INS[]
+  notifications       Notification[] // Some notifications have a post
+  likes               User[]  @relation(name: "likes")
+  inses               INS[]
 }
 
 model Comment {
-  id             String   @id @default(uuid())
-  createdAt      DateTime @default(now())
-  edited         Boolean  @default(false)
-  content        String
+  id              String  @id @default(uuid())
+  createdAt       DateTime  @default(now())
+  edited          Boolean  @default(false)
+  content         String
 
   //The author is the one who created the comment
-  author   User   @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  authorId String
+  author          User  @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId        String
 
-  post   Post   @relation(fields: [postId], references: [id])
-  postId String
+  post            Post  @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId          String
 
-  notifications Notification[]
+  notifications   Notification[]
 
-  likes User[] @relation(name: "liked")
+  likes           User[]  @relation(name: "liked")
 }
 
 model Notification {
-  id        String             @id @default(uuid())
-  createdAt DateTime           @default(now())
-  source    NotificationSource
-  target    User               @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  targetId  String
+  id            String  @id @default(uuid())
+  createdAt     DateTime  @default(now())
+  source        NotificationSource
+  target        User  @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  targetId      String
 
   // Some notifications come from the ether, others from the user
-  author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  authorId String
+  author        User  @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId      String
 
   //Some notifications have a related post / comment, sometimes both
-  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String?
+  post          Post?  @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId        String?
 
-  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  commentId String?
+  comment       Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  commentId     String?
 }
 
-model INS { 
-  id        String @id @default(uuid())
-  name      String
-  cover String?
-  shareCode String @unique
+model INS {
+  id            String  @id @default(uuid())
+  name          String
+  cover         String?
+  shareCode     String  @unique
 
-  members UserInsConnection[]
+  members       UserInsConnection[]
   //pendingMembers User[]
-  posts   Post[]
+  posts         Post[]
 
-  createdAt DateTime @default(now())
+  createdAt     DateTime  @default(now())
 }
 
 model UserInsConnection {
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String // relation scalar field (used in the `@relation` attribute above)
-  ins   INS @relation(fields: [insId], references: [id])
-  insId String // relation scalar field (used in the `@relation` attribute above)
+  user              User  @relation(fields: [userId], references: [id])
+  userId            String // relation scalar field (used in the `@relation` attribute above)
+  ins               INS  @relation(fields: [insId], references: [id])
+  insId             String // relation scalar field (used in the `@relation` attribute above)
   
-  interactions Int @default(0)
+  interactions      Int  @default(0)
 
-  role         UserRole @default(MEMBER)
+  role              UserRole  @default(MEMBER)
+
+  deniedByUsers     String[]
 
   @@id([userId, insId])
 }
 
 model CurrentVersions {
-  type                          DocumentType @id
-  updatedAt                   DateTime @default(now())
-  link String @default("")
+  type          DocumentType  @id
+  updatedAt     DateTime  @default(now())
+  link          String  @default("")
 }
 
 enum DocumentType {
