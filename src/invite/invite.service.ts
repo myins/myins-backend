@@ -79,7 +79,7 @@ export class InviteService {
         members: {
           create: {
             userId: otherUser,
-            role: UserRole.PENDING,
+            role: UserRole.MEMBER,
           },
         },
       },
