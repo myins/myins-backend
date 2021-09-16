@@ -127,9 +127,11 @@ model UserInsConnection {
   ins   INS @relation(fields: [insId], references: [id])
   insId String // relation scalar field (used in the `@relation` attribute above)
   
-  interactions Int @default(0)
+  interactions      Int @default(0)
 
-  role         UserRole @default(MEMBER)
+  role              UserRole @default(MEMBER)
+
+  deniedByUsers     String[]
 
   @@id([userId, insId])
 }

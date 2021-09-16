@@ -11,14 +11,10 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
-import { InsInteractionService } from './ins.interaction.service';
 
 @Controller('ins/admin')
 export class InsAdminController {
-  constructor(
-    private readonly insAdminService: InsAdminService,
-    private readonly insInteractionService: InsInteractionService,
-  ) {}
+  constructor(private readonly insAdminService: InsAdminService) {}
 
   @Post('/change')
   @ApiTags('ins')
