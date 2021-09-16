@@ -52,6 +52,7 @@ export class InviteService {
       (phoneNumber) => !existedPhoneNumbers.includes(phoneNumber),
     );
     if (otherUsersPhoneNumbers.length) {
+      //FIXME: look into integrating twilio mass messaging tool to avoid multiple api calls
       await Promise.all(
         otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
           await this.smsService.sendSMS(
