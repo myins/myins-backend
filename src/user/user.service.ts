@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma } from '@prisma/client';
+import { User, Prisma, UserRole } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
@@ -127,6 +127,36 @@ export class UserService {
       data: {
         refreshToken: null,
         pushToken: null,
+      },
+    });
+  }
+
+  async approveUser(userId: string, insId: string) {
+    return this.prisma.userInsConnection.update({
+      where: {
+        userId_insId: {
+          userId: userId,
+          insId: insId,
+        },
+      },
+      data: {
+        role: UserRole.MEMBER,
+      },
+    });
+  }
+
+  async denyUser(id: string, userId: string, insId: string) {
+    return this.prisma.userInsConnection.update({
+      where: {
+        userId_insId: {
+          userId: userId,
+          insId: insId,
+        },
+      },
+      data: {
+        deniedByUsers: {
+          push: id,
+        },
       },
     });
   }
