@@ -51,14 +51,16 @@ export class InviteService {
     const otherUsersPhoneNumbers = phoneNumbers.filter(
       (phoneNumber) => !existedPhoneNumbers.includes(phoneNumber),
     );
-    await Promise.all(
-      otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
-        await this.smsService.sendSMS(
-          otherUserPhoneNumer,
-          `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS[0].shareCode}`,
-        );
-      }),
-    );
+    if (otherUsersPhoneNumbers.length) {
+      await Promise.all(
+        otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
+          await this.smsService.sendSMS(
+            otherUserPhoneNumer,
+            `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS[0].shareCode}`,
+          );
+        }),
+      );
+    }
   }
 
   async inviteINSUser(userID: string, otherUsers: string[], ins: string) {
@@ -97,7 +99,6 @@ export class InviteService {
       userId: otherUser,
       role: UserRole.MEMBER,
     }));
-    console.log(data);
     await this.prismaService.iNS.update({
       where: {
         id: theINS[0].id,
