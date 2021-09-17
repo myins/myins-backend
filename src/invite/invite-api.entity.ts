@@ -11,7 +11,7 @@ export class InviteUserToINSAPI {
 
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(25)
   userIDs: string[];
 }
 
@@ -21,6 +21,6 @@ export class InviteExternalUserToINSAPI {
 
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(25)
   phoneNumbers: string[];
 }
