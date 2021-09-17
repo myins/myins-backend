@@ -59,7 +59,7 @@ model Post {
   edited              Boolean  @default(false)
   content             String
   mediaContent        PostContent[]  @relation(name: "post")
-  author              User?  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author              User?  @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId            String? // Optional because of guest posts, see onboarding service
   comments            Comment[]
 
@@ -122,9 +122,9 @@ model INS {
 }
 
 model UserInsConnection {
-  user              User  @relation(fields: [userId], references: [id])
+  user              User  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId            String // relation scalar field (used in the `@relation` attribute above)
-  ins               INS  @relation(fields: [insId], references: [id])
+  ins               INS  @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   insId             String // relation scalar field (used in the `@relation` attribute above)
   
   interactions      Int  @default(0)

@@ -49,6 +49,14 @@ export class InsAdminService {
     });
   }
 
+  async deleteINS(insId: string) {
+    await this.prismaService.iNS.delete({
+      where: {
+        id: insId,
+      },
+    });
+  }
+
   async isAdmin(userId: string, insId: string) {
     const connection = await this.insService.getConnection(userId, insId);
     return connection?.role === UserRole.ADMIN;

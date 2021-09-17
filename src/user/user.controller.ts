@@ -2,7 +2,9 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -24,7 +26,6 @@ import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import {
   CreateUserAPI,
-  DeleteUserAPI,
   UpdatePushTokenAPI,
   UpdateUserAPI,
 } from './user-api.entity';
@@ -131,19 +132,6 @@ export class UserController {
     }
   }
 
-  @Post('deleteUser')
-  @ApiTags('users-testing')
-  async deleteUser(@Body() dataModel: DeleteUserAPI) {
-    try {
-      const toRet = await this.userService.deleteUser({
-        id: dataModel.userID,
-      });
-      return toRet;
-    } catch (exception) {
-      throw new BadRequestException('User does not exist!');
-    }
-  }
-
   @Post('updateToken')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
@@ -163,5 +151,18 @@ export class UserController {
     return {
       message: 'Updated token successfully!',
     };
+  }
+
+  @Delete(':id')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') userId: string) {
+    const user = await this.userService.user({
+      id: userId,
+    });
+    if (!user) {
+      throw new NotFoundException('Could not find this user!');
+    }
+    return this.userService.deleteUser(userId);
   }
 }

@@ -48,6 +48,7 @@ export class InsController {
 
   @Get('list')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
   async getINSList(
     @PrismaUser('id') userID: string,
     @Query('skip') skip: number,
@@ -59,6 +60,7 @@ export class InsController {
 
   @Get(':id/media')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
   async getMediaByID(
     @Param('id') id: string,
     @PrismaUser('id') userID: string,
@@ -84,6 +86,7 @@ export class InsController {
 
   @Get(':id/members')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
   async getINSMembers(
     @Param('id') id: string,
     @PrismaUser('id') userID: string,
@@ -110,6 +113,7 @@ export class InsController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
     const toRet = await this.insService.inses({
       where: {

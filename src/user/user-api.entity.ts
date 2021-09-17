@@ -37,10 +37,6 @@ export class UpdateUserAPI {
   description: string;
 }
 
-export class DeleteUserAPI {
-  userID: string;
-}
-
 export class UpdatePushTokenAPI {
   @IsNotEmpty()
   pushToken: string;

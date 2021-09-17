@@ -27,7 +27,7 @@ export class UserPendingController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiTags('users')
+  @ApiTags('users-pending')
   async getPendingUsers(
     @PrismaUser('id') id: string,
     @Query('skip') skip: number,
@@ -77,7 +77,7 @@ export class UserPendingController {
 
   @Patch('approve')
   @UseGuards(JwtAuthGuard)
-  @ApiTags('users')
+  @ApiTags('users-pending')
   async approve(
     @PrismaUser('id') id: string,
     @Body() data: ApproveDenyUserAPI,
@@ -97,7 +97,7 @@ export class UserPendingController {
 
   @Patch('deny')
   @UseGuards(JwtAuthGuard)
-  @ApiTags('users')
+  @ApiTags('users-pending')
   async deny(@PrismaUser('id') id: string, @Body() data: ApproveDenyUserAPI) {
     const connection = await this.insService.getConnection(id, data.insID);
     if (!connection || connection.role === UserRole.PENDING) {

@@ -24,7 +24,7 @@ export class UserVersionsController {
   ) {}
 
   @Get('accepted-documents')
-  @ApiTags('users')
+  @ApiTags('users-versions')
   @UseGuards(JwtAuthGuard)
   async getAcceptStatus(@PrismaUser() user: User) {
     const {
@@ -51,7 +51,7 @@ export class UserVersionsController {
   }
 
   @Post('accept')
-  @ApiTags('users')
+  @ApiTags('users-versions')
   @UseGuards(JwtAuthGuard)
   async updateVersion(
     @PrismaUser('id') userID: string,

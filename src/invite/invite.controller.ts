@@ -30,6 +30,7 @@ export class InviteController {
 
   @Post('ins-users')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('invite')
   async inviteInsUser(
     @PrismaUser('id') userID: string,
     @Body() body: InviteUserToINSAPI,
@@ -43,6 +44,7 @@ export class InviteController {
 
   @Post('external-users')
   @UseGuards(JwtAuthGuard)
+  @ApiTags('invite')
   async inviteExternalUser(
     @PrismaUser('id') userID: string,
     @Body() body: InviteExternalUserToINSAPI,
@@ -59,7 +61,7 @@ export class InviteController {
   }
 
   @Get('search')
-  @ApiTags('share')
+  @ApiTags('invite')
   @UseGuards(JwtAuthGuard)
   @Throttle(60, 60) // limit, ttl. limit = cate request-uri pana crapa,  ttl = cat tine minte un request
   async getUserSearch(
