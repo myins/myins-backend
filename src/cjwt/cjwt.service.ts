@@ -10,7 +10,7 @@ export class CjwtService {
         const payload: JwtStrategyPayload = { phone: phone, sub: userID };
     
         return {
-          cloudfront: this.jwtService.sign(payload),
+          cloudfront: this.jwtService.sign(payload, {expiresIn: '1d'}),
         };
       }
 
