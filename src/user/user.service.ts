@@ -94,10 +94,11 @@ export class UserService {
       newUserModel.phoneNumber,
       newUserModel.id,
     );
+    const cloudfrontToken = this.cloudfrontService.generateNewCloudfrontToken(newUserModel.phoneNumber, newUserModel.id)
 
     // Get the new user profile, this includes following counts, etc.
     const newUserProfile = await this.getUserProfile(newUserModel.id);
-    const addedTogether = { ...newUserProfile, ...authTokens };
+    const addedTogether = { ...newUserProfile, ...authTokens, ...cloudfrontToken };
 
     this.smsService.sendVerificationCode(newUserModel);
 
@@ -165,7 +166,7 @@ export class UserService {
     });
   }
 
-  async getJWT(phone: string, userID: string) {
+  async getCloudfrontToken(phone: string, userID: string) {
     return this.cloudfrontService.generateNewCloudfrontToken(phone, userID)
   }
 }
