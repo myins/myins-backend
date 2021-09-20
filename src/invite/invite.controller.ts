@@ -118,9 +118,17 @@ export class InviteController {
 
     const toRet = await this.userService.shallowUsers({
       where: profileInfo,
-      orderBy: {
-        firstName: 'desc',
-      },
+      orderBy: [
+        {
+          firstName: 'desc',
+        },
+        {
+          lastName: 'desc',
+        },
+        {
+          id: 'desc',
+        },
+      ],
       skip: skip,
       take: take,
     });

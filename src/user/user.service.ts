@@ -72,7 +72,7 @@ export class UserService {
     take?: number;
     cursor?: Prisma.UserWhereUniqueInput;
     where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
+    orderBy?: Prisma.Enumerable<Prisma.UserOrderByWithRelationInput>;
   }) {
     const { skip, take, cursor, where, orderBy } = params;
     return this.prisma.user.findMany({
@@ -94,11 +94,18 @@ export class UserService {
       newUserModel.phoneNumber,
       newUserModel.id,
     );
-    const cloudfrontToken = this.cloudfrontService.generateNewCloudfrontToken(newUserModel.phoneNumber, newUserModel.id)
+    const cloudfrontToken = this.cloudfrontService.generateNewCloudfrontToken(
+      newUserModel.phoneNumber,
+      newUserModel.id,
+    );
 
     // Get the new user profile, this includes following counts, etc.
     const newUserProfile = await this.getUserProfile(newUserModel.id);
-    const addedTogether = { ...newUserProfile, ...authTokens, ...cloudfrontToken };
+    const addedTogether = {
+      ...newUserProfile,
+      ...authTokens,
+      ...cloudfrontToken,
+    };
 
     this.smsService.sendVerificationCode(newUserModel);
 
@@ -167,6 +174,6 @@ export class UserService {
   }
 
   async getCloudfrontToken(phone: string, userID: string) {
-    return this.cloudfrontService.generateNewCloudfrontToken(phone, userID)
+    return this.cloudfrontService.generateNewCloudfrontToken(phone, userID);
   }
 }
