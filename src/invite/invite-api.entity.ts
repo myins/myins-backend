@@ -23,6 +23,6 @@ export class InviteExternalUserToINSAPI {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(25)
-  @IsPhoneNumber(undefined, {each: true})
+  @IsPhoneNumber(undefined, { each: true })
   phoneNumbers: string[];
 }

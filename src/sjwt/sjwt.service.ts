@@ -22,6 +22,10 @@ export class SjwtService {
     return {
       accessToken: this.jwtService.sign(payload),
       refreshToken: newRefreshToken,
+      cloudfrontToken: this.jwtService.sign(payload, {
+        expiresIn: '1d',
+        secret: process.env.CLOUDFRONT_JWT_KEY,
+      }),
     };
   }
 

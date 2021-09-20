@@ -173,8 +173,7 @@ export class AuthService {
       user.id,
     );
     const userProfile = await this.usersService.getUserProfile(user.id);
-    const cloudfrontToken = await this.usersService.getCloudfrontToken(user.phoneNumber, user.id);
-    const addedTogether = { ...userProfile, ...authTokens, ...cloudfrontToken };
+    const addedTogether = { ...userProfile, ...authTokens };
 
     this.smsService.sendVerificationCode(user);
 

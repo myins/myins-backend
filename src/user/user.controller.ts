@@ -43,7 +43,13 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')
   async getUserJWT(@PrismaUser() user: User) {
-    return this.userService.getCloudfrontToken(user.phoneNumber, user.id);
+    const newToken = await this.userService.getCloudfrontToken(
+      user.phoneNumber,
+      user.id,
+    );
+    return {
+      cloudfrontToken: newToken,
+    };
   }
 
   @Get(':id')

@@ -5,14 +5,12 @@ import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
-import { CjwtService } from 'src/cjwt/cjwt.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private jwtService: SjwtService,
-    private cloudfrontService: CjwtService,
     private smsService: SmsService,
   ) {}
 
@@ -94,17 +92,12 @@ export class UserService {
       newUserModel.phoneNumber,
       newUserModel.id,
     );
-    const cloudfrontToken = this.cloudfrontService.generateNewCloudfrontToken(
-      newUserModel.phoneNumber,
-      newUserModel.id,
-    );
 
     // Get the new user profile, this includes following counts, etc.
     const newUserProfile = await this.getUserProfile(newUserModel.id);
     const addedTogether = {
       ...newUserProfile,
       ...authTokens,
-      ...cloudfrontToken,
     };
 
     this.smsService.sendVerificationCode(newUserModel);
@@ -174,6 +167,7 @@ export class UserService {
   }
 
   async getCloudfrontToken(phone: string, userID: string) {
-    return this.cloudfrontService.generateNewCloudfrontToken(phone, userID);
+    return (await this.jwtService.generateNewAuthTokens(phone, userID))
+      .cloudfrontToken;
   }
 }
