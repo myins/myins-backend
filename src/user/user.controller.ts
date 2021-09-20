@@ -39,6 +39,13 @@ export class UserController {
     private readonly smsService: SmsService,
   ) {}
 
+  @Get('post-jwt')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('users')
+  async getUserJWT(@PrismaUser() user: User) {
+    return this.userService.getJWT(user.phoneNumber, user.id)
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')

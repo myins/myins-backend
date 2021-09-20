@@ -25,7 +25,7 @@ export class StorageService {
   }
 
   promisePutObject(
-    bucket: string,
+    bucket: StorageContainer,
     key: string,
     body: Buffer | Uint8Array | Blob | string | Readable,
   ) {
@@ -40,7 +40,13 @@ export class StorageService {
         (err, data) => {
           if (err) reject(err);
           else if (data) {
-            resolve(`https://${bucket}.s3.amazonaws.com/${key}`);
+            let base = `https://${bucket}.s3.amazonaws.com/`
+            // if (bucket === StorageContainer.posts) {
+            //   if (process.env.CLOUDFRONT_URL) {
+            //     base = process.env.CLOUDFRONT_URL
+            //   }
+            // }
+            resolve(`${base}${key}`);
           }
         },
       );

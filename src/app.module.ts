@@ -19,6 +19,7 @@ import { InviteModule } from './invite/invite.module';
 import { CurrentVersionsModule } from './current-versions/current-versions.module';
 import * as admin from 'firebase-admin';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CjwtModule } from './cjwt/cjwt.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     InviteModule,
     CurrentVersionsModule,
     ScheduleModule.forRoot(),
+    CjwtModule,
   ],
   providers: [
     {

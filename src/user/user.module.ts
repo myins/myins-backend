@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { CjwtModule } from 'src/cjwt/cjwt.module';
 import { CurrentVersionsModule } from 'src/current-versions/current-versions.module';
 import { InsModule } from 'src/ins/ins.module';
 import { PostModule } from 'src/post/post.module';
@@ -19,6 +20,7 @@ import { UserVersionsController } from './user.versions.controller';
     StorageModule,
     CurrentVersionsModule,
     InsModule,
+    CjwtModule,
     forwardRef(() => PostModule),
   ],
   controllers: [UserPendingController, UserController, UserVersionsController],

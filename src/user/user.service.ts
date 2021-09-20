@@ -5,12 +5,14 @@ import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
+import { CjwtService } from 'src/cjwt/cjwt.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private jwtService: SjwtService,
+    private cloudfrontService: CjwtService,
     private smsService: SmsService,
   ) {}
 
@@ -161,5 +163,9 @@ export class UserService {
         },
       },
     });
+  }
+
+  async getJWT(phone: string, userID: string) {
+    return this.cloudfrontService.generateNewCloudfrontToken(phone, userID)
   }
 }

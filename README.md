@@ -12,12 +12,6 @@ After changing prisma files, run: prisma migrate dev
 
 To build docker image for prod: docker compose build
 
-# Big To-DO list
-
-- Add SMS(Twilio)
-- Make S3 actually work
-- After S3 works, add cloutfront for images: https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-s3-amazon-cloudfront-a-match-made-in-the-cloud/
-
 Environment variables;
 - DATABASE_URL: PostgresSQL database url
 - JWT_SIGNING_KEY: Signing key used for JWT auth
