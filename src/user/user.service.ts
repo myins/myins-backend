@@ -172,8 +172,7 @@ export class UserService {
     });
   }
 
-  async getCloudfrontToken(phone: string, userID: string) {
-    return (await this.jwtService.generateNewAuthTokens(phone, userID))
-      .cloudfrontToken;
+  getCloudfrontToken(phone: string, userID: string) {
+    return this.jwtService.getCloudfrontToken({phone, sub: userID})
   }
 }
