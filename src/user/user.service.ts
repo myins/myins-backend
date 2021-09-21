@@ -44,11 +44,14 @@ export class UserService {
     if (userModel == null) {
       throw new NotFoundException();
     }
-    let toRet = {...omit(userModel, 'password', 'refreshToken', 'pushToken')}
+    let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };
     if (userID === asUserID) {
-      toRet = {...toRet, ...{
-        cloudfrontToken: this.getCloudfrontToken("", asUserID)
-      }}
+      toRet = {
+        ...toRet,
+        ...{
+          cloudfrontToken: this.getCloudfrontToken('', asUserID),
+        },
+      };
     }
     return toRet;
   }
@@ -173,6 +176,6 @@ export class UserService {
   }
 
   getCloudfrontToken(phone: string, userID: string) {
-    return this.jwtService.getCloudfrontToken({phone, sub: userID})
+    return this.jwtService.getCloudfrontToken({ phone, sub: userID });
   }
 }
