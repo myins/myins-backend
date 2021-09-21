@@ -5,7 +5,6 @@ import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
-import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class UserService {
@@ -13,7 +12,6 @@ export class UserService {
     private prisma: PrismaService,
     private jwtService: SjwtService,
     private smsService: SmsService,
-    private chatService: ChatService,
   ) {}
 
   async user(

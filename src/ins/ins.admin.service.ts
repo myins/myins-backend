@@ -1,6 +1,5 @@
 import { UserRole } from '.prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InsService } from './ins.service';
 
@@ -9,7 +8,6 @@ export class InsAdminService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly insService: InsService,
-    private readonly chatService: ChatService,
   ) {}
 
   async changeAdmin(insId: string, newAdminId: string) {

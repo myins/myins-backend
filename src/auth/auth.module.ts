@@ -8,17 +8,9 @@ import { JwtStrategy } from './jwt.strategy';
 import { SjwtModule } from 'src/sjwt/sjwt.module';
 import { SmsModule } from 'src/sms/sms.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports: [
-    UserModule,
-    PassportModule,
-    SjwtModule,
-    SmsModule,
-    PrismaModule,
-    ChatModule,
-  ],
+  imports: [UserModule, PassportModule, SjwtModule, SmsModule, PrismaModule],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
 })

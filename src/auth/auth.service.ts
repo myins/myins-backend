@@ -7,7 +7,6 @@ import {
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
-import { ChatService } from 'src/chat/chat.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
@@ -19,7 +18,6 @@ export class AuthService {
     private usersService: UserService,
     private jwtService: SjwtService,
     private smsService: SmsService, //@InjectTwilio() private readonly twilioClient: TwilioClient
-    private chatService: ChatService,
   ) {}
 
   async resendConfirmation(phone: string) {
