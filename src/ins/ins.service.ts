@@ -11,13 +11,14 @@ import { retry } from 'ts-retry-promise';
 import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
+import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
 export class InsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
-  ) {}
+  ) { }
 
   async createINS(userID: string | null, data: CreateINSAPI) {
     const user = userID
@@ -39,11 +40,11 @@ export class InsService {
             shareCode: randomCode(6),
             members: userID
               ? {
-                  create: {
-                    userId: userID,
-                    role: UserRole.ADMIN,
-                  },
-                }
+                create: {
+                  userId: userID,
+                  role: UserRole.ADMIN,
+                },
+              }
               : undefined,
           },
         }),
@@ -60,11 +61,11 @@ export class InsService {
           ins:
             filter && filter.length > 0
               ? {
-                  name: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                }
+                name: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              }
               : undefined,
         },
         orderBy: {
@@ -145,19 +146,19 @@ export class InsService {
         OR:
           filter && filter.length > 0
             ? [
-                {
-                  firstName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
+              {
+                firstName: {
+                  contains: filter,
+                  mode: 'insensitive',
                 },
-                {
-                  lastName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
+              },
+              {
+                lastName: {
+                  contains: filter,
+                  mode: 'insensitive',
                 },
-              ]
+              },
+            ]
             : undefined,
       },
       skip: skip,
@@ -165,6 +166,7 @@ export class InsService {
       orderBy: {
         firstName: 'desc',
       },
+      select: ShallowUserSelect,
     });
   }
 
