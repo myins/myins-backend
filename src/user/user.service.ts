@@ -5,6 +5,7 @@ import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class UserService {
@@ -12,6 +13,7 @@ export class UserService {
     private prisma: PrismaService,
     private jwtService: SjwtService,
     private smsService: SmsService,
+    private chatService: ChatService,
   ) {}
 
   async user(
@@ -84,6 +86,14 @@ export class UserService {
   }
 
   async createUser(data: Prisma.UserCreateInput) {
+    this.prisma.$use(async (params, next) => {
+      const result = await next(params);
+      if (params.model == 'User' && params.action == 'create') {
+        await this.chatService.createStreamIDForUser(result);
+      }
+      return result;
+    });
+
     const newUserModel = await this.prisma.user.create({
       data,
     });
@@ -114,6 +124,14 @@ export class UserService {
   }
 
   async deleteUser(userId: string): Promise<User> {
+    this.prisma.$use(async (params, next) => {
+      const result = await next(params);
+      if (params.model == 'User' && params.action == 'delete') {
+        await this.chatService.deleteStreamUser(result.id);
+      }
+      return result;
+    });
+
     return this.prisma.user.delete({
       where: {
         id: userId,

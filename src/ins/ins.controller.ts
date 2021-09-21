@@ -51,8 +51,6 @@ export class InsController {
   @ApiTags('ins')
   async getINSList(
     @PrismaUser('id') userID: string,
-    @Query('skip') skip: number,
-    @Query('take') take: number,
     @Query('filter') filter: string,
   ) {
     return this.insService.insList(userID, filter);

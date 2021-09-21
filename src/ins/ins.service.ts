@@ -11,15 +11,25 @@ import { retry } from 'ts-retry-promise';
 import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class InsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
+    private readonly chatService: ChatService,
   ) {}
 
   async createINS(userID: string | null, data: CreateINSAPI) {
+    this.prismaService.$use(async (params, next) => {
+      const result = await next(params);
+      if (params.model == 'INS' && params.action == 'create') {
+        await this.chatService.createStreamIDForINS(result);
+      }
+      return result;
+    });
+
     const user = userID
       ? await this.prismaService.user.findUnique({ where: { id: userID } })
       : null;
