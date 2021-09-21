@@ -30,7 +30,7 @@ export class UserService {
     });
   }
 
-  async getUserProfile(userID: string) {
+  async getUserProfile(userID: string, asUserID?: string) {
     const userModel = await this.user(
       { id: userID },
       {
@@ -44,7 +44,13 @@ export class UserService {
     if (userModel == null) {
       throw new NotFoundException();
     }
-    return omit(userModel, 'password', 'refreshToken', 'pushToken');
+    let toRet = {...omit(userModel, 'password', 'refreshToken', 'pushToken')}
+    if (userID === asUserID) {
+      toRet = {...toRet, ...{
+        cloudfrontToken: this.getCloudfrontToken("", asUserID)
+      }}
+    }
+    return toRet;
   }
 
   async users(params: {

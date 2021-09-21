@@ -55,8 +55,8 @@ export class UserController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')
-  async getUser(@Param('id') id: string) {
-    return this.userService.getUserProfile(id);
+  async getUser(@Param('id') id: string, @PrismaUser('id') asUserID: string) {
+    return this.userService.getUserProfile(id, asUserID);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -90,7 +90,7 @@ export class UserController {
       },
     });
 
-    return this.getUser(user.id);
+    return this.getUser(user.id, user.id);
   }
 
   @Patch()
@@ -118,7 +118,7 @@ export class UserController {
       if (didChangePhone) {
         this.smsService.sendVerificationCode(toRet);
       }
-      return this.getUser(user.id);
+      return this.getUser(user.id, user.id);
     } catch (err) {
       throw new BadRequestException('That username / phone is already taken!');
     }
