@@ -12,6 +12,7 @@ import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { ChatService } from 'src/chat/chat.service';
+import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
 export class InsService {
@@ -175,6 +176,7 @@ export class InsService {
       orderBy: {
         firstName: 'desc',
       },
+      select: ShallowUserSelect,
     });
   }
 

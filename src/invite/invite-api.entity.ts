@@ -3,6 +3,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsNotEmpty,
+  IsPhoneNumber,
 } from 'class-validator';
 
 export class InviteUserToINSAPI {
@@ -22,5 +23,6 @@ export class InviteExternalUserToINSAPI {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(25)
+  @IsPhoneNumber(undefined, { each: true })
   phoneNumbers: string[];
 }

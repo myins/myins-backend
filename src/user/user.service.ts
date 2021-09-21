@@ -32,7 +32,7 @@ export class UserService {
     });
   }
 
-  async getUserProfile(userID: string) {
+  async getUserProfile(userID: string, asUserID?: string) {
     const userModel = await this.user(
       { id: userID },
       {
@@ -46,7 +46,16 @@ export class UserService {
     if (userModel == null) {
       throw new NotFoundException();
     }
-    return omit(userModel, 'password', 'refreshToken', 'pushToken');
+    let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };
+    if (userID === asUserID) {
+      toRet = {
+        ...toRet,
+        ...{
+          cloudfrontToken: this.getCloudfrontToken('', asUserID),
+        },
+      };
+    }
+    return toRet;
   }
 
   async users(params: {
@@ -72,7 +81,7 @@ export class UserService {
     take?: number;
     cursor?: Prisma.UserWhereUniqueInput;
     where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
+    orderBy?: Prisma.Enumerable<Prisma.UserOrderByWithRelationInput>;
   }) {
     const { skip, take, cursor, where, orderBy } = params;
     return this.prisma.user.findMany({
@@ -105,7 +114,10 @@ export class UserService {
 
     // Get the new user profile, this includes following counts, etc.
     const newUserProfile = await this.getUserProfile(newUserModel.id);
-    const addedTogether = { ...newUserProfile, ...authTokens };
+    const addedTogether = {
+      ...newUserProfile,
+      ...authTokens,
+    };
 
     this.smsService.sendVerificationCode(newUserModel);
 
@@ -179,5 +191,9 @@ export class UserService {
         },
       },
     });
+  }
+
+  getCloudfrontToken(phone: string, userID: string) {
+    return this.jwtService.getCloudfrontToken({ phone, sub: userID });
   }
 }
