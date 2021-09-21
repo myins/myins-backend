@@ -26,7 +26,7 @@ export class InsService {
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
       if (params.model == 'INS' && params.action == 'create') {
-        await this.chatService.createStreamIDForINS(result);
+        await this.chatService.createChannelForINS(result, userID);
       }
       return result;
     });
@@ -40,8 +40,8 @@ export class InsService {
     if (!user?.phoneNumberVerified && userID) {
       throw new UnauthorizedException("You're not allowed to do this!");
     }
-    // Retry it a couple of times in case the code is taken
 
+    // Retry it a couple of times in case the code is taken
     return retry(
       () =>
         this.prismaService.iNS.create({

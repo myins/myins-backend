@@ -95,14 +95,6 @@ export class UserService {
   }
 
   async createUser(data: Prisma.UserCreateInput) {
-    this.prisma.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'User' && params.action == 'create') {
-        await this.chatService.createStreamIDForUser(result);
-      }
-      return result;
-    });
-
     const newUserModel = await this.prisma.user.create({
       data,
     });
@@ -136,14 +128,6 @@ export class UserService {
   }
 
   async deleteUser(userId: string): Promise<User> {
-    this.prisma.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'User' && params.action == 'delete') {
-        await this.chatService.deleteStreamUser(result.id);
-      }
-      return result;
-    });
-
     return this.prisma.user.delete({
       where: {
         id: userId,

@@ -1,50 +1,28 @@
-import { INS, User } from '.prisma/client';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { connect, StreamClient } from 'getstream';
+import { INS } from '.prisma/client';
+import { Injectable } from '@nestjs/common';
+import { StreamChat } from 'stream-chat';
 
 @Injectable()
 export class ChatService {
-  private connectClient(): StreamClient {
-    return connect(
+  private getStreamChat(): StreamChat {
+    return StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
-      process.env.GET_STREAM_API_SECRET || null,
-      process.env.GET_STREAM_APP_ID,
-      { location: process.env.GET_STREAM_LOCATION },
+      process.env.GET_STREAM_API_SECRET,
     );
   }
 
-  async createStreamIDForUser(user: User) {
-    const client = this.connectClient();
-    return client.user(user.id).getOrCreate({
-      name: `${user.firstName} ${user.lastName}`,
-      phoneNumber: user.phoneNumber,
-    });
-  }
-
-  async createStreamIDForINS(ins: INS) {
-    const client = this.connectClient();
-    return client.user(ins.id).getOrCreate({
+  async createChannelForINS(ins: INS, userID: string | null) {
+    const streamChat = this.getStreamChat();
+    const channel = streamChat.channel('messaging', ins.id, {
       name: ins.name,
+      members: userID ? [userID] : [],
+      created_by_id: userID,
     });
+    return await channel.create();
   }
 
-  async createStreamToken(id: string) {
-    const client = this.connectClient();
-    try {
-      await client.user(id).get();
-      return client.createUserToken(id);
-    } catch (e) {
-      throw new BadRequestException('Stream user does not exist');
-    }
-  }
-
-  async deleteStreamUser(id: string) {
-    const client = this.connectClient();
-    try {
-      const streamUSer = await client.user(id).delete();
-      return streamUSer;
-    } catch (e) {
-      return;
-    }
+  createStreamChatToken(id: string) {
+    const streamChat = this.getStreamChat();
+    return streamChat.createToken(id);
   }
 }

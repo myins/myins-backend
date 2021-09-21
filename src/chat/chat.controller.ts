@@ -18,8 +18,8 @@ export class ChatController {
   @Get(':id/token')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
-  async getStreamToken(@Param('id') id: string) {
-    const token = await this.chatService.createStreamToken(id);
+  async getStreamChatToken(@Param('id') id: string) {
+    const token = this.chatService.createStreamChatToken(id);
     return {
       accessTokenStream: token,
     };

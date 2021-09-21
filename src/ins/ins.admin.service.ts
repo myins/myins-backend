@@ -52,14 +52,6 @@ export class InsAdminService {
   }
 
   async deleteINS(insId: string) {
-    this.prismaService.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'INS' && params.action == 'delete') {
-        await this.chatService.deleteStreamUser(result.id);
-      }
-      return result;
-    });
-
     await this.prismaService.iNS.delete({
       where: {
         id: insId,

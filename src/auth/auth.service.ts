@@ -179,8 +179,6 @@ export class AuthService {
 
     this.smsService.sendVerificationCode(user);
 
-    await this.chatService.createStreamIDForUser(user);
-
     return addedTogether;
   }
 
