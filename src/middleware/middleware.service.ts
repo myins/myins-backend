@@ -9,8 +9,6 @@ export class MiddlewareService {
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
   ) {
-    // Still need to add comments to each middleware explaining purpose
-
     // Ready for use
 
     this.prismaService.$use(async (params, next) => {
