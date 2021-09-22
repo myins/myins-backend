@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OnboardingService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly chatService: ChatService,
+  ) {}
 
   private readonly logger = new Logger(OnboardingService.name);
 
@@ -73,5 +77,8 @@ export class OnboardingService {
         },
       });
     });
+
+    // And lastly, we want to create the chat channel
+    await this.chatService.createChannelINS(ins, userID);
   }
 }

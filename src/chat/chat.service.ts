@@ -31,10 +31,10 @@ export class ChatService {
     });
   }
 
-  async createChannelINS(ins: INS, userID: string | null) {
+  async createChannelINS(ins: INS, userID: string) {
     const channel = this.streamChat.channel('messaging', ins.id, {
       name: ins.name,
-      members: userID ? [userID] : [],
+      members: [userID],
       created_by_id: userID,
     });
     return await channel.create();

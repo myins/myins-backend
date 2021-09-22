@@ -20,6 +20,7 @@ import { CurrentVersionsModule } from './current-versions/current-versions.modul
 import * as admin from 'firebase-admin';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ChatModule } from './chat/chat.module';
+import { MiddlewareModule } from './middleware/middleware.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ChatModule } from './chat/chat.module';
     CurrentVersionsModule,
     ScheduleModule.forRoot(),
     ChatModule,
+    MiddlewareModule,
   ],
   providers: [
     {

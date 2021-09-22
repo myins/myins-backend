@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { INS, Prisma, UserRole } from '@prisma/client';
@@ -12,7 +11,6 @@ import { retry } from 'ts-retry-promise';
 import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
-import { ChatService } from 'src/chat/chat.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
@@ -20,31 +18,9 @@ export class InsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
-    private readonly chatService: ChatService,
   ) {}
 
   async createINS(userID: string | null, data: CreateINSAPI) {
-    this.prismaService.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'INS' && params.action == 'create' && userID) {
-        await this.chatService.createChannelINS(result, userID);
-      }
-      if (
-        params.model == 'Post' &&
-        params.action == 'updateMany' &&
-        params.args.where.authorId === null &&
-        params.args.where.inses.some.id &&
-        params.args.data.authorId
-      ) {
-        const ins = await this.ins({ id: params.args.where.inses.some.id });
-        if (!ins) {
-          throw new NotFoundException('Could not find this INS!');
-        }
-        await this.chatService.createChannelINS(ins, params.args.data.authorId);
-      }
-      return result;
-    });
-
     const user = userID
       ? await this.prismaService.user.findUnique({ where: { id: userID } })
       : null;

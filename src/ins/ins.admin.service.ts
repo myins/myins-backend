@@ -41,14 +41,6 @@ export class InsAdminService {
   }
 
   async removeMember(insId: string, removeMemberId: string) {
-    this.prismaService.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'UserInsConnection' && params.action == 'delete') {
-        await this.chatService.removeMemberFromChannel(removeMemberId, insId);
-      }
-      return result;
-    });
-
     await this.prismaService.userInsConnection.delete({
       where: {
         userId_insId: {
@@ -60,14 +52,6 @@ export class InsAdminService {
   }
 
   async deleteINS(insId: string) {
-    this.prismaService.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'INS' && params.action == 'delete') {
-        await this.chatService.deleteChannelINS(result.id);
-      }
-      return result;
-    });
-
     await this.prismaService.iNS.delete({
       where: {
         id: insId,
