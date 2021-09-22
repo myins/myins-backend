@@ -57,11 +57,10 @@ export class UserService {
         ...toRet,
         ...{
           cloudfrontToken: this.getCloudfrontToken('', asUserID),
+          streamChatToken: this.chatService.createStreamChatToken(userID),
         },
       };
     }
-    const streamChatToken = this.chatService.createStreamChatToken(userID);
-    toRet = { ...toRet, ...{ streamChatToken } };
     return toRet;
   }
 

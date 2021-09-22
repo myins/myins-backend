@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { INS, Prisma, UserRole } from '@prisma/client';
@@ -32,12 +33,14 @@ export class InsService {
         params.model == 'Post' &&
         params.action == 'updateMany' &&
         params.args.where.authorId === null &&
+        params.args.where.inses.some.id &&
         params.args.data.authorId
       ) {
-        await this.chatService.createChannelINS(
-          result,
-          params.args.data.authorId,
-        );
+        const ins = await this.ins({ id: params.args.where.inses.some.id });
+        if (!ins) {
+          throw new NotFoundException('Could not find this INS!');
+        }
+        await this.chatService.createChannelINS(ins, params.args.data.authorId);
       }
       return result;
     });
