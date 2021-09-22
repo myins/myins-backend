@@ -25,8 +25,19 @@ export class InsService {
   async createINS(userID: string | null, data: CreateINSAPI) {
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
-      if (params.model == 'INS' && params.action == 'create') {
+      if (params.model == 'INS' && params.action == 'create' && userID) {
         await this.chatService.createChannelINS(result, userID);
+      }
+      if (
+        params.model == 'Post' &&
+        params.action == 'updateMany' &&
+        params.args.where.authorId === null &&
+        params.args.data.authorId
+      ) {
+        await this.chatService.createChannelINS(
+          result,
+          params.args.data.authorId,
+        );
       }
       return result;
     });
