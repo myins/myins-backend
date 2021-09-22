@@ -10,14 +10,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { UserService } from 'src/user/user.service';
 import { CommentLikeService } from './comment.like.service';
 import { CommentService } from './comment.service';
 
 @Controller('comment')
 export class CommentLikeController {
   constructor(
-    private readonly userService: UserService,
     private readonly commentService: CommentService,
     private readonly commentLikeService: CommentLikeService,
   ) {}

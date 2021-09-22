@@ -12,7 +12,7 @@ import { InsModule } from 'src/ins/ins.module';
 @Module({
   imports: [
     PrismaModule,
-    forwardRef(() => UserModule),
+    UserModule,
     forwardRef(() => PostModule),
     NotificationModule,
     InsModule,

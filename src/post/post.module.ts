@@ -1,6 +1,5 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CommentModule } from 'src/comment/comment.module';
-import { CommentService } from 'src/comment/comment.service';
 import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
 import { InsModule } from 'src/ins/ins.module';
 import { NotificationModule } from 'src/notification/notification.module';
@@ -19,7 +18,7 @@ import { PostService } from './post.service';
 @Module({
   imports: [
     PrismaModule,
-    forwardRef(() => UserModule),
+    UserModule,
     StorageModule,
     CommentModule,
     NotificationModule,

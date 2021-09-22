@@ -1,8 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
+import { ChatService } from 'src/chat/chat.service';
+import { InsService } from 'src/ins/ins.service';
 
 @Injectable()
 export class InviteService {
@@ -10,6 +16,8 @@ export class InviteService {
     private readonly prismaService: PrismaService,
     private readonly smsService: SmsService,
     private readonly userService: UserService,
+    private readonly chatService: ChatService,
+    private readonly insService: InsService,
   ) {}
 
   async inviteExternalUser(
@@ -17,6 +25,13 @@ export class InviteService {
     phoneNumbers: string[],
     ins: string,
   ) {
+    const connection = await this.insService.getConnection(userID, ins);
+    if (!connection || connection.role === UserRole.PENDING) {
+      throw new UnauthorizedException(
+        "You're not allowed to approve members for this INS!",
+      );
+    }
+
     const theINS = await this.prismaService.iNS.findMany({
       where: {
         id: ins,
@@ -65,6 +80,13 @@ export class InviteService {
   }
 
   async inviteINSUser(userID: string, otherUsers: string[], ins: string) {
+    const connection = await this.insService.getConnection(userID, ins);
+    if (!connection || connection.role === UserRole.PENDING) {
+      throw new UnauthorizedException(
+        "You're not allowed to approve members for this INS!",
+      );
+    }
+
     const theINS = await this.prismaService.iNS.findMany({
       where: {
         id: ins,
@@ -98,6 +120,8 @@ export class InviteService {
     );
     const data = usersNotInINS.map((otherUser) => ({
       userId: otherUser,
+      // after implement pendingMembers, here the role will be changed to UserRole.PENDING and
+      // the addMembersToChannel from line 139 will be moved to approve user function from user service
       role: UserRole.MEMBER,
     }));
     await this.prismaService.iNS.update({
@@ -112,5 +136,6 @@ export class InviteService {
         },
       },
     });
+    await this.chatService.addMembersToChannel(otherUsers, theINS[0].id);
   }
 }

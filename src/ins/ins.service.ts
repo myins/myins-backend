@@ -26,7 +26,7 @@ export class InsService {
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
       if (params.model == 'INS' && params.action == 'create') {
-        await this.chatService.createChannelForINS(result, userID);
+        await this.chatService.createChannelINS(result, userID);
       }
       return result;
     });

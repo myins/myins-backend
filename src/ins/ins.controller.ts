@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { photoInterceptor } from 'src/util/multer';
@@ -20,7 +21,10 @@ import { InsService } from './ins.service';
 
 @Controller('ins')
 export class InsController {
-  constructor(private readonly insService: InsService) {}
+  constructor(
+    private readonly insService: InsService,
+    private readonly chatService: ChatService,
+  ) {}
 
   @Post()
   @ApiTags('ins')
@@ -163,6 +167,7 @@ export class InsController {
         },
       },
     });
+    await this.chatService.addMembersToChannel([userID], theINS.id);
     return {
       message: 'Joined the INS!',
     };

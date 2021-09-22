@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
-import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
@@ -10,7 +9,6 @@ export class CommentService {
   constructor(
     private prismaService: PrismaService,
     private postService: PostService,
-    private notifsService: NotificationService,
   ) {}
 
   async createComment(data: Prisma.CommentCreateInput): Promise<Comment> {

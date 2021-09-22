@@ -1,5 +1,6 @@
 import { UserRole } from '.prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InsService } from './ins.service';
 
@@ -8,6 +9,7 @@ export class InsAdminService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly insService: InsService,
+    private readonly chatService: ChatService,
   ) {}
 
   async changeAdmin(insId: string, newAdminId: string) {
@@ -39,6 +41,14 @@ export class InsAdminService {
   }
 
   async removeMember(insId: string, removeMemberId: string) {
+    this.prismaService.$use(async (params, next) => {
+      const result = await next(params);
+      if (params.model == 'UserInsConnection' && params.action == 'delete') {
+        await this.chatService.removeMemberFromChannel(removeMemberId, insId);
+      }
+      return result;
+    });
+
     await this.prismaService.userInsConnection.delete({
       where: {
         userId_insId: {
@@ -50,6 +60,14 @@ export class InsAdminService {
   }
 
   async deleteINS(insId: string) {
+    this.prismaService.$use(async (params, next) => {
+      const result = await next(params);
+      if (params.model == 'INS' && params.action == 'delete') {
+        await this.chatService.deleteChannelINS(result.id);
+      }
+      return result;
+    });
+
     await this.prismaService.iNS.delete({
       where: {
         id: insId,
