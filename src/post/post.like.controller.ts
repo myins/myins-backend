@@ -103,7 +103,7 @@ export class PostLikeController {
         },
       },
     });
-    await this.insInteractionService.interact(user.id, toRet.id);
+    await this.insInteractionService.interactPost(user.id, toRet.id);
 
     if (post.authorId !== user.id) {
       this.notificationsService.createNotification({
