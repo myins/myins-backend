@@ -60,6 +60,8 @@ export class UserService {
         },
       };
     }
+    const streamChatToken = this.chatService.createStreamChatToken(userID);
+    toRet = { ...toRet, ...{ streamChatToken } };
     return toRet;
   }
 
