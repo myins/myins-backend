@@ -1,12 +1,7 @@
-import {
-  Controller,
-  UseInterceptors,
-  Get,
-  UseGuards,
-  Param,
-} from '@nestjs/common';
+import { Controller, UseInterceptors, Get, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { ChatService } from './chat.service';
 
@@ -15,11 +10,11 @@ import { ChatService } from './chat.service';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Get(':id/token')
+  @Get('/token')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
-  async getStreamChatToken(@Param('id') id: string) {
-    const token = this.chatService.createStreamChatToken(id);
+  async getStreamChatToken(@PrismaUser('id') userID: string) {
+    const token = this.chatService.createStreamChatToken(userID);
     return {
       accessTokenStream: token,
     };
