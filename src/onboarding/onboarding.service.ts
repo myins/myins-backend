@@ -81,5 +81,27 @@ export class OnboardingService {
 
     // And lastly, we want to create the chat channel
     await this.chatService.createChannelINS(ins, userID);
+    const posts = await this.prismaService.post.findMany({
+      where: {
+        inses: {
+          some: {
+            id: ins.id,
+          },
+        },
+        authorId: userID,
+      },
+    });
+    await Promise.all(
+      posts.map(async (post) => {
+        if (post.authorId) {
+          const message = `Post created by ${post.id}: "${post.content}"`;
+          await this.chatService.sendMessageToChannels(
+            [insID],
+            post.authorId,
+            message,
+          );
+        }
+      }),
+    );
   }
 }

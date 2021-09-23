@@ -72,7 +72,6 @@ export class MiddlewareService {
           const postResult = <Post>result;
           if (postResult.authorId && params.args.data.inses.connect.length) {
             const message = `Post created by ${postResult.id}: "${postResult.content}"`;
-            console.log('message', message);
             await this.chatService.sendMessageToChannels(
               params.args.data.inses.connect.map(
                 (ins: { id: string }) => ins.id,
