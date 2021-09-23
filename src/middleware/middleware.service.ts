@@ -51,7 +51,7 @@ export class MiddlewareService {
 
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
-      if (params.model == 'User' && params.action == 'delete') {
+      if (params.model == 'User') {
         if (params.action == 'delete') {
           // A user was deleted, remove them from stream.
           await this.chatService.deleteStreamChatUser(result.id);
