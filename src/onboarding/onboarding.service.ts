@@ -58,6 +58,7 @@ export class OnboardingService {
           members: {
             create: {
               userId: userID,
+              role: 'ADMIN'
             },
           },
         },
