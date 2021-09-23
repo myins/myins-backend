@@ -1,10 +1,11 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { ChatService } from 'src/chat/chat.service';
@@ -137,5 +138,80 @@ export class InviteService {
       },
     });
     await this.chatService.addMembersToChannel(otherUsers, theINS[0].id);
+  }
+
+  async invitesList(all: boolean, skip: number, take: number, search: string, userID: string, insID: string) {
+    const theINS = await this.prismaService.iNS.findUnique({
+      where: {
+        id: insID
+      },
+      include: {
+        members: {
+          select: {
+            userId: true
+          }
+        }
+      }
+    })
+
+    if (!theINS || theINS.members.findIndex(each => each.userId == userID) == -1) {
+      throw new NotFoundException("Could not find that INS!")
+    }
+
+    const profileInfo: Prisma.UserWhereInput = {
+      OR:
+        search && search.length > 0
+          ? [
+              {
+                firstName: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                lastName: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ]
+          : undefined,
+      id: {
+        not: {
+          in: theINS.members.map(each => each.userId)
+        },
+      },
+      inses: all
+        ? undefined
+        : {
+            some: {
+              ins: {
+                members: {
+                  some: {
+                    userId: userID,
+                  },
+                },
+              },
+            },
+          },
+    };
+
+    const toRet = await this.userService.shallowUsers({
+      where: profileInfo,
+      orderBy: [
+        {
+          firstName: 'asc',
+        },
+        {
+          lastName: 'asc',
+        },
+        {
+          id: 'asc',
+        },
+      ],
+      skip: skip,
+      take: take,
+    });
+    return toRet;
   }
 }
