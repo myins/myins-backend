@@ -70,6 +70,7 @@ export class InviteController {
     @Query('skip') skip: number,
     @Query('take') take: number,
     @Query('search') search: string,
+    @Query('ins') insID: string,
   ) {
     if (Number.isNaN(skip) || Number.isNaN(take)) {
       throw new BadRequestException('Invalid skip / take values!');
@@ -77,61 +78,9 @@ export class InviteController {
     if (allNumber != 0 && allNumber != 1) {
       throw new BadRequestException('Invalid all param!');
     }
-
-    const isAll = allNumber == 1;
-
-    const profileInfo: Prisma.UserWhereInput = {
-      OR:
-        search && search.length > 0
-          ? [
-              {
-                firstName: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                lastName: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            ]
-          : undefined,
-      id: {
-        not: userID,
-      },
-      inses: isAll
-        ? undefined
-        : {
-            some: {
-              ins: {
-                members: {
-                  some: {
-                    userId: userID,
-                  },
-                },
-              },
-            },
-          },
-    };
-
-    const toRet = await this.userService.shallowUsers({
-      where: profileInfo,
-      orderBy: [
-        {
-          firstName: 'desc',
-        },
-        {
-          lastName: 'desc',
-        },
-        {
-          id: 'desc',
-        },
-      ],
-      skip: skip,
-      take: take,
-    });
-    return toRet;
+    if (!insID) {
+      throw new BadRequestException('Must specify INS!')
+    }
+    return this.inviteService.invitesList(allNumber === 1, skip, take, search, userID, insID);
   }
 }

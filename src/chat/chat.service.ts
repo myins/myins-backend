@@ -59,7 +59,11 @@ export class ChatService {
       },
     });
     await this.createStreamChatUsers(users);
-    await channels[0].addMembers(userIDs);
+
+    // FIXME: remove this check once all inses have chat channels
+    if (channels.length) {
+      await channels[0].addMembers(userIDs);
+    }
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
