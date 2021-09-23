@@ -5,6 +5,7 @@ import {
   Logger,
   Param,
   Post,
+  UnauthorizedException,
   UploadedFile,
   UploadedFiles,
   UseGuards,
@@ -179,7 +180,9 @@ export class PostCreateController {
 
     for (const each of mappedINSIDs) {
       if (!inses.includes(each.id)) {
-        throw { message: "You're not allowed to post to that INS!" };
+        throw new UnauthorizedException(
+          "You're not allowed to post to that INS!",
+        );
       }
     }
 

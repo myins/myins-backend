@@ -16,6 +16,10 @@ export class ChatService {
     );
   }
 
+  createStreamChatToken(id: string) {
+    return this.streamChat.createToken(id);
+  }
+
   async createStreamChatUsers(users: User[]) {
     const data = users.map((user) => ({
       id: user.id,
@@ -63,7 +67,26 @@ export class ChatService {
     await channels[0].removeMembers([userID]);
   }
 
-  createStreamChatToken(id: string) {
-    return this.streamChat.createToken(id);
+  async sendMessageToChannels(
+    insIds: string[],
+    userID: string,
+    message: string,
+  ) {
+    const channels = await this.streamChat.queryChannels({
+      id: { $in: insIds },
+    });
+    const users = await this.streamChat.queryUsers({ id: userID });
+    const user = users.users[0];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { created_at, updated_at, ...myUser } = user;
+
+    return Promise.all(
+      channels.map(async (channel) => {
+        await channel.sendMessage({
+          user: myUser,
+          text: message,
+        });
+      }),
+    );
   }
 }
