@@ -51,7 +51,7 @@ export class UserService {
     if (userModel == null) {
       throw new NotFoundException();
     }
-    let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };
+    let toRet = omit(userModel, 'password', 'refreshToken', 'pushToken');
     if (userID === asUserID) {
       toRet = {
         ...toRet,
