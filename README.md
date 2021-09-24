@@ -25,7 +25,6 @@ Environment variables;
 
 Known issues:
 
-- Post deletion does not work if the post has comments or likes
 - Need some analytics for server to see which calls take the most time
 - Multiple notifications are added if you like / unlike a post multiple times, need to constrain them.
 - Delete old profile pictures when a new one is uploaded
@@ -37,20 +36,6 @@ Known issues:
 ### Automatic deployment
 
 To easily update the dev environment, simply push to develop in the [TODO] Repo. A build & release pipeline will automatically run & deploy the changes.
-
-### Deploying to AWS manually
-
-1. [TODO]
-2. docker compose build backend
-3. docker compose push backend
-
-This will push it to the myins container registry. To apply the update, just restart it!
-
-
-### The front-end
-
-The frontend git repository is hosted on AWS CodeCommit, under the same organization as the Portal.
-At the moment it's just one screen providing forgot password functionality.
 
 Remaining DevOps:
 
