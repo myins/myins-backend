@@ -1,7 +1,8 @@
 import { INS, User } from '.prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { StreamChat } from 'stream-chat';
+import { StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
+import { omit } from 'src/util/omit';
 
 @Injectable()
 export class ChatService {
@@ -81,8 +82,7 @@ export class ChatService {
     });
     const users = await this.streamChat.queryUsers({ id: userID });
     const user = users.users[0];
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { created_at, updated_at, ...myUser } = user;
+    const myUser = <UserResponse>omit(user, 'created_at', 'updated_at');
 
     return Promise.all(
       channels.map(async (channel) => {
