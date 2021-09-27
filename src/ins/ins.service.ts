@@ -170,6 +170,42 @@ export class InsService {
     });
   }
 
+  async addAsInvitedExternalUser(insId: string, phoneNumbers: string[]) {
+    return this.prismaService.iNS.update({
+      where: {
+        id: insId,
+      },
+      data: {
+        invitedPhoneNumbers: {
+          push: phoneNumbers,
+        },
+      },
+    });
+  }
+
+  async addInvitedUsersIntoINSes(insIDs: string[], userID: string) {
+    const data = insIDs.map((insID) => ({
+      insId: insID,
+      userId: userID,
+    }));
+    await this.prismaService.$transaction([
+      this.prismaService.userInsConnection.createMany({
+        data: data,
+      }),
+      // this.prismaService.iNS.updateMany({
+      //   where: {
+      //     id: {
+      //       in: insIDs,
+      //     },
+      //   },
+      //   data: {
+      //     invitedPhoneNumbers: {
+      //     }
+      //   },
+      // }),
+    ]);
+  }
+
   async ins(where: Prisma.INSWhereUniqueInput, include?: Prisma.INSInclude) {
     return this.prismaService.iNS.findUnique({
       where: where,
