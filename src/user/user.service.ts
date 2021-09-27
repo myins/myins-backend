@@ -138,6 +138,7 @@ export class UserService {
     await this.insService.addInvitedUsersIntoINSes(
       inses.map((ins) => ins.id),
       newUserProfile.id,
+      newUserProfile.phoneNumber,
     );
 
     return addedTogether;
