@@ -135,7 +135,7 @@ export class UserService {
         },
       },
     });
-    await this.insService.addInvitedUsersIntoINSes(
+    await this.insService.addInvitedExternalUserIntoINSes(
       inses.map((ins) => ins.id),
       newUserProfile.id,
       newUserProfile.phoneNumber,

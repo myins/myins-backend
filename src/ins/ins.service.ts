@@ -170,7 +170,7 @@ export class InsService {
     });
   }
 
-  async addAsInvitedExternalUser(insId: string, phoneNumbers: string[]) {
+  async addAsInvitedPhoneNumbers(insId: string, phoneNumbers: string[]) {
     return this.prismaService.iNS.update({
       where: {
         id: insId,
@@ -183,7 +183,7 @@ export class InsService {
     });
   }
 
-  async addInvitedUsersIntoINSes(
+  async addInvitedExternalUserIntoINSes(
     insIDs: string[],
     userID: string,
     phoneNumber: string,

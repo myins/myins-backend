@@ -77,7 +77,7 @@ export class InviteService {
           );
         }),
       );
-      await this.insService.addAsInvitedExternalUser(
+      await this.insService.addAsInvitedPhoneNumbers(
         theINS[0].id,
         otherUsersPhoneNumbers,
       );
