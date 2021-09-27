@@ -82,7 +82,9 @@ export class ChatService {
     });
     const users = await this.streamChat.queryUsers({ id: userID });
     const user = users.users[0];
-    const myUser = <UserResponse>omit(user, 'created_at', 'updated_at');
+    const myUser = <UserResponse>(
+      omit(user, 'created_at', 'updated_at', 'last_active')
+    );
 
     return Promise.all(
       channels.map(async (channel) => {
