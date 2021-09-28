@@ -26,7 +26,6 @@ export class ChatService {
       id: user.id,
       name: `${user.firstName} ${user.lastName}`,
       phoneNumber: user.phoneNumber,
-      image: user.profilePicture,
     }));
     await this.streamChat.upsertUsers(data);
   }
