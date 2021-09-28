@@ -55,11 +55,6 @@ export const isVideo = (originalName: string) => {
 
 export const videoExtensions = ['.mp4'];
 
-export const photoOrVideoInterceptorDeprecated = FileInterceptor(
-  'file',
-  photoOrVideoOptions,
-);
-
 export const photoOrVideoInterceptor = FileFieldsInterceptor(
   [
     { name: 'file', maxCount: 1 },

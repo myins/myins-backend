@@ -43,12 +43,7 @@ export class StorageService {
         (err, data) => {
           if (err) reject(err);
           else if (data) {
-            const base = `https://${bucket}.s3.amazonaws.com/`;
-            // if (bucket === StorageContainer.posts) {
-            //   if (process.env.CLOUDFRONT_URL) {
-            //     base = process.env.CLOUDFRONT_URL
-            //   }
-            // }
+            const base = process.env.CLOUDFRONT_URL;
             resolve(`${base}${key}`);
           }
         },

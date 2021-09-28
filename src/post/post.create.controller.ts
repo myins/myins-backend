@@ -6,7 +6,6 @@ import {
   Param,
   Post,
   UnauthorizedException,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -17,11 +16,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import {
-  isVideo,
-  photoOrVideoInterceptorDeprecated,
-  photoOrVideoInterceptor,
-} from 'src/util/multer';
+import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
 import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
@@ -78,55 +73,6 @@ export class PostCreateController {
       return this.postMediaService.attachMediaToPost(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        postID2,
-        userID,
-        {
-          width,
-          height,
-          isVideo: isVideoPost,
-          setCover,
-        },
-      );
-    } catch (err) {
-      if (err instanceof BadRequestException) {
-        throw err; // If it's a bad request, just forward it
-      } else {
-        this.logger.error('Error attaching media to post!');
-        this.logger.error(err);
-
-        throw new BadRequestException(`Error creating post! ${err}`);
-      }
-    }
-  }
-
-  @Post(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  @UseInterceptors(photoOrVideoInterceptorDeprecated)
-  async attachMediaToPostDeprecated(
-    @UploadedFile() file: Express.Multer.File,
-    @Param('id') postID2: string,
-    @PrismaUser('id') userID: string,
-    @Body() body: AttachMediaAPI,
-  ) {
-    if (!file) {
-      throw new BadRequestException('No file!');
-    }
-    if (!file.buffer) {
-      throw new BadRequestException('No buffer!');
-    }
-    const isVideoPost = isVideo(file.originalname);
-
-    const setCover = body.setCover === 'true';
-    const width = parseInt(body.width);
-    const height = parseInt(body.height);
-    if (!width || !height) {
-      throw new BadRequestException('Invalid width / height!');
-    }
-
-    try {
-      return this.postMediaService.attachMediaToPostDeprecated(
-        file,
         postID2,
         userID,
         {
