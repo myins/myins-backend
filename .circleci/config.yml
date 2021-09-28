@@ -3,6 +3,7 @@ version: 2.1
 
 orbs:
   aws-ecr: circleci/aws-ecr@7.2.0
+  aws-ecs: circleci/aws-ecs@2.2.1
 
 workflows:
   build_and_push_image:
@@ -17,3 +18,9 @@ workflows:
           region: AWS_REGION
           repo: myinsn-backend
           tag: "$CIRCLE_SHA1"
+      - aws-ecs/deploy-service-update:
+          requires:
+            - aws-ecr/build-and-push-image # only run this job once aws-ecr/build-and-push-image has completed
+          family: "myinsn-backend-dev"
+          cluster-name: "myinsn-backend-dev"
+          container-image-name-updates: "container=myinsn-backend-dev,tag=${CIRCLE_SHA1}"
