@@ -23,4 +23,4 @@ workflows:
             - aws-ecr/build-and-push-image # only run this job once aws-ecr/build-and-push-image has completed
           family: "myinsn-backend-dev"
           cluster-name: "myinsn-backend-dev"
-          container-image-name-updates: "container=myinsn-backend-dev,tag=${CIRCLE_SHA1}"
+          container-image-name-updates: "container=app,tag=${CIRCLE_SHA1}"
