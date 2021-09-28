@@ -1,7 +1,8 @@
 import { INS, User } from '.prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { StreamChat } from 'stream-chat';
+import { StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
+import { omit } from 'src/util/omit';
 
 @Injectable()
 export class ChatService {
@@ -14,6 +15,10 @@ export class ChatService {
       process.env.GET_STREAM_API_KEY || '',
       process.env.GET_STREAM_API_SECRET,
     );
+  }
+
+  createStreamChatToken(id: string) {
+    return this.streamChat.createToken(id);
   }
 
   async createStreamChatUsers(users: User[]) {
@@ -55,7 +60,11 @@ export class ChatService {
       },
     });
     await this.createStreamChatUsers(users);
-    await channels[0].addMembers(userIDs);
+
+    // FIXME: remove this check once all inses have chat channels
+    if (channels.length) {
+      await channels[0].addMembers(userIDs);
+    }
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
@@ -63,7 +72,27 @@ export class ChatService {
     await channels[0].removeMembers([userID]);
   }
 
-  createStreamChatToken(id: string) {
-    return this.streamChat.createToken(id);
+  async sendMessageToChannels(
+    insIds: string[],
+    userID: string,
+    message: string,
+  ) {
+    const channels = await this.streamChat.queryChannels({
+      id: { $in: insIds },
+    });
+    const users = await this.streamChat.queryUsers({ id: userID });
+    const user = users.users[0];
+    const myUser = <UserResponse>(
+      omit(user, 'created_at', 'updated_at', 'last_active')
+    );
+
+    return Promise.all(
+      channels.map(async (channel) => {
+        await channel.sendMessage({
+          user: myUser,
+          text: message,
+        });
+      }),
+    );
   }
 }
