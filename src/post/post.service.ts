@@ -43,6 +43,7 @@ export class PostService {
             id: asUserID,
           },
         },
+        mediaContent: true,
       },
     });
     return toRet;
