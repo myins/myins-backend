@@ -72,6 +72,11 @@ export class ChatService {
     await channels[0].removeMembers([userID]);
   }
 
+  async sendMessageWhenPost(insIds: string[], userID: string, content: string) {
+    const message = `Post created by ${userID}: "${content}"`;
+    return this.sendMessageToChannels(insIds, userID, message);
+  }
+
   async sendMessageToChannels(
     insIds: string[],
     userID: string,

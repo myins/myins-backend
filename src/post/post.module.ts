@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
 import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
 import { InsModule } from 'src/ins/ins.module';
@@ -24,6 +25,7 @@ import { PostService } from './post.service';
     NotificationModule,
     FfmpegModule,
     InsModule,
+    ChatModule,
   ],
   controllers: [
     PostFeedController,

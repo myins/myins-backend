@@ -71,13 +71,12 @@ export class MiddlewareService {
           // A post was created, send message to all channels.
           const postResult = <Post>result;
           if (postResult.authorId && params.args.data.inses.connect.length) {
-            const message = `Post created by ${postResult.id}: "${postResult.content}"`;
-            await this.chatService.sendMessageToChannels(
+            await this.chatService.sendMessageWhenPost(
               params.args.data.inses.connect.map(
                 (ins: { id: string }) => ins.id,
               ),
               postResult.authorId,
-              message,
+              postResult.content,
             );
           }
         }
