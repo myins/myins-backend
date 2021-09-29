@@ -45,13 +45,24 @@ export class MiddlewareService {
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
 
-      if (params.model == 'UserInsConnection' && params.action == 'delete') {
-        // A user left an INS, remove them from the channel.
-        const userInsResult = <UserInsConnection>result;
-        await this.chatService.removeMemberFromChannel(
-          userInsResult.userId,
-          userInsResult.insId,
-        );
+      if (params.model == 'UserInsConnection') {
+        if (params.action == 'createMany') {
+          params.args.data.forEach(
+            async (userInsConnection: { userId: string; insId: string }) => {
+              await chatService.addMembersToChannel(
+                [userInsConnection.userId],
+                userInsConnection.insId,
+              );
+            },
+          );
+        } else if (params.action == 'delete') {
+          // A user left an INS, remove them from the channel.
+          const userInsResult = <UserInsConnection>result;
+          await this.chatService.removeMemberFromChannel(
+            userInsResult.userId,
+            userInsResult.insId,
+          );
+        }
       }
 
       return result;

@@ -12,6 +12,7 @@ import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { ShallowUserSelect } from 'src/util/shallow-user';
+import { omit } from 'src/util/omit';
 
 @Injectable()
 export class InsService {
@@ -94,7 +95,12 @@ export class InsService {
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {
-        const theRightINS = toRet.find((each2) => each2.id == each.insId);
+        let theRightINS = toRet.find((each2) => each2.id == each.insId);
+        if (theRightINS?.invitedPhoneNumbers) {
+          theRightINS = <INS & { _count: { members: number } | null }>(
+            omit(theRightINS, 'invitedPhoneNumbers')
+          );
+        }
         return {
           ...theRightINS,
           userRole: each.role,
@@ -168,6 +174,48 @@ export class InsService {
       },
       select: ShallowUserSelect,
     });
+  }
+
+  async addAsInvitedPhoneNumbers(insId: string, phoneNumbers: string[]) {
+    return this.prismaService.iNS.update({
+      where: {
+        id: insId,
+      },
+      data: {
+        invitedPhoneNumbers: {
+          push: phoneNumbers,
+        },
+      },
+    });
+  }
+
+  async addInvitedExternalUserIntoINSes(
+    insIDs: string[],
+    userID: string,
+    phoneNumber: string,
+  ) {
+    const data = insIDs.map((insID) => ({
+      insId: insID,
+      userId: userID,
+    }));
+    await this.prismaService.userInsConnection.createMany({
+      data: data,
+    });
+    await Promise.all(
+      insIDs.map(async (insID) => {
+        const ins = await this.ins({ id: insID });
+        await this.update({
+          where: {
+            id: insID,
+          },
+          data: {
+            invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
+              (invitedPhoneNumber) => invitedPhoneNumber !== phoneNumber,
+            ),
+          },
+        });
+      }),
+    );
   }
 
   async ins(where: Prisma.INSWhereUniqueInput, include?: Prisma.INSInclude) {

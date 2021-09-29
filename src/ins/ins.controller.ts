@@ -157,6 +157,13 @@ export class InsController {
     if (!theINS) {
       throw new BadRequestException('Invalid ins code!');
     }
+    const connection = await this.insService.getConnection(userID, theINS.id);
+    if (connection) {
+      return {
+        statusCode: 585858,
+        message: 'Already in INS!',
+      };
+    }
     await this.insService.update({
       where: { id: theINS.id },
       data: {

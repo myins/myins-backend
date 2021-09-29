@@ -11,6 +11,7 @@ import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { ShallowUserSelect } from 'src/util/shallow-user';
 import { ChatService } from 'src/chat/chat.service';
+import { InsService } from 'src/ins/ins.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +20,7 @@ export class UserService {
     private jwtService: SjwtService,
     private smsService: SmsService,
     @Inject(forwardRef(() => ChatService)) private chatService: ChatService,
+    private insService: InsService,
   ) {}
 
   async user(
@@ -125,6 +127,19 @@ export class UserService {
     };
 
     this.smsService.sendVerificationCode(newUserModel);
+
+    const inses = await this.insService.inses({
+      where: {
+        invitedPhoneNumbers: {
+          has: newUserProfile.phoneNumber,
+        },
+      },
+    });
+    await this.insService.addInvitedExternalUserIntoINSes(
+      inses.map((ins) => ins.id),
+      newUserProfile.id,
+      newUserProfile.phoneNumber,
+    );
 
     return addedTogether;
   }
