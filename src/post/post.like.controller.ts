@@ -59,7 +59,7 @@ export class PostLikeController {
       throw new BadRequestException('Could not find post!');
     }
 
-    return this.userService.users({
+    return this.userService.shallowUsers({
       where: {
         likedPosts: {
           some: {

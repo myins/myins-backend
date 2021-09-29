@@ -26,6 +26,7 @@ import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import {
   CreateUserAPI,
+  SetLastNotificationAPI,
   UpdatePushTokenAPI,
   UpdateUserAPI,
 } from './user-api.entity';
@@ -164,6 +165,16 @@ export class UserController {
     return {
       message: 'Updated token successfully!',
     };
+  }
+
+  @Patch('setLastNotification')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async setLastNotification(
+    @Body() data: SetLastNotificationAPI,
+    @PrismaUser('id') userID: string,
+  ) {
+    return this.userService.setLastReadNotificationID(userID, data.notifID);
   }
 
   @Delete(':id')

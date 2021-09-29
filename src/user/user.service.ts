@@ -205,6 +205,17 @@ export class UserService {
     });
   }
 
+  async setLastReadNotificationID(userID: string, notifID: string) {
+    return this.updateUser({
+      where: {
+        id: userID,
+      },
+      data: {
+        lastReadNotificationID: notifID,
+      },
+    });
+  }
+
   getCloudfrontToken(phone: string, userID: string) {
     return this.jwtService.getCloudfrontToken({ phone, sub: userID });
   }

@@ -36,6 +36,8 @@ model User {
 
   lastAcceptedTermsAndConditionsVersion DateTime?
   lastAcceptedPrivacyPolicyVersion      DateTime?
+
+  lastReadNotificationID String?
 }
 
 model PostContent {

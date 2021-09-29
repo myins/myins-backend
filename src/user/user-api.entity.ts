@@ -62,3 +62,8 @@ export class ApproveDenyUserAPI {
   @IsNotEmpty()
   insID: string;
 }
+
+export class SetLastNotificationAPI {
+  @IsNotEmpty()
+  notifID: string;
+}
