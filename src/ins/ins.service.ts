@@ -219,10 +219,14 @@ export class InsService {
   }
 
   async ins(where: Prisma.INSWhereUniqueInput, include?: Prisma.INSInclude) {
-    return this.prismaService.iNS.findUnique({
+    let ins = await this.prismaService.iNS.findUnique({
       where: where,
       include: include,
     });
+    if (ins?.invitedPhoneNumbers) {
+      ins = <INS>omit(ins, 'invitedPhoneNumbers');
+    }
+    return ins;
   }
 
   async inses(params: {
@@ -233,13 +237,20 @@ export class InsService {
     include?: Prisma.INSInclude;
   }): Promise<INS[]> {
     const { skip, take, where, orderBy, include } = params;
-    return this.prismaService.iNS.findMany({
+    const inses = await this.prismaService.iNS.findMany({
       skip,
       take,
       where,
       orderBy,
       include: include,
     });
+    const insesWithoutPhoneNumbers = inses.map((ins) => {
+      if (ins.invitedPhoneNumbers) {
+        return <INS>omit(ins, 'invitedPhoneNumbers');
+      }
+      return ins;
+    });
+    return insesWithoutPhoneNumbers;
   }
 
   //FIXME: figure out type safety with select statements
