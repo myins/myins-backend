@@ -10,7 +10,6 @@ import { NotificationModule } from './notification/notification.module';
 import { FfmpegModule } from './ffmpeg/ffmpeg.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { ShareModule } from './share/share.module';
 import { FirebaseAdminModule } from '@aginix/nestjs-firebase-admin';
 import { SmsModule } from './sms/sms.module';
 import { InsModule } from './ins/ins.module';
@@ -37,7 +36,6 @@ import { MiddlewareModule } from './middleware/middleware.module';
       ttl: 30,
       limit: 30,
     }),
-    ShareModule,
     FirebaseAdminModule.forRootAsync({
       useFactory: async () => {
         const adminConfig: admin.ServiceAccount = {
