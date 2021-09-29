@@ -179,7 +179,7 @@ export class AuthService {
 
     this.smsService.sendVerificationCode(user);
 
-    await this.chatService.createStreamChatUsers([user]);
+    await this.chatService.createOrUpdateStreamChatUsers([user]);
 
     return addedTogether;
   }

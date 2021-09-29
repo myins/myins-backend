@@ -27,13 +27,16 @@ export class AttachMediaAPI {
 }
 
 export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
-
   @IsString()
   claimToken: string;
-
 }
 
 export class AttachCoverAPI {
   @IsString()
   claimToken: string;
+}
+
+export class SharePostAPI {
+  @ArrayNotEmpty()
+  ins: string[];
 }
