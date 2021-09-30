@@ -17,7 +17,8 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsInteractionService } from 'src/ins/ins.interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
-import { UserService } from 'src/user/user.service';
+import { ShallowUserSelect } from 'src/util/shallow-user';
+import { PostLikeService } from './post.like.service';
 import { PostService } from './post.service';
 
 @Controller('post')
@@ -25,9 +26,9 @@ import { PostService } from './post.service';
 export class PostLikeController {
   constructor(
     private readonly postService: PostService,
-    private readonly userService: UserService,
     private readonly notificationsService: NotificationService,
     private readonly insInteractionService: InsInteractionService,
+    private readonly postLikeService: PostLikeService,
   ) {}
 
   @Get(':id/likes')
@@ -59,18 +60,21 @@ export class PostLikeController {
       throw new BadRequestException('Could not find post!');
     }
 
-    return this.userService.users({
+    return this.postLikeService.postLikes({
       where: {
-        likedPosts: {
-          some: {
-            id: postID,
-          },
-        },
+        postId: postID,
       },
       skip: skip,
       take: take,
+      include: {
+        user: {
+          select: ShallowUserSelect,
+        },
+      },
       orderBy: {
-        firstName: 'desc',
+        user: {
+          firstName: 'desc',
+        },
       },
     });
   }
@@ -97,8 +101,8 @@ export class PostLikeController {
       where: { id: postID },
       data: {
         likes: {
-          connect: {
-            id: user.id,
+          create: {
+            userId: user.id,
           },
         },
       },
@@ -150,8 +154,11 @@ export class PostLikeController {
       where: { id: postID },
       data: {
         likes: {
-          disconnect: {
-            id: user.id,
+          delete: {
+            userId_postId: {
+              userId: user.id,
+              postId: postID,
+            },
           },
         },
       },

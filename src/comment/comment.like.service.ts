@@ -17,8 +17,8 @@ export class CommentLikeService {
       where: { id: comment.id },
       data: {
         likes: {
-          connect: {
-            id: userID,
+          create: {
+            userId: userID,
           },
         },
       },
@@ -58,8 +58,11 @@ export class CommentLikeService {
       where: { id: comment.id },
       data: {
         likes: {
-          disconnect: {
-            id: userID,
+          delete: {
+            userId_commentId: {
+              userId: userID,
+              commentId: comment.id,
+            },
           },
         },
       },
