@@ -1,3 +1,4 @@
+import { User } from '.prisma/client';
 import {
   BadRequestException,
   Controller,
@@ -26,6 +27,17 @@ export class NotificationController {
       throw new BadRequestException("Don't get greedy!");
     }
     return this.notifService.getFeed(userID, skip, take);
+  }
+
+  @Get('count-unread')
+  @ApiTags('notification')
+  @UseGuards(JwtAuthGuard)
+  async countUnreadNotifications(@PrismaUser() user: User) {
+    return {
+      countUnread: await this.notifService.countUnreadNotifications(
+        user.lastReadNotificationID,
+      ),
+    };
   }
 
   // @Get('test')
