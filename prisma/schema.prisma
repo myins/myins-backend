@@ -28,8 +28,8 @@ model User {
   notifications        Notification[] @relation(name: "target")
   createdNotifications Notification[] @relation(name: "notifAuthor")
 
-  likedComments Comment[] @relation(name: "liked")
-  likedPosts    Post[]    @relation(name: "likes")
+  likedComments UserCommentLikeConnection[]
+  likedPosts    UserPostLikeConnection[]
 
   inses UserInsConnection[]
   // pendingINses                            INS[]
@@ -69,8 +69,19 @@ model Post {
   totalMediaContent Int
 
   notifications Notification[] // Some notifications have a post
-  likes         User[]         @relation(name: "likes")
+  likes         UserPostLikeConnection[]
   inses         INS[]
+}
+
+model UserPostLikeConnection {
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String // relation scalar field (used in the `@relation` attribute above)
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
 }
 
 model Comment {
@@ -88,7 +99,18 @@ model Comment {
 
   notifications Notification[]
 
-  likes User[] @relation(name: "liked")
+  likes UserCommentLikeConnection[]
+}
+
+model UserCommentLikeConnection {
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String // relation scalar field (used in the `@relation` attribute above)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  commentId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, commentId])
 }
 
 model Notification {

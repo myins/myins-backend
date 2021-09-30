@@ -13,6 +13,7 @@ import { PostCreateController } from './post.create.controller';
 import { PostFeedController } from './post.feed.controller';
 import { PostFeedService } from './post.feed.service';
 import { PostLikeController } from './post.like.controller';
+import { PostLikeService } from './post.like.service';
 import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
 
@@ -34,7 +35,7 @@ import { PostService } from './post.service';
     PostController,
     PostCreateController,
   ],
-  providers: [PostMediaService, PostService, PostFeedService],
+  providers: [PostMediaService, PostService, PostFeedService, PostLikeService],
   exports: [PostService, PostMediaService],
 })
 export class PostModule {}

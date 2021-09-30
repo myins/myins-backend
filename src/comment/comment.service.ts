@@ -89,10 +89,10 @@ export class CommentService {
         },
         likes: {
           where: {
-            id: userID,
+            userId: userID,
           },
           select: {
-            id: true,
+            userId: true,
           },
         },
         author: {
