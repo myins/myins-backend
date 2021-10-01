@@ -16,6 +16,7 @@ import { Post as PostModel } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
+import { PostMediaService } from 'src/post/post.media.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { SharePostAPI } from './post-api.entity';
@@ -29,6 +30,7 @@ export class PostController {
     private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly chatService: ChatService,
+    private readonly postMediaService: PostMediaService,
   ) {}
 
   @Get('pending')
@@ -114,6 +116,43 @@ export class PostController {
       );
     }
     return this.postService.deletePost(postID);
+  }
+
+  @Delete('/media/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async deletePostMedia(
+    @Param('id') postMediaID: string,
+    @PrismaUser('id') userID: string,
+  ) {
+    const postMedia = await this.postMediaService.getPostMediaById(postMediaID);
+    if (!postMedia) {
+      throw new NotFoundException('Could not find this post media!');
+    }
+    const post = await this.postService.post(
+      {
+        id: postMedia.postId,
+      },
+      false,
+    );
+    if (!post) {
+      throw new NotFoundException('Could not find this post!');
+    }
+    if (post.authorId !== userID) {
+      throw new UnauthorizedException(
+        "You're not allowed to delete this post media!",
+      );
+    }
+    await this.postMediaService.deletePostMedia(postMediaID);
+
+    const remainingMedia = await this.postMediaService.getMediaForPost(post.id);
+    if (!remainingMedia.length) {
+      await this.postService.deletePost(post.id);
+    }
+
+    return {
+      message: 'Post media deleted!',
+    };
   }
 
   @Patch(':id/share')

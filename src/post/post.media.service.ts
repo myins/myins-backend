@@ -1,3 +1,4 @@
+import { PostContent } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 // import { FfmpegService } from 'src/ffmpeg/ffmpeg.service';
@@ -13,6 +14,22 @@ export class PostMediaService {
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
+
+  async getPostMediaById(postMediaId: string): Promise<PostContent | null> {
+    return this.prismaService.postContent.findUnique({
+      where: {
+        id: postMediaId,
+      },
+    });
+  }
+
+  async getMediaForPost(postId: string): Promise<PostContent[]> {
+    return this.prismaService.postContent.findMany({
+      where: {
+        postId: postId,
+      },
+    });
+  }
 
   async attachMediaToPost(
     file: Express.Multer.File,
@@ -299,6 +316,14 @@ export class PostMediaService {
       }
     }
     return toRet;
+  }
+
+  async deletePostMedia(postMediaId: string): Promise<PostContent | null> {
+    return this.prismaService.postContent.delete({
+      where: {
+        id: postMediaId,
+      },
+    });
   }
 }
 
