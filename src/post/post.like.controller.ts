@@ -17,7 +17,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsInteractionService } from 'src/ins/ins.interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { PostLikeService } from './post.like.service';
 import { PostService } from './post.service';
 

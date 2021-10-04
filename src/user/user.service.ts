@@ -9,7 +9,7 @@ import { User, Prisma, UserRole } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 

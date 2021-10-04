@@ -11,7 +11,7 @@ import { retry } from 'ts-retry-promise';
 import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { omit } from 'src/util/omit';
 
 @Injectable()

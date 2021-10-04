@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { PostService } from 'src/post/post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 
 @Injectable()
 export class CommentService {
