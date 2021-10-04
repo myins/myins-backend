@@ -43,7 +43,10 @@ export class StorageService {
         (err, data) => {
           if (err) reject(err);
           else if (data) {
+            console.log(`OK, I put object!`);
             const base = process.env.CLOUDFRONT_URL;
+            console.log(`URL: ${base}`);
+            console.log(`key: ${key}`);
             resolve(`${base}${key}`);
           }
         },
