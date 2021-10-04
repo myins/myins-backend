@@ -47,7 +47,7 @@ export class StorageService {
             const base = process.env.CLOUDFRONT_URL;
             console.log(`URL: ${base}`);
             console.log(`key: ${key}`);
-            resolve(`${base}${key}`);
+            resolve(`https://${base}/${key}`);
           }
         },
       );
