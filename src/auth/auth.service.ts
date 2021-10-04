@@ -179,7 +179,7 @@ export class AuthService {
 
     this.smsService.sendVerificationCode(user);
 
-    await this.chatService.createOrUpdateStreamChatUsers([user]);
+    await this.chatService.createOrUpdateStreamUsers([user]);
 
     return addedTogether;
   }
@@ -204,6 +204,6 @@ export class AuthService {
   }
 
   async logout(user: User) {
-    return this.usersService.logoutUser(user);
+    return this.usersService.logoutUser(user.id);
   }
 }

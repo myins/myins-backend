@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
 import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
@@ -20,12 +20,12 @@ import { PostService } from './post.service';
 @Module({
   imports: [
     PrismaModule,
-    UserModule,
+    forwardRef(() => UserModule),
     StorageModule,
-    CommentModule,
+    forwardRef(() => CommentModule),
     NotificationModule,
     FfmpegModule,
-    InsModule,
+    forwardRef(() => InsModule),
     ChatModule,
   ],
   controllers: [

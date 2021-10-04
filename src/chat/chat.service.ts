@@ -1,6 +1,6 @@
 import { INS, User } from '.prisma/client';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { StreamChat, UserResponse } from 'stream-chat';
+import { ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 import { omit } from 'src/util/omit';
 
@@ -21,7 +21,7 @@ export class ChatService {
     return this.streamChat.createToken(id);
   }
 
-  async createOrUpdateStreamChatUsers(users: User[]) {
+  async createOrUpdateStreamUsers(users: User[]) {
     const data = users.map((user) => ({
       id: user.id,
       name: `${user.firstName} ${user.lastName}`,
@@ -31,12 +31,12 @@ export class ChatService {
     await this.streamChat.upsertUsers(data);
   }
 
-  async getUser(id: string) {
+  async getStreamUser(id: string) {
     const users = await this.streamChat.queryUsers({ id });
     return users.users[0];
   }
 
-  async deleteStreamChatUser(userID: string) {
+  async deleteStreamUser(userID: string) {
     await this.streamChat.deleteUser(userID, {
       mark_messages_deleted: false,
     });
@@ -52,18 +52,18 @@ export class ChatService {
     return await channel.create();
   }
 
-  async getChannel(id: string) {
-    const channels = await this.streamChat.queryChannels({ id });
-    return channels[0];
+  async getChannelsINS(where: ChannelFilters) {
+    const channels = await this.streamChat.queryChannels(where);
+    return channels;
   }
 
   async deleteChannelINS(insID: string) {
-    const channel = await this.getChannel(insID);
-    await channel.delete();
+    const channels = await this.getChannelsINS({ id: insID });
+    await channels[0].delete();
   }
 
   async addMembersToChannel(userIDs: string[], insId: string) {
-    const channel = await this.getChannel(insId);
+    const channels = await this.getChannelsINS({ id: insId });
     const users = await this.userService.users({
       where: {
         id: {
@@ -71,13 +71,13 @@ export class ChatService {
         },
       },
     });
-    await this.createOrUpdateStreamChatUsers(users);
-    await channel.addMembers(userIDs);
+    await this.createOrUpdateStreamUsers(users);
+    await channels[0].addMembers(userIDs);
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
-    const channel = await this.getChannel(insId);
-    await channel.removeMembers([userID]);
+    const channels = await this.getChannelsINS({ id: insId });
+    await channels[0].removeMembers([userID]);
   }
 
   async sendMessageWhenPost(insIds: string[], userID: string, content: string) {
@@ -90,10 +90,10 @@ export class ChatService {
     userID: string,
     message: string,
   ) {
-    const channels = await this.streamChat.queryChannels({
+    const channels = await this.getChannelsINS({
       id: { $in: insIds },
     });
-    const user = await this.getUser(userID);
+    const user = await this.getStreamUser(userID);
     const myUser = <UserResponse>(
       omit(user, 'created_at', 'updated_at', 'last_active')
     );

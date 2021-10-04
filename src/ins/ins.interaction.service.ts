@@ -1,9 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { CommentService } from 'src/comment/comment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import {
+  CommentWithPostWithInsesID,
+  CommentWithPostWithInsesInclude,
+} from 'src/util/prisma-queries-helper';
 
 @Injectable()
 export class InsInteractionService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly commentService: CommentService,
+    private readonly userConnectionService: UserConnectionService,
+  ) {}
 
   async interact(userId: string, insId: string) {
     await this.prismaService.userInsConnection.update({
@@ -54,27 +64,19 @@ export class InsInteractionService {
   }
 
   async interactComment(userId: string, commentId: string) {
-    const postWithIns = await this.prismaService.comment.findUnique({
-      where: {
+    const postWithIns = await this.commentService.comment(
+      {
         id: commentId,
       },
-      include: {
-        post: {
-          select: {
-            inses: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
-      },
-    });
+      CommentWithPostWithInsesInclude,
+    );
     if (!postWithIns) {
       throw new BadRequestException('Invalid post ID!');
     }
-    const insIDs = postWithIns.post.inses.map((each) => each.id);
-    return this.prismaService.userInsConnection.updateMany({
+    const insIDs = (<CommentWithPostWithInsesID>postWithIns).post.inses.map(
+      (each) => each.id,
+    );
+    return this.userConnectionService.updateMany({
       where: {
         insId: {
           in: insIDs,

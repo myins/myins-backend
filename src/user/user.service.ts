@@ -163,10 +163,10 @@ export class UserService {
     });
   }
 
-  async logoutUser(userModel: User) {
+  async logoutUser(userID: string) {
     return this.updateUser({
       where: {
-        id: userModel.id,
+        id: userID,
       },
       data: {
         refreshToken: null,

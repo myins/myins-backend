@@ -12,10 +12,10 @@ import { InsModule } from 'src/ins/ins.module';
 @Module({
   imports: [
     PrismaModule,
-    UserModule,
-    forwardRef(() => PostModule),
+    forwardRef(() => UserModule),
+    PostModule,
     NotificationModule,
-    InsModule,
+    forwardRef(() => InsModule),
   ],
   providers: [CommentService, CommentLikeService],
   exports: [CommentService],

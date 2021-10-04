@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { PostService } from 'src/post/post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
+import {
+  CommentWithPostWithInsesID,
+  ShallowUserSelect,
+} from 'src/util/prisma-queries-helper';
 
 @Injectable()
 export class CommentService {
@@ -41,9 +44,11 @@ export class CommentService {
 
   async comment(
     commentWhereUniqueInput: Prisma.CommentWhereUniqueInput,
-  ): Promise<Comment | null> {
+    commentInclude?: Prisma.CommentInclude,
+  ): Promise<(Comment | CommentWithPostWithInsesID) | null> {
     return this.prismaService.comment.findUnique({
       where: commentWhereUniqueInput,
+      include: commentInclude,
     });
   }
 
@@ -54,11 +59,9 @@ export class CommentService {
     return this.prismaService.comment.update(params);
   }
 
-  async deleteComment(commentID: string) {
+  async deleteComment(where: Prisma.CommentWhereUniqueInput) {
     return this.prismaService.comment.delete({
-      where: {
-        id: commentID,
-      },
+      where,
     });
   }
 
