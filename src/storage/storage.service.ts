@@ -35,7 +35,7 @@ export class StorageService {
     return new Promise<string>((resolve, reject) => {
       this.s3Service.putObject(
         {
-          ACL: 'public-read',
+          ACL: 'bucket-owner-read',
           Bucket: bucket,
           Key: key,
           Body: body,
