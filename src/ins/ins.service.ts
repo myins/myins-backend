@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { INS, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -13,6 +12,7 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { ShallowUserSelect } from 'src/util/shallow-user';
 import { omit } from 'src/util/omit';
+import fetch from 'node-fetch';
 
 @Injectable()
 export class InsService {
@@ -34,11 +34,11 @@ export class InsService {
 
     // Retry it a couple of times in case the code is taken
     return retry(
-      () =>
+      async () =>
         this.prismaService.iNS.create({
           data: {
             name: data.name,
-            shareCode: randomCode(6),
+            shareCode: await this.randomCode(),
             members: userID
               ? {
                   create: {
@@ -308,5 +308,48 @@ export class InsService {
         cover: dataURL,
       },
     });
+  }
+
+  private async randomCode() {
+    const makeRandom = () => {
+      const length = 20;
+      let result = '';
+      const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const charactersLength = characters.length;
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(
+          Math.floor(Math.random() * charactersLength),
+        );
+      }
+      return result;
+    };
+
+    const res = await fetch(
+      `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${process.env.FIREBASE_API_KEY}`,
+      {
+        body: JSON.stringify({
+          dynamicLinkInfo: {
+            domainUriPrefix: process.env.FIREBASE_DYNAMIC_URL_PREFIX,
+            link: `${process.env.FIREBASE_REDIRECT_URL}/${makeRandom()}`,
+            iosInfo: {
+              iosBundleId: process.env.FIREBASE_IOS_BUNDLE_ID,
+              iosAppStoreId: process.env.FIREBASE_APP_STORE_ID,
+            },
+          },
+          suffix: {
+            option: 'SHORT',
+          },
+        }),
+        method: 'POST',
+      },
+    );
+    const resData = await res.json();
+    const shortLink = resData.shortLink;
+
+    const parts = shortLink.split('/');
+    const lastSegment = parts.pop() || parts.pop(); // handle potential trailing slash
+
+    return lastSegment;
   }
 }
