@@ -22,7 +22,7 @@ export class ChatService {
   }
 
   async createOrUpdateStreamUsers(users: User[]) {
-    const data = users.map((user) => ({
+    const data: UserResponse[] = users.map((user) => ({
       id: user.id,
       name: `${user.firstName} ${user.lastName}`,
       phoneNumber: user.phoneNumber,
