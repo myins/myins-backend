@@ -18,6 +18,10 @@ workflows:
           region: AWS_REGION
           repo: myinsn-backend
           tag: "$CIRCLE_SHA1"
+          filters:
+            branches:
+              only:
+                - master
       - aws-ecs/deploy-service-update:
           requires:
             - aws-ecr/build-and-push-image # only run this job once aws-ecr/build-and-push-image has completed
