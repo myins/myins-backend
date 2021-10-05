@@ -17,10 +17,10 @@ export class PostFeedService {
       },
       likes: {
         where: {
-          id: userID,
+          userId: userID,
         },
         select: {
-          id: true,
+          userId: true,
         },
       },
       mediaContent: true,

@@ -77,6 +77,10 @@ export class InviteService {
           );
         }),
       );
+      await this.insService.addAsInvitedPhoneNumbers(
+        theINS[0].id,
+        otherUsersPhoneNumbers,
+      );
     }
   }
 
@@ -140,22 +144,32 @@ export class InviteService {
     await this.chatService.addMembersToChannel(otherUsers, theINS[0].id);
   }
 
-  async invitesList(all: boolean, skip: number, take: number, search: string, userID: string, insID: string) {
+  async invitesList(
+    all: boolean,
+    skip: number,
+    take: number,
+    search: string,
+    userID: string,
+    insID: string,
+  ) {
     const theINS = await this.prismaService.iNS.findUnique({
       where: {
-        id: insID
+        id: insID,
       },
       include: {
         members: {
           select: {
-            userId: true
-          }
-        }
-      }
-    })
+            userId: true,
+          },
+        },
+      },
+    });
 
-    if (!theINS || theINS.members.findIndex(each => each.userId == userID) == -1) {
-      throw new NotFoundException("Could not find that INS!")
+    if (
+      !theINS ||
+      theINS.members.findIndex((each) => each.userId == userID) == -1
+    ) {
+      throw new NotFoundException('Could not find that INS!');
     }
 
     const profileInfo: Prisma.UserWhereInput = {
@@ -178,7 +192,7 @@ export class InviteService {
           : undefined,
       id: {
         not: {
-          in: theINS.members.map(each => each.userId)
+          in: theINS.members.map((each) => each.userId),
         },
       },
       inses: all

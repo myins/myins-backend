@@ -14,6 +14,14 @@ export class NotificationService {
     private readonly pushService: NotificationPushService,
   ) {}
 
+  async getById(notifID: string) {
+    return await this.prisma.notification.findUnique({
+      where: {
+        id: notifID,
+      },
+    });
+  }
+
   async getFeed(userID: string, skip: number, take: number) {
     const count = await this.prisma.notification.count({
       where: { targetId: userID },
@@ -44,9 +52,21 @@ export class NotificationService {
         createdAt: 'desc',
       },
     });
+
+    const user = await this.users.user({ id: userID });
+    const notification = user?.lastReadNotificationID
+      ? await this.getById(user?.lastReadNotificationID)
+      : null;
+    const dataReturn = data.map((notif) => {
+      return {
+        ...notif,
+        isSeen: !!notification && notification.createdAt > notif.createdAt,
+      };
+    });
+
     return {
       count: count,
-      data: data,
+      data: dataReturn,
     };
   }
 
@@ -212,6 +232,23 @@ export class NotificationService {
       },
     };
     return toRet;
+  }
+
+  async countUnreadNotifications(
+    lastReadNotificationID: string | null,
+  ): Promise<number> {
+    let data = {};
+    if (lastReadNotificationID) {
+      const notification = await this.getById(lastReadNotificationID);
+      data = {
+        where: {
+          createdAt: {
+            gt: notification?.createdAt,
+          },
+        },
+      };
+    }
+    return this.prisma.notification.count(data);
   }
 }
 

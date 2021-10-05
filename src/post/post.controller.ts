@@ -16,13 +16,22 @@ import { Post as PostModel } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
+import { PostMediaService } from 'src/post/post.media.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { SharePostAPI } from './post-api.entity';
+import { InsService } from 'src/ins/ins.service';
+import { ChatService } from 'src/chat/chat.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly insService: InsService,
+    private readonly chatService: ChatService,
+    private readonly postMediaService: PostMediaService,
+  ) {}
 
   @Get('pending')
   @UseGuards(JwtAuthGuard)
@@ -36,6 +45,7 @@ export class PostController {
       includeRelatedInfo: true,
     });
   }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
@@ -106,5 +116,98 @@ export class PostController {
       );
     }
     return this.postService.deletePost(postID);
+  }
+
+  @Delete('/media/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async deletePostMedia(
+    @Param('id') postMediaID: string,
+    @PrismaUser('id') userID: string,
+  ) {
+    const postMedia = await this.postMediaService.getPostMediaById(postMediaID);
+    if (!postMedia) {
+      throw new NotFoundException('Could not find this post media!');
+    }
+    const post = await this.postService.post(
+      {
+        id: postMedia.postId,
+      },
+      false,
+    );
+    if (!post) {
+      throw new NotFoundException('Could not find this post!');
+    }
+    if (post.authorId !== userID) {
+      throw new UnauthorizedException(
+        "You're not allowed to delete this post media!",
+      );
+    }
+    await this.postMediaService.deletePostMedia(postMediaID);
+
+    const remainingMedia = await this.postMediaService.getMediaForPost(post.id);
+    if (!remainingMedia.length) {
+      await this.postService.deletePost(post.id);
+    }
+
+    return {
+      message: 'Post media deleted!',
+    };
+  }
+
+  @Patch(':id/share')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async sharePost(
+    @Param('id') postID: string,
+    @PrismaUser('id') userID: string,
+    @Body() shareData: SharePostAPI,
+  ) {
+    const post = await this.postService.post(
+      {
+        id: postID,
+      },
+      false,
+    );
+    if (!post) {
+      throw new NotFoundException('Could not find this post!');
+    }
+    if (post.authorId !== userID) {
+      throw new UnauthorizedException("You're not allowed to share this post!");
+    }
+
+    const { ins } = shareData;
+    const inses = (
+      await this.insService.insesSelectIDs({
+        members: {
+          some: {
+            userId: userID,
+          },
+        },
+      })
+    ).map((each) => each.id);
+    for (const each of ins) {
+      if (!inses.includes(each)) {
+        throw new UnauthorizedException(
+          "You're not allowed to post to one of that INS!",
+        );
+      }
+    }
+
+    await this.postService.updatePost({
+      where: {
+        id: postID,
+      },
+      data: {
+        inses: {
+          connect: ins.map((insId) => ({ id: insId })),
+        },
+      },
+    });
+    await this.chatService.sendMessageWhenPost(ins, userID, post.content);
+
+    return {
+      message: 'Post shared!',
+    };
   }
 }

@@ -48,6 +48,9 @@ export class OnboardingService {
       throw new BadRequestException('Could not find INS!');
     }
 
+    // Firstly, we want to create the chat channel
+    
+    await this.chatService.createChannelINS(ins, userID);
     await this.prismaService.$transaction(async (prisma) => {
       // First we connect the user to that INS
       await prisma.iNS.update({
@@ -78,9 +81,6 @@ export class OnboardingService {
         },
       });
     });
-
-    // And lastly, we want to create the chat channel
-    await this.chatService.createChannelINS(ins, userID);
     const posts = await this.prismaService.post.findMany({
       where: {
         inses: {
@@ -94,11 +94,10 @@ export class OnboardingService {
     await Promise.all(
       posts.map(async (post) => {
         if (post.authorId) {
-          const message = `Post created by ${post.id}: "${post.content}"`;
-          await this.chatService.sendMessageToChannels(
+          await this.chatService.sendMessageWhenPost(
             [insID],
             post.authorId,
-            message,
+            post.content,
           );
         }
       }),

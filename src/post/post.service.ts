@@ -40,9 +40,10 @@ export class PostService {
         },
         likes: {
           where: {
-            id: asUserID,
+            userId: asUserID,
           },
         },
+        mediaContent: true,
       },
     });
     return toRet;

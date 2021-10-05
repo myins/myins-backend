@@ -1,5 +1,3 @@
-import { IsNumber } from 'class-validator';
-
 export class CreateCommentAPI {
   content: string;
 
@@ -8,11 +6,4 @@ export class CreateCommentAPI {
 
 export class PatchCommentAPI {
   content: string;
-}
-
-export class SharePostAPI {
-  postID: string;
-
-  @IsNumber({}, { each: true })
-  targetIDs: string[];
 }

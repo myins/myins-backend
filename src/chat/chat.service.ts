@@ -21,13 +21,19 @@ export class ChatService {
     return this.streamChat.createToken(id);
   }
 
-  async createStreamChatUsers(users: User[]) {
+  async createOrUpdateStreamChatUsers(users: User[]) {
     const data = users.map((user) => ({
       id: user.id,
       name: `${user.firstName} ${user.lastName}`,
       phoneNumber: user.phoneNumber,
+      image: user.profilePicture,
     }));
     await this.streamChat.upsertUsers(data);
+  }
+
+  async getUser(id: string) {
+    const users = await this.streamChat.queryUsers({ id });
+    return users.users[0];
   }
 
   async deleteStreamChatUser(userID: string) {
@@ -41,17 +47,23 @@ export class ChatService {
       name: ins.name,
       members: [userID],
       created_by_id: userID,
+      image: ins.cover,
     });
     return await channel.create();
   }
 
+  async getChannel(id: string) {
+    const channels = await this.streamChat.queryChannels({ id });
+    return channels[0];
+  }
+
   async deleteChannelINS(insID: string) {
-    const channels = await this.streamChat.queryChannels({ id: insID });
-    await channels[0].delete();
+    const channel = await this.getChannel(insID);
+    await channel.delete();
   }
 
   async addMembersToChannel(userIDs: string[], insId: string) {
-    const channels = await this.streamChat.queryChannels({ id: insId });
+    const channel = await this.getChannel(insId);
     const users = await this.userService.users({
       where: {
         id: {
@@ -59,17 +71,18 @@ export class ChatService {
         },
       },
     });
-    await this.createStreamChatUsers(users);
-
-    // FIXME: remove this check once all inses have chat channels
-    if (channels.length) {
-      await channels[0].addMembers(userIDs);
-    }
+    await this.createOrUpdateStreamChatUsers(users);
+    await channel.addMembers(userIDs);
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
-    const channels = await this.streamChat.queryChannels({ id: insId });
-    await channels[0].removeMembers([userID]);
+    const channel = await this.getChannel(insId);
+    await channel.removeMembers([userID]);
+  }
+
+  async sendMessageWhenPost(insIds: string[], userID: string, content: string) {
+    const message = `Post created by ${userID}: "${content}"`;
+    return this.sendMessageToChannels(insIds, userID, message);
   }
 
   async sendMessageToChannels(
@@ -80,8 +93,7 @@ export class ChatService {
     const channels = await this.streamChat.queryChannels({
       id: { $in: insIds },
     });
-    const users = await this.streamChat.queryUsers({ id: userID });
-    const user = users.users[0];
+    const user = await this.getUser(userID);
     const myUser = <UserResponse>(
       omit(user, 'created_at', 'updated_at', 'last_active')
     );
