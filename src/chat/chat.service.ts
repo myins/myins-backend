@@ -9,7 +9,8 @@ export class ChatService {
   private streamChat: StreamChat;
 
   constructor(
-    @Inject(forwardRef(() => UserService)) private userService: UserService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
   ) {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
@@ -93,7 +94,7 @@ export class ChatService {
     const channels = await this.getChannelsINS({
       id: { $in: insIds },
     });
-    const user = await this.getStreamUser(userID);
+    const user: UserResponse = await this.getStreamUser(userID);
     const myUser = <UserResponse>(
       omit(user, 'created_at', 'updated_at', 'last_active')
     );

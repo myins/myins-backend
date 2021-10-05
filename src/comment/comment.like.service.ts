@@ -7,8 +7,8 @@ import { InsInteractionService } from 'src/ins/ins.interaction.service';
 @Injectable()
 export class CommentLikeService {
   constructor(
-    private commentService: CommentService,
-    private notifsService: NotificationService,
+    private readonly commentService: CommentService,
+    private readonly notifsService: NotificationService,
     private readonly interactionService: InsInteractionService,
   ) {}
 

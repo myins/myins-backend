@@ -10,8 +10,8 @@ import {
 @Injectable()
 export class CommentService {
   constructor(
-    private prismaService: PrismaService,
-    private postService: PostService,
+    private readonly prismaService: PrismaService,
+    private readonly postService: PostService,
   ) {}
 
   async createComment(data: Prisma.CommentCreateInput): Promise<Comment> {

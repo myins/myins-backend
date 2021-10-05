@@ -16,10 +16,10 @@ import { isTestNumber } from 'src/util/test-numbers';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UserService,
-    private jwtService: SjwtService,
-    private smsService: SmsService, //@InjectTwilio() private readonly twilioClient: TwilioClient
-    private chatService: ChatService,
+    private readonly usersService: UserService,
+    private readonly jwtService: SjwtService,
+    private readonly smsService: SmsService, //@InjectTwilio() private readonly twilioClient: TwilioClient
+    private readonly chatService: ChatService,
   ) {}
 
   async resendConfirmation(phone: string) {
