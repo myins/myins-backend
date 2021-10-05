@@ -31,12 +31,12 @@ export class UserVersionsController {
       lastAcceptedPrivacyPolicyVersion,
       lastAcceptedTermsAndConditionsVersion,
     } = user;
-    const tAndCVersions = await this.currentVersionsService.get(
-      DocumentType.TERMS_AND_CONDITIONS,
-    );
-    const privacyPolicyVersions = await this.currentVersionsService.get(
-      DocumentType.PRIVACY_POLICY,
-    );
+    const tAndCVersions = await this.currentVersionsService.getByType({
+      type: DocumentType.TERMS_AND_CONDITIONS,
+    });
+    const privacyPolicyVersions = await this.currentVersionsService.getByType({
+      type: DocumentType.PRIVACY_POLICY,
+    });
 
     const isTermsAndConditionsAccepted =
       lastAcceptedTermsAndConditionsVersion?.getTime() ===
@@ -57,9 +57,9 @@ export class UserVersionsController {
     @PrismaUser('id') userID: string,
     @Body() body: ChangeCurrentVersionsAPI,
   ) {
-    const currentVersions = await this.currentVersionsService.get(
-      body.documentType,
-    );
+    const currentVersions = await this.currentVersionsService.getByType({
+      type: body.documentType,
+    });
     await this.userService.updateUser({
       where: {
         id: userID,

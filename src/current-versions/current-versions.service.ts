@@ -1,17 +1,15 @@
-import { DocumentType } from '.prisma/client';
+import { Prisma } from '.prisma/client';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 
 @Injectable()
 export class CurrentVersionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async get(type: DocumentType) {
+  async getByType(where: Prisma.CurrentVersionsWhereUniqueInput) {
     const currentVersionsValues = await this.prisma.currentVersions.findUnique({
-      where: {
-        type: type,
-      },
+      where,
     });
     if (currentVersionsValues == null) {
       throw new InternalServerErrorException('There is no current version!');
