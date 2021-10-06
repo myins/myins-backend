@@ -154,7 +154,6 @@ export class OnboardingController {
         },
         id: body.postID,
       },
-      includeRelatedInfo: false,
     });
 
     if (!post || post.length == 0) {
@@ -227,7 +226,6 @@ export class OnboardingController {
         },
         id: body.postID,
       },
-      includeRelatedInfo: false,
     });
 
     if (!post || post.length == 0) {

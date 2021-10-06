@@ -53,35 +53,24 @@ export class PostService {
     return toRet;
   }
 
-  async posts(params: {
-    skip?: number;
-    take?: number;
-    where?: Prisma.PostWhereInput;
-    orderBy?: Prisma.PostOrderByWithRelationInput;
-    includeRelatedInfo: boolean;
-  }): Promise<Post[]> {
-    const { skip, take, where, orderBy, includeRelatedInfo } = params;
-    return this.prisma.post.findMany({
-      skip,
-      take,
-      where,
-      orderBy,
-      include: includeRelatedInfo
-        ? {
-            author: {
-              select: ShallowUserSelect,
-            },
-            mediaContent: true,
-          }
-        : null,
-    });
+  async posts(params: Prisma.PostFindManyArgs) {
+    return this.prisma.post.findMany(params);
+  }
+
+  async postsWithRelatedInfo(params: Prisma.PostFindManyArgs) {
+    params.include = {
+      author: {
+        select: ShallowUserSelect,
+      },
+      mediaContent: true,
+    };
+    return this.posts(params);
   }
 
   async createPost(data: Prisma.PostCreateInput): Promise<Post> {
-    const toRet = await this.prisma.post.create({
+    return this.prisma.post.create({
       data,
     });
-    return toRet;
   }
 
   async updatePost(params: {
@@ -89,11 +78,14 @@ export class PostService {
     data: Prisma.PostUpdateInput;
   }): Promise<Post> {
     const { data, where } = params;
-    const toRet = await this.prisma.post.update({
+    return this.prisma.post.update({
       data,
       where,
     });
-    return toRet;
+  }
+
+  async updateManyPosts(params: Prisma.PostUpdateManyArgs) {
+    return this.prisma.post.updateMany(params);
   }
 
   async deletePost(postId: string): Promise<Post> {

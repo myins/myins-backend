@@ -37,12 +37,11 @@ export class PostController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async getPendingPosts(@PrismaUser('id') userID: string) {
-    return this.postService.posts({
+    return this.postService.postsWithRelatedInfo({
       where: {
         authorId: userID,
         pending: true,
       },
-      includeRelatedInfo: true,
     });
   }
 

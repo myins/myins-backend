@@ -53,7 +53,6 @@ export class PostLikeController {
           },
         },
       },
-      includeRelatedInfo: false,
     });
 
     if (!postIfValid || postIfValid.length == 0) {

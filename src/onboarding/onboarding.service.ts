@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
+import { PostService } from 'src/post/post.service';
 import {
   InsWithCountMembers,
   InsWithCountMembersInclude,
@@ -14,6 +15,7 @@ export class OnboardingService {
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
     private readonly insService: InsService,
+    private readonly postService: PostService,
   ) {}
 
   private readonly logger = new Logger(OnboardingService.name);
@@ -24,7 +26,7 @@ export class OnboardingService {
     const d = new Date();
     d.setDate(d.getDate() - 2);
 
-    const res = await this.prismaService.iNS.deleteMany({
+    const res = await this.insService.deleteMany({
       where: {
         members: {
           none: {},
@@ -67,7 +69,7 @@ export class OnboardingService {
         },
       });
       //Then we also make him the owner of all the posts (should be one post)
-      await this.prismaService.post.updateMany({
+      await this.postService.updateManyPosts({
         where: {
           inses: {
             some: {
@@ -81,7 +83,7 @@ export class OnboardingService {
         },
       });
     });
-    const posts = await this.prismaService.post.findMany({
+    const posts = await this.postService.posts({
       where: {
         inses: {
           some: {

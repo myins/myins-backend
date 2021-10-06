@@ -14,11 +14,11 @@ export class NotificationService {
     private readonly pushService: NotificationPushService,
   ) {}
 
-  async getById(notifID: string) {
-    return await this.prisma.notification.findUnique({
-      where: {
-        id: notifID,
-      },
+  async getById(
+    where: Prisma.NotificationWhereUniqueInput,
+  ): Promise<Notification | null> {
+    return this.prisma.notification.findUnique({
+      where,
     });
   }
 
@@ -55,7 +55,7 @@ export class NotificationService {
 
     const user = await this.users.user({ id: userID });
     const notification = user?.lastReadNotificationID
-      ? await this.getById(user?.lastReadNotificationID)
+      ? await this.getById({ id: user?.lastReadNotificationID })
       : null;
     const dataReturn = data.map((notif) => {
       return {
@@ -110,7 +110,7 @@ export class NotificationService {
     const targetUser = await this.users.user({ id: targetID });
     const authorUser = await this.users.user({ id: sourceID });
     if (authorUser && targetUser?.pushToken) {
-      return await this.pushService.pushData(
+      return this.pushService.pushData(
         targetUser.pushToken,
         targetUser?.sandboxToken ?? false,
         this.constructNotificationBody(authorUser, targetUser, {
@@ -134,12 +134,11 @@ export class NotificationService {
     const targetUser = await this.users.user({ id: targetID });
     const authorUser = await this.users.user({ id: sourceID });
     if (authorUser && targetUser?.pushToken) {
-      const toRet = await this.pushService.pushData(
+      return this.pushService.pushData(
         targetUser.pushToken,
         targetUser?.sandboxToken ?? false,
         this.constructNotificationBody(authorUser, targetUser, notif),
       );
-      return toRet;
     }
   }
 
@@ -220,7 +219,7 @@ export class NotificationService {
         break;
     }
 
-    const toRet = {
+    return {
       title: 'MyINS',
       body: body,
       badge: 1,
@@ -231,7 +230,6 @@ export class NotificationService {
         ...clean(source),
       },
     };
-    return toRet;
   }
 
   async countUnreadNotifications(
@@ -239,7 +237,7 @@ export class NotificationService {
   ): Promise<number> {
     let data = {};
     if (lastReadNotificationID) {
-      const notification = await this.getById(lastReadNotificationID);
+      const notification = await this.getById({ id: lastReadNotificationID });
       data = {
         where: {
           createdAt: {

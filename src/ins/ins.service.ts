@@ -278,4 +278,8 @@ export class InsService {
       },
     });
   }
+
+  async deleteMany(params: Prisma.INSDeleteManyArgs) {
+    return this.prismaService.iNS.deleteMany(params);
+  }
 }

@@ -20,13 +20,11 @@ export class UserConnectionService {
 
   async createMany(params: {
     data: Prisma.UserInsConnectionCreateManyInput[];
-  }): Promise<Prisma.BatchPayload> {
+  }) {
     return this.prisma.userInsConnection.createMany(params);
   }
 
-  async updateMany(
-    params: Prisma.UserInsConnectionUpdateManyArgs,
-  ): Promise<Prisma.BatchPayload> {
+  async updateMany(params: Prisma.UserInsConnectionUpdateManyArgs) {
     return this.prisma.userInsConnection.updateMany(params);
   }
 
