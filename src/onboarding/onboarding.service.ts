@@ -49,7 +49,7 @@ export class OnboardingService {
     }
 
     // Firstly, we want to create the chat channel
-    
+
     await this.chatService.createChannelINS(ins, userID);
     await this.prismaService.$transaction(async (prisma) => {
       // First we connect the user to that INS
