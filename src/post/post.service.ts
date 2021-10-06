@@ -17,6 +17,10 @@ export class PostService {
     });
   }
 
+  async firstPost(params: Prisma.PostFindFirstArgs): Promise<Post | null> {
+    return this.prisma.post.findFirst(params);
+  }
+
   async postWithUserInfo(
     postWhereUniqueInput: Prisma.PostWhereUniqueInput,
   ): Promise<Post | null> {
@@ -27,12 +31,12 @@ export class PostService {
     });
   }
 
-  async injectedPost(postID: string, asUserID: string) {
-    const toRet = await this.prisma.post.findUnique({
-      where: {
+  async injectedPost(postID: string, asUserID: string): Promise<Post | null> {
+    return this.post(
+      {
         id: postID,
       },
-      include: {
+      {
         author: {
           select: ShallowUserSelect,
         },
@@ -49,15 +53,14 @@ export class PostService {
         },
         mediaContent: true,
       },
-    });
-    return toRet;
+    );
   }
 
-  async posts(params: Prisma.PostFindManyArgs) {
+  async posts(params: Prisma.PostFindManyArgs): Promise<Post[]> {
     return this.prisma.post.findMany(params);
   }
 
-  async postsWithRelatedInfo(params: Prisma.PostFindManyArgs) {
+  async postsWithRelatedInfo(params: Prisma.PostFindManyArgs): Promise<Post[]> {
     params.include = {
       author: {
         select: ShallowUserSelect,
@@ -73,26 +76,17 @@ export class PostService {
     });
   }
 
-  async updatePost(params: {
-    where: Prisma.PostWhereUniqueInput;
-    data: Prisma.PostUpdateInput;
-  }): Promise<Post> {
-    const { data, where } = params;
-    return this.prisma.post.update({
-      data,
-      where,
-    });
+  async updatePost(params: Prisma.PostUpdateArgs): Promise<Post> {
+    return this.prisma.post.update(params);
   }
 
   async updateManyPosts(params: Prisma.PostUpdateManyArgs) {
     return this.prisma.post.updateMany(params);
   }
 
-  async deletePost(postId: string): Promise<Post> {
+  async deletePost(where: Prisma.PostWhereUniqueInput): Promise<Post> {
     return this.prisma.post.delete({
-      where: {
-        id: postId,
-      },
+      where,
     });
   }
 }

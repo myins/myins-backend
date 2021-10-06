@@ -36,10 +36,7 @@ export class CommentService {
     });
   }
 
-  async updateComment(params: {
-    where: Prisma.CommentWhereUniqueInput;
-    data: Prisma.CommentUpdateInput;
-  }): Promise<Comment> {
+  async updateComment(params: Prisma.CommentUpdateArgs): Promise<Comment> {
     return this.prismaService.comment.update(params);
   }
 
@@ -59,7 +56,7 @@ export class CommentService {
     if (x == null) {
       throw new BadRequestException('Could not find post!');
     }
-    const toRet = await this.comments({
+    return this.comments({
       skip: skip,
       take: take,
       where: {
@@ -87,6 +84,5 @@ export class CommentService {
         },
       },
     });
-    return toRet;
   }
 }

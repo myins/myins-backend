@@ -59,7 +59,7 @@ export class PostController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async patchPost(
-    @Param('id') commentID: string,
+    @Param('id') postID: string,
     @Body() postData: PatchCommentAPI,
     @PrismaUser('id') userID: string,
   ) {
@@ -69,7 +69,7 @@ export class PostController {
     }
 
     const post = await this.postService.post({
-      id: commentID,
+      id: postID,
     });
     if (post == null) {
       throw new NotFoundException('Could not find this comment!');
@@ -81,7 +81,7 @@ export class PostController {
     }
     return this.postService.updatePost({
       where: {
-        id: commentID,
+        id: postID,
       },
       data: {
         content: content,
@@ -108,7 +108,7 @@ export class PostController {
         "You're not allowed to delete this post!",
       );
     }
-    return this.postService.deletePost(postID);
+    return this.postService.deletePost({ id: postID });
   }
 
   @Delete('/media/:id')
@@ -118,7 +118,9 @@ export class PostController {
     @Param('id') postMediaID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const postMedia = await this.postMediaService.getPostMediaById(postMediaID);
+    const postMedia = await this.postMediaService.getPostMediaById({
+      id: postMediaID,
+    });
     if (!postMedia) {
       throw new NotFoundException('Could not find this post media!');
     }
@@ -133,11 +135,13 @@ export class PostController {
         "You're not allowed to delete this post media!",
       );
     }
-    await this.postMediaService.deletePostMedia(postMediaID);
+    await this.postMediaService.deletePostMedia({ id: postMediaID });
 
-    const remainingMedia = await this.postMediaService.getMediaForPost(post.id);
+    const remainingMedia = await this.postMediaService.getMediaForPost({
+      postId: post.id,
+    });
     if (!remainingMedia.length) {
-      await this.postService.deletePost(post.id);
+      await this.postService.deletePost({ id: post.id });
     }
 
     return {

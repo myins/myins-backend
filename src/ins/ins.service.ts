@@ -186,9 +186,7 @@ export class InsService {
       insId: insID,
       userId: userID,
     }));
-    await this.userConnectionService.createMany({
-      data: data,
-    });
+    await this.userConnectionService.createMany(data);
     return Promise.all(
       insIDs.map(async (insID) => {
         const ins = await this.ins({ id: insID });
@@ -232,25 +230,17 @@ export class InsService {
   }
 
   //FIXME: figure out type safety with select statements
-  async insesSelectIDs(where: Prisma.INSWhereInput) {
-    const toRet = await this.inses({
+  async insesSelectIDs(where: Prisma.INSWhereInput): Promise<INS[]> {
+    return this.inses({
       where: where,
       select: {
         id: true,
       },
     });
-    return toRet;
   }
 
-  async update(params: {
-    where: Prisma.INSWhereUniqueInput;
-    data: Prisma.INSUpdateInput;
-  }): Promise<INS> {
-    const { where, data } = params;
-    return this.prismaService.iNS.update({
-      data,
-      where,
-    });
+  async update(params: Prisma.INSUpdateArgs): Promise<INS> {
+    return this.prismaService.iNS.update(params);
   }
 
   async attachCoverToPost(

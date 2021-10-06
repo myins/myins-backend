@@ -8,10 +8,14 @@ import {
 } from '@nestjs/common';
 import * as path from 'path';
 import { InsService } from 'src/ins/ins.service';
-// import { FfmpegService } from 'src/ffmpeg/ffmpeg.service';
+import {
+  PostWithInsesAndCountMedia,
+  PostWithInsesAndCountMediaInclude,
+} from 'src/prisma-queries-helper/post-include-inses-and-count-media';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
+import { PostService } from './post.service';
 
 @Injectable()
 export class PostMediaService {
@@ -20,23 +24,24 @@ export class PostMediaService {
     private readonly storageService: StorageService, // private readonly ffmpegService: FfmpegService,
     @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
+    private readonly postService: PostService,
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
 
-  async getPostMediaById(postMediaId: string): Promise<PostContent | null> {
+  async getPostMediaById(
+    where: Prisma.PostContentWhereUniqueInput,
+  ): Promise<PostContent | null> {
     return this.prismaService.postContent.findUnique({
-      where: {
-        id: postMediaId,
-      },
+      where,
     });
   }
 
-  async getMediaForPost(postId: string): Promise<PostContent[]> {
+  async getMediaForPost(
+    where: Prisma.PostContentWhereInput,
+  ): Promise<PostContent[]> {
     return this.prismaService.postContent.findMany({
-      where: {
-        postId: postId,
-      },
+      where,
     });
   }
 
@@ -46,6 +51,10 @@ export class PostMediaService {
     return this.prismaService.postContent.findMany(params);
   }
 
+  async create(params: Prisma.PostContentCreateArgs): Promise<PostContent> {
+    return this.prismaService.postContent.create(params);
+  }
+
   async attachMediaToPost(
     file: Express.Multer.File,
     thumbnail: Express.Multer.File | undefined,
@@ -53,21 +62,12 @@ export class PostMediaService {
     userID: string | null,
     postInfo: PostInformation,
   ) {
-    const post = await this.prismaService.post.findUnique({
-      where: { id: postID },
-      include: {
-        inses: {
-          select: {
-            id: true,
-          },
-        },
-        _count: {
-          select: {
-            mediaContent: true,
-          },
-        },
+    const post = await this.postService.post(
+      {
+        id: postID,
       },
-    });
+      PostWithInsesAndCountMediaInclude,
+    );
     if (post == null) {
       throw new BadRequestException('Could not find post!');
     }
@@ -76,7 +76,8 @@ export class PostMediaService {
         throw new BadRequestException("That's not your post!");
       }
     }
-    const existingContent = post._count?.mediaContent ?? 0;
+    const existingContent =
+      (<PostWithInsesAndCountMedia>post)._count?.mediaContent ?? 0;
     if (existingContent + 1 > post.totalMediaContent) {
       throw new BadRequestException(
         'There are too many medias attached already!',
@@ -116,10 +117,14 @@ export class PostMediaService {
 
     this.logger.debug('Uploading new post content...');
 
-    const toRet = await this.prismaService.postContent.create({
+    const toRet = await this.create({
       data: {
         content: dataURL,
-        postId: postID,
+        post: {
+          connect: {
+            id: postID,
+          },
+        },
         thumbnail: thumbnailURL,
         width: postInfo.width,
         height: postInfo.height,
@@ -131,19 +136,15 @@ export class PostMediaService {
 
     // Time to update the post's pending state. This is a transaction in case we add async loading
     // And 2 pictures get uploaded at aprox the same time.
-    await this.prismaService.$transaction(async (prisma) => {
+    await this.prismaService.$transaction(async () => {
       // Find an available ticket
 
-      const transactionPost = await prisma.post.findUnique({
-        where: { id: post.id },
-        include: {
-          _count: {
-            select: {
-              mediaContent: true,
-            },
-          },
+      const transactionPost = await this.postService.post(
+        {
+          id: post.id,
         },
-      });
+        PostWithInsesAndCountMediaInclude,
+      );
       this.logger.debug(`Got post, ${transactionPost?.id}`);
 
       if (!transactionPost) {
@@ -156,7 +157,8 @@ export class PostMediaService {
         return; // Nothing to do here, looks like the other thread
       }
 
-      const realMediaCount = transactionPost._count?.mediaContent ?? 0;
+      const realMediaCount =
+        (<PostWithInsesAndCountMedia>transactionPost)._count?.mediaContent ?? 0;
       const isReady = realMediaCount >= transactionPost.totalMediaContent;
 
       this.logger.debug(`Is ready? ${isReady}`);
@@ -169,7 +171,7 @@ export class PostMediaService {
 
       this.logger.debug(`Setting pending to false!`);
 
-      return prisma.post.update({
+      return this.postService.updatePost({
         data: {
           pending: false,
         },
@@ -180,7 +182,7 @@ export class PostMediaService {
     });
 
     if (postInfo.setCover && !postInfo.isVideo) {
-      for (const eachINS of post.inses) {
+      for (const eachINS of (<PostWithInsesAndCountMedia>post).inses) {
         await this.insService.update({
           where: eachINS,
           data: {
@@ -333,11 +335,11 @@ export class PostMediaService {
     return toRet;
   }
 
-  async deletePostMedia(postMediaId: string): Promise<PostContent | null> {
+  async deletePostMedia(
+    where: Prisma.PostContentWhereUniqueInput,
+  ): Promise<PostContent | null> {
     return this.prismaService.postContent.delete({
-      where: {
-        id: postMediaId,
-      },
+      where,
     });
   }
 }

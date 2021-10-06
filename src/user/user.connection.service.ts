@@ -18,25 +18,18 @@ export class UserConnectionService {
     return connection;
   }
 
-  async createMany(params: {
-    data: Prisma.UserInsConnectionCreateManyInput[];
-  }) {
-    return this.prisma.userInsConnection.createMany(params);
+  async createMany(data: Prisma.UserInsConnectionCreateManyInput[]) {
+    return this.prisma.userInsConnection.createMany({ data });
   }
 
   async updateMany(params: Prisma.UserInsConnectionUpdateManyArgs) {
     return this.prisma.userInsConnection.updateMany(params);
   }
 
-  async update(params: {
-    where: Prisma.UserInsConnectionWhereUniqueInput;
-    data: Prisma.UserInsConnectionUpdateInput;
-  }): Promise<UserInsConnection> {
-    const { where, data } = params;
-    return this.prisma.userInsConnection.update({
-      data,
-      where,
-    });
+  async update(
+    params: Prisma.UserInsConnectionUpdateArgs,
+  ): Promise<UserInsConnection> {
+    return this.prisma.userInsConnection.update(params);
   }
 
   async changeAdmin(insId: string, newAdminId: string) {
