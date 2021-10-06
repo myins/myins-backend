@@ -4,8 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, User, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { ChatService } from 'src/chat/chat.service';
@@ -23,7 +22,6 @@ import {
 @Injectable()
 export class InviteService {
   constructor(
-    private readonly prismaService: PrismaService,
     private readonly smsService: SmsService,
     private readonly userService: UserService,
     private readonly chatService: ChatService,
@@ -167,7 +165,7 @@ export class InviteService {
     search: string,
     userID: string,
     insID: string,
-  ) {
+  ): Promise<User[]> {
     const theINS = await this.insService.ins(
       {
         id: insID,
@@ -222,7 +220,7 @@ export class InviteService {
           },
     };
 
-    const toRet = await this.userService.shallowUsers({
+    return this.userService.shallowUsers({
       where: profileInfo,
       orderBy: [
         {
@@ -238,6 +236,5 @@ export class InviteService {
       skip: skip,
       take: take,
     });
-    return toRet;
   }
 }

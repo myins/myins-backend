@@ -9,10 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { UserService } from 'src/user/user.service';
 import {
   InviteExternalUserToINSAPI,
   InviteUserToINSAPI,
@@ -21,10 +19,7 @@ import { InviteService } from './invite.service';
 
 @Controller('invite')
 export class InviteController {
-  constructor(
-    private readonly userService: UserService,
-    private readonly inviteService: InviteService,
-  ) {}
+  constructor(private readonly inviteService: InviteService) {}
 
   // invite by phone number, invite by user id
 
@@ -79,8 +74,15 @@ export class InviteController {
       throw new BadRequestException('Invalid all param!');
     }
     if (!insID) {
-      throw new BadRequestException('Must specify INS!')
+      throw new BadRequestException('Must specify INS!');
     }
-    return this.inviteService.invitesList(allNumber === 1, skip, take, search, userID, insID);
+    return this.inviteService.invitesList(
+      allNumber === 1,
+      skip,
+      take,
+      search,
+      userID,
+      insID,
+    );
   }
 }

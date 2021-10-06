@@ -78,7 +78,7 @@ export class UserService {
   }
 
   //FIXME: also figure out type returns to allow select
-  async shallowUsers(params: Prisma.UserFindManyArgs) {
+  async shallowUsers(params: Prisma.UserFindManyArgs): Promise<User[]> {
     params.select = ShallowUserSelect;
     return this.users(params);
   }
