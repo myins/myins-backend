@@ -1,6 +1,11 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ChatService } from 'src/chat/chat.service';
+import { InsService } from 'src/ins/ins.service';
+import {
+  InsWithCountMembers,
+  InsWithCountMembersInclude,
+} from 'src/prisma-queries-helper/ins-include-count-members';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -8,6 +13,7 @@ export class OnboardingService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
+    private readonly insService: InsService,
   ) {}
 
   private readonly logger = new Logger(OnboardingService.name);
@@ -32,28 +38,22 @@ export class OnboardingService {
   }
 
   async claimINS(insID: string, userID: string) {
-    const ins = await this.prismaService.iNS.findUnique({
-      where: {
+    const ins = await this.insService.ins(
+      {
         id: insID,
       },
-      include: {
-        _count: {
-          select: {
-            members: true,
-          },
-        },
-      },
-    });
-    if (!ins || ins._count?.members != 0) {
+      InsWithCountMembersInclude,
+    );
+    if (!ins || (<InsWithCountMembers>ins)._count?.members != 0) {
       throw new BadRequestException('Could not find INS!');
     }
 
     // Firstly, we want to create the chat channel
-    
+
     await this.chatService.createChannelINS(ins, userID);
-    await this.prismaService.$transaction(async (prisma) => {
+    await this.prismaService.$transaction(async () => {
       // First we connect the user to that INS
-      await prisma.iNS.update({
+      await this.insService.update({
         where: {
           id: insID,
         },

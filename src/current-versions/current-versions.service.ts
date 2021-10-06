@@ -1,4 +1,4 @@
-import { Prisma } from '.prisma/client';
+import { CurrentVersions, Prisma } from '.prisma/client';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
@@ -7,7 +7,9 @@ import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
 export class CurrentVersionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getByType(where: Prisma.CurrentVersionsWhereUniqueInput) {
+  async getByType(
+    where: Prisma.CurrentVersionsWhereUniqueInput,
+  ): Promise<CurrentVersions> {
     const currentVersionsValues = await this.prisma.currentVersions.findUnique({
       where,
     });
@@ -17,8 +19,10 @@ export class CurrentVersionsService {
     return currentVersionsValues;
   }
 
-  async changeDocumentVersion(valuesVersions: ChangeCurrentVersionsAPI) {
-    await this.prisma.currentVersions.upsert({
+  async changeDocumentVersion(
+    valuesVersions: ChangeCurrentVersionsAPI,
+  ): Promise<CurrentVersions> {
+    return this.prisma.currentVersions.upsert({
       where: {
         type: valuesVersions.documentType,
       },

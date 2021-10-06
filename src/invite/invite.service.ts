@@ -10,6 +10,15 @@ import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import {
+  InsWithMembersID,
+  InsWithMembersIDInclude,
+} from 'src/prisma-queries-helper/ins-include-member-id';
+import {
+  InsWithMembersInUserIDs,
+  InsWithMembersInUserIDsInclude,
+} from 'src/prisma-queries-helper/ins-include-members-in-user-ids';
 
 @Injectable()
 export class InviteService {
@@ -19,6 +28,7 @@ export class InviteService {
     private readonly userService: UserService,
     private readonly chatService: ChatService,
     private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   async inviteExternalUser(
@@ -26,14 +36,19 @@ export class InviteService {
     phoneNumbers: string[],
     ins: string,
   ) {
-    const connection = await this.insService.getConnection(userID, ins);
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: userID,
+        insId: ins,
+      },
+    });
     if (!connection || connection.role === UserRole.PENDING) {
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
       );
     }
 
-    const theINS = await this.prismaService.iNS.findMany({
+    const theINS = await this.insService.inses({
       where: {
         id: ins,
         members: {
@@ -85,14 +100,19 @@ export class InviteService {
   }
 
   async inviteINSUser(userID: string, otherUsers: string[], ins: string) {
-    const connection = await this.insService.getConnection(userID, ins);
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: userID,
+        insId: ins,
+      },
+    });
     if (!connection || connection.role === UserRole.PENDING) {
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
       );
     }
 
-    const theINS = await this.prismaService.iNS.findMany({
+    const theINS = await this.insService.inses({
       where: {
         id: ins,
         members: {
@@ -101,25 +121,21 @@ export class InviteService {
           },
         },
       },
-      include: {
-        members: {
-          where: {
-            userId: {
-              in: otherUsers,
-            },
-          },
-        },
-      },
+      include: InsWithMembersInUserIDsInclude(otherUsers),
     });
 
     if (!theINS.length) {
       throw new BadRequestException('Could not find that INS!');
     }
-    if (theINS[0].members.length === otherUsers.length) {
+    if (
+      (<InsWithMembersInUserIDs>theINS[0]).members.length === otherUsers.length
+    ) {
       throw new BadRequestException('All users are already in that INS!');
     }
 
-    const memberIDs = theINS[0].members.map((member) => member.userId);
+    const memberIDs = (<InsWithMembersInUserIDs>theINS[0]).members.map(
+      (member) => member.userId,
+    );
     const usersNotInINS = otherUsers.filter(
       (otherUser) => !memberIDs.includes(otherUser),
     );
@@ -129,7 +145,7 @@ export class InviteService {
       // the addMembersToChannel from line 139 will be moved to approve user function from user service
       role: UserRole.MEMBER,
     }));
-    await this.prismaService.iNS.update({
+    await this.insService.update({
       where: {
         id: theINS[0].id,
       },
@@ -152,22 +168,18 @@ export class InviteService {
     userID: string,
     insID: string,
   ) {
-    const theINS = await this.prismaService.iNS.findUnique({
-      where: {
+    const theINS = await this.insService.ins(
+      {
         id: insID,
       },
-      include: {
-        members: {
-          select: {
-            userId: true,
-          },
-        },
-      },
-    });
+      InsWithMembersIDInclude,
+    );
 
     if (
       !theINS ||
-      theINS.members.findIndex((each) => each.userId == userID) == -1
+      (<InsWithMembersID>theINS).members.findIndex(
+        (each) => each.userId == userID,
+      ) == -1
     ) {
       throw new NotFoundException('Could not find that INS!');
     }
@@ -192,7 +204,7 @@ export class InviteService {
           : undefined,
       id: {
         not: {
-          in: theINS.members.map((each) => each.userId),
+          in: (<InsWithMembersID>theINS).members.map((each) => each.userId),
         },
       },
       inses: all

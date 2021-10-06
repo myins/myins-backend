@@ -1,6 +1,13 @@
-import { PostContent } from '.prisma/client';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { PostContent, Prisma } from '.prisma/client';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import * as path from 'path';
+import { InsService } from 'src/ins/ins.service';
 // import { FfmpegService } from 'src/ffmpeg/ffmpeg.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
@@ -9,8 +16,10 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class PostMediaService {
   constructor(
-    private prismaService: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly storageService: StorageService, // private readonly ffmpegService: FfmpegService,
+    @Inject(forwardRef(() => InsService))
+    private readonly insService: InsService,
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
@@ -29,6 +38,12 @@ export class PostMediaService {
         postId: postId,
       },
     });
+  }
+
+  async getMedias(
+    params: Prisma.PostContentFindManyArgs,
+  ): Promise<PostContent[]> {
+    return this.prismaService.postContent.findMany(params);
   }
 
   async attachMediaToPost(
@@ -166,7 +181,7 @@ export class PostMediaService {
 
     if (postInfo.setCover && !postInfo.isVideo) {
       for (const eachINS of post.inses) {
-        await this.prismaService.iNS.update({
+        await this.insService.update({
           where: eachINS,
           data: {
             cover: dataURL,
@@ -307,7 +322,7 @@ export class PostMediaService {
 
     if (postInfo.setCover && !postInfo.isVideo) {
       for (const eachINS of post.inses) {
-        await this.prismaService.iNS.update({
+        await this.insService.update({
           where: eachINS,
           data: {
             cover: dataURL,

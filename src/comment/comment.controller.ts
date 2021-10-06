@@ -97,7 +97,7 @@ export class CommentController {
       );
     }
 
-    const post = await this.postService.post({ id: postID }, false);
+    const post = await this.postService.post({ id: postID });
     if (!post || !post.authorId) {
       throw new BadRequestException('Could not find that post!');
     }

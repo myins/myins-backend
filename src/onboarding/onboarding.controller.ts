@@ -27,6 +27,7 @@ import {
   photoOrVideoInterceptor,
   photoOrVideoInterceptorDeprecated,
 } from 'src/util/multer';
+import { randomCode } from 'src/util/random';
 import { ClaimINSAPI, CreateGuestPostAPI } from './onboarding-api.entity';
 import { OnboardingService } from './onboarding.service';
 
@@ -65,8 +66,9 @@ export class OnboardingController {
   @ApiTags('onboarding')
   async createGuestINS(@Body() body: CreateINSAPI & CreateGuestPostAPI) {
     const { name, content, totalMediaContent } = body;
-    const ins = await this.insService.createINS(null, {
+    const ins = await this.insService.createINS({
       name: name,
+      shareCode: randomCode(6),
     });
     if (!ins) {
       throw new BadRequestException(

@@ -11,6 +11,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
@@ -20,6 +21,7 @@ export class InsAdminController {
   constructor(
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Post('/change')
@@ -56,7 +58,12 @@ export class InsAdminController {
       );
     }
 
-    await this.insAdminService.removeMember(data.insID, data.memberID);
+    await this.userConnectionService.removeMember({
+      userId_insId: {
+        userId: data.memberID,
+        insId: data.insID,
+      },
+    });
     return {
       message: 'Member removed from INS!',
     };
@@ -79,6 +86,6 @@ export class InsAdminController {
     if (!isAdmin) {
       throw new UnauthorizedException("You're not allowed to delete this INS!");
     }
-    return this.insAdminService.deleteINS(insID);
+    return this.insAdminService.deleteINS({ id: insID });
   }
 }

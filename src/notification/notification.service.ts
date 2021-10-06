@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Notification, User, NotificationSource } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { NotificationPushService } from './notification.push.service';
 import * as PushNotifications from 'node-pushnotifications';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 
 @Injectable()
 export class NotificationService {

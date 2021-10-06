@@ -1,53 +1,42 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { INS, Prisma, UserRole } from '@prisma/client';
+import { INS, PostContent, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { randomCode } from 'src/util/random';
-import { CreateINSAPI } from './ins-api.entity';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { omit } from 'src/util/omit';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import {
+  InsWithCountMembers,
+  InsWithCountMembersInclude,
+} from 'src/prisma-queries-helper/ins-include-count-members';
+import { PostMediaService } from 'src/post/post.media.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class InsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
+    private readonly userConnectionService: UserConnectionService,
+    private readonly postMediaService: PostMediaService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
   ) {}
 
-  async createINS(userID: string | null, data: CreateINSAPI) {
-    const user = userID
-      ? await this.prismaService.user.findUnique({ where: { id: userID } })
-      : null;
-    if (!user && userID) {
-      throw new UnauthorizedException("You're not allowed to do this!");
-    }
-    if (!user?.phoneNumberVerified && userID) {
-      throw new UnauthorizedException("You're not allowed to do this!");
-    }
-
+  async createINS(data: Prisma.INSCreateInput): Promise<INS> {
     // Retry it a couple of times in case the code is taken
     return retry(
       () =>
         this.prismaService.iNS.create({
-          data: {
-            name: data.name,
-            shareCode: randomCode(6),
-            members: userID
-              ? {
-                  create: {
-                    userId: userID,
-                    role: UserRole.ADMIN,
-                  },
-                }
-              : undefined,
-          },
+          data,
         }),
       { retries: 3 },
     );
@@ -55,41 +44,33 @@ export class InsService {
 
   async insList(userID: string, filter: string) {
     // First we get all the user's ins connections, ordered by his interaction count
-    const connectionQuery = await this.prismaService.userInsConnection.findMany(
-      {
-        where: {
-          userId: userID,
-          ins:
-            filter && filter.length > 0
-              ? {
-                  name: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                }
-              : undefined,
-        },
-        orderBy: {
-          interactions: 'desc',
-        },
+    const connectionQuery = await this.userConnectionService.getConnections({
+      where: {
+        userId: userID,
+        ins:
+          filter && filter.length > 0
+            ? {
+                name: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              }
+            : undefined,
       },
-    );
+      orderBy: {
+        interactions: 'desc',
+      },
+    });
     const onlyIDs = connectionQuery.map((each) => each.insId);
 
     // Now get all the inses, using the in query
-    const toRet = await this.prismaService.iNS.findMany({
+    const toRet = await this.inses({
       where: {
         id: {
           in: onlyIDs,
         },
       },
-      include: {
-        _count: {
-          select: {
-            members: true,
-          },
-        },
-      },
+      include: InsWithCountMembersInclude,
     });
 
     // And finally sort the received inses by their position in the onlyIDs array
@@ -97,7 +78,7 @@ export class InsService {
       .map((each) => {
         let theRightINS = toRet.find((each2) => each2.id == each.insId);
         if (theRightINS?.invitedPhoneNumbers) {
-          theRightINS = <INS & { _count: { members: number } | null }>(
+          theRightINS = <InsWithCountMembers>(
             omit(theRightINS, 'invitedPhoneNumbers')
           );
         }
@@ -113,11 +94,15 @@ export class InsService {
     return orderedByIDs;
   }
 
-  async mediaForIns(insID: string, skip: number, take: number) {
+  async mediaForIns(
+    insID: string,
+    skip: number,
+    take: number,
+  ): Promise<PostContent[]> {
     if (!insID || insID.length == 0) {
       throw new BadRequestException('Invalid ins ID!');
     }
-    return this.prismaService.postContent.findMany({
+    return this.postMediaService.getMedias({
       where: {
         post: {
           inses: {
@@ -140,9 +125,9 @@ export class InsService {
     skip: number,
     take: number,
     filter: string,
-  ) {
+  ): Promise<User[]> {
     //console.log(`Filter: ${filter}`)
-    return this.prismaService.user.findMany({
+    return this.userService.users({
       where: {
         inses: {
           some: {
@@ -176,8 +161,11 @@ export class InsService {
     });
   }
 
-  async addAsInvitedPhoneNumbers(insId: string, phoneNumbers: string[]) {
-    return this.prismaService.iNS.update({
+  async addAsInvitedPhoneNumbers(
+    insId: string,
+    phoneNumbers: string[],
+  ): Promise<INS> {
+    return this.update({
       where: {
         id: insId,
       },
@@ -198,10 +186,10 @@ export class InsService {
       insId: insID,
       userId: userID,
     }));
-    await this.prismaService.userInsConnection.createMany({
+    await this.userConnectionService.createMany({
       data: data,
     });
-    await Promise.all(
+    return Promise.all(
       insIDs.map(async (insID) => {
         const ins = await this.ins({ id: insID });
         await this.update({
@@ -218,7 +206,10 @@ export class InsService {
     );
   }
 
-  async ins(where: Prisma.INSWhereUniqueInput, include?: Prisma.INSInclude) {
+  async ins(
+    where: Prisma.INSWhereUniqueInput,
+    include?: Prisma.INSInclude,
+  ): Promise<INS | null> {
     let ins = await this.prismaService.iNS.findUnique({
       where: where,
       include: include,
@@ -229,21 +220,8 @@ export class InsService {
     return ins;
   }
 
-  async inses(params: {
-    skip?: number;
-    take?: number;
-    where?: Prisma.INSWhereInput;
-    orderBy?: Prisma.INSOrderByWithRelationInput;
-    include?: Prisma.INSInclude;
-  }): Promise<INS[]> {
-    const { skip, take, where, orderBy, include } = params;
-    const inses = await this.prismaService.iNS.findMany({
-      skip,
-      take,
-      where,
-      orderBy,
-      include: include,
-    });
+  async inses(params: Prisma.INSFindManyArgs): Promise<INS[]> {
+    const inses = await this.prismaService.iNS.findMany(params);
     const insesWithoutPhoneNumbers = inses.map((ins) => {
       if (ins.invitedPhoneNumbers) {
         return <INS>omit(ins, 'invitedPhoneNumbers');
@@ -255,7 +233,7 @@ export class InsService {
 
   //FIXME: figure out type safety with select statements
   async insesSelectIDs(where: Prisma.INSWhereInput) {
-    const toRet = await this.prismaService.iNS.findMany({
+    const toRet = await this.inses({
       where: where,
       select: {
         id: true,
@@ -275,19 +253,10 @@ export class InsService {
     });
   }
 
-  async getConnection(userId: string, insId: string) {
-    const connection = await this.prismaService.userInsConnection.findUnique({
-      where: {
-        userId_insId: {
-          userId: userId,
-          insId: insId,
-        },
-      },
-    });
-    return connection;
-  }
-
-  async attachCoverToPost(file: Express.Multer.File, insID: string) {
+  async attachCoverToPost(
+    file: Express.Multer.File,
+    insID: string,
+  ): Promise<INS> {
     const ext = path.extname(file.originalname);
     const randomUUID = uuid.v4();
     const postName = `cover_${insID}_${randomUUID}${ext}`;
@@ -300,7 +269,7 @@ export class InsService {
       x,
       StorageContainer.posts,
     );
-    await this.prismaService.iNS.update({
+    return this.update({
       where: {
         id: insID,
       },

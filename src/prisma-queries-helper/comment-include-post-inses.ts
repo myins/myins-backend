@@ -1,11 +1,4 @@
-import { Prisma } from '@prisma/client';
-
-export const ShallowUserSelect: Prisma.UserSelect = {
-  firstName: true,
-  lastName: true,
-  profilePicture: true,
-  id: true,
-};
+import { Prisma } from '.prisma/client';
 
 const commentWithPostWithInsesIDData = {
   post: {
@@ -18,7 +11,7 @@ const commentWithPostWithInsesIDData = {
     },
   },
 };
-export const CommentWithPostWithInsesInclude: Prisma.CommentInclude =
+export const CommentWithPostWithInsesIDInclude: Prisma.CommentInclude =
   commentWithPostWithInsesIDData;
 
 const commentWithPostWithInsesID = Prisma.validator<Prisma.CommentArgs>()({

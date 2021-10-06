@@ -9,9 +9,9 @@ import { User, Prisma, UserRole } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 
 @Injectable()
 export class UserService {
@@ -73,40 +73,14 @@ export class UserService {
     return toRet;
   }
 
-  async users(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<User[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-    });
+  async users(params: Prisma.UserFindManyArgs): Promise<User[]> {
+    return this.prisma.user.findMany(params);
   }
 
   //FIXME: also figure out type returns to allow select
-  async shallowUsers(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.Enumerable<Prisma.UserOrderByWithRelationInput>;
-  }) {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-      select: ShallowUserSelect,
-    });
+  async shallowUsers(params: Prisma.UserFindManyArgs) {
+    params.select = ShallowUserSelect;
+    return this.users(params);
   }
 
   async createUser(data: Prisma.UserCreateInput) {

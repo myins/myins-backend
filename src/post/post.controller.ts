@@ -69,12 +69,9 @@ export class PostController {
       throw new BadRequestException('Content must be empty, not missing!');
     }
 
-    const post = await this.postService.post(
-      {
-        id: commentID,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: commentID,
+    });
     if (post == null) {
       throw new NotFoundException('Could not find this comment!');
     }
@@ -101,12 +98,9 @@ export class PostController {
     @Param('id') postID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const post = await this.postService.post(
-      {
-        id: postID,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: postID,
+    });
     if (!post) {
       throw new NotFoundException('Could not find this post!');
     }
@@ -129,12 +123,9 @@ export class PostController {
     if (!postMedia) {
       throw new NotFoundException('Could not find this post media!');
     }
-    const post = await this.postService.post(
-      {
-        id: postMedia.postId,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: postMedia.postId,
+    });
     if (!post) {
       throw new NotFoundException('Could not find this post!');
     }
@@ -163,12 +154,9 @@ export class PostController {
     @PrismaUser('id') userID: string,
     @Body() shareData: SharePostAPI,
   ) {
-    const post = await this.postService.post(
-      {
-        id: postID,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: postID,
+    });
     if (!post) {
       throw new NotFoundException('Could not find this post!');
     }

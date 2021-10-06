@@ -1,11 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { PostService } from 'src/post/post.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
-import {
-  CommentWithPostWithInsesID,
-  ShallowUserSelect,
-} from 'src/util/prisma-queries-helper';
 
 @Injectable()
 export class CommentService {
@@ -21,31 +18,18 @@ export class CommentService {
     return toRet;
   }
 
-  async comments(params: {
-    skip?: number;
-    take?: number;
-    where?: Prisma.CommentWhereInput;
-    orderBy?: Prisma.CommentOrderByWithRelationInput;
-    include?: Prisma.CommentInclude;
-  }) {
-    const { skip, take, where, orderBy, include } = params;
-    return this.prismaService.comment.findMany({
-      skip,
-      take,
-      where,
-      orderBy,
-      include,
-    });
+  async comments(params: Prisma.CommentFindManyArgs): Promise<Comment[]> {
+    return this.prismaService.comment.findMany(params);
   }
 
-  async countComments(where: Prisma.CommentWhereInput) {
+  async countComments(where: Prisma.CommentWhereInput): Promise<number> {
     return this.prismaService.comment.count({ where });
   }
 
   async comment(
     commentWhereUniqueInput: Prisma.CommentWhereUniqueInput,
     commentInclude?: Prisma.CommentInclude,
-  ): Promise<(Comment | CommentWithPostWithInsesID) | null> {
+  ): Promise<Comment | null> {
     return this.prismaService.comment.findUnique({
       where: commentWhereUniqueInput,
       include: commentInclude,
@@ -59,7 +43,7 @@ export class CommentService {
     return this.prismaService.comment.update(params);
   }
 
-  async deleteComment(where: Prisma.CommentWhereUniqueInput) {
+  async deleteComment(where: Prisma.CommentWhereUniqueInput): Promise<Comment> {
     return this.prismaService.comment.delete({
       where,
     });
@@ -71,11 +55,11 @@ export class CommentService {
     take: number,
     userID: string,
   ) {
-    const x = await this.postService.post({ id: postID }, false);
+    const x = await this.postService.post({ id: postID });
     if (x == null) {
       throw new BadRequestException('Could not find post!');
     }
-    const toRet = await this.prismaService.comment.findMany({
+    const toRet = await this.comments({
       skip: skip,
       take: take,
       where: {

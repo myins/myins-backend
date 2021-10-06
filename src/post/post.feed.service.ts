@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
 
 @Injectable()
 export class PostFeedService {

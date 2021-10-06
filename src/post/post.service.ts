@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
-import { ShallowUserSelect } from 'src/util/prisma-queries-helper';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,17 +9,21 @@ export class PostService {
 
   async post(
     postWhereUniqueInput: Prisma.PostWhereUniqueInput,
-    includeUserInfo: boolean,
+    include?: Prisma.PostInclude,
   ): Promise<Post | null> {
     return this.prisma.post.findUnique({
       where: postWhereUniqueInput,
-      include: includeUserInfo
-        ? {
-            author: {
-              select: ShallowUserSelect,
-            },
-          }
-        : null,
+      include,
+    });
+  }
+
+  async postWithUserInfo(
+    postWhereUniqueInput: Prisma.PostWhereUniqueInput,
+  ): Promise<Post | null> {
+    return this.post(postWhereUniqueInput, {
+      author: {
+        select: ShallowUserSelect,
+      },
     });
   }
 

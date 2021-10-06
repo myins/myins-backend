@@ -1,22 +1,27 @@
+import { UserInsConnection } from '.prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UserConnectionService } from 'src/user/user.connection.service';
+import { PostService } from 'src/post/post.service';
 import {
   CommentWithPostWithInsesID,
-  CommentWithPostWithInsesInclude,
-} from 'src/util/prisma-queries-helper';
+  CommentWithPostWithInsesIDInclude,
+} from 'src/prisma-queries-helper/comment-include-post-inses';
+import {
+  PostWithInsesId,
+  PostWithInsesIdInclude,
+} from 'src/prisma-queries-helper/post-include-inses-id';
+import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
 export class InsInteractionService {
   constructor(
-    private readonly prismaService: PrismaService,
     private readonly commentService: CommentService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly postService: PostService,
   ) {}
 
-  async interact(userId: string, insId: string) {
-    await this.prismaService.userInsConnection.update({
+  async interact(userId: string, insId: string): Promise<UserInsConnection> {
+    return this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -32,23 +37,17 @@ export class InsInteractionService {
   }
 
   async interactPost(userId: string, postId: string) {
-    const postWithIns = await this.prismaService.post.findUnique({
-      where: {
+    const postWithIns = await this.postService.post(
+      {
         id: postId,
       },
-      include: {
-        inses: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+      PostWithInsesIdInclude,
+    );
     if (!postWithIns) {
       throw new BadRequestException('Invalid post ID!');
     }
-    const insIDs = postWithIns.inses.map((each) => each.id);
-    return this.prismaService.userInsConnection.updateMany({
+    const insIDs = (<PostWithInsesId>postWithIns).inses.map((each) => each.id);
+    return this.userConnectionService.updateMany({
       where: {
         insId: {
           in: insIDs,
@@ -64,16 +63,16 @@ export class InsInteractionService {
   }
 
   async interactComment(userId: string, commentId: string) {
-    const postWithIns = await this.commentService.comment(
+    const commentWithPost = await this.commentService.comment(
       {
         id: commentId,
       },
-      CommentWithPostWithInsesInclude,
+      CommentWithPostWithInsesIDInclude,
     );
-    if (!postWithIns) {
+    if (!commentWithPost) {
       throw new BadRequestException('Invalid post ID!');
     }
-    const insIDs = (<CommentWithPostWithInsesID>postWithIns).post.inses.map(
+    const insIDs = (<CommentWithPostWithInsesID>commentWithPost).post.inses.map(
       (each) => each.id,
     );
     return this.userConnectionService.updateMany({

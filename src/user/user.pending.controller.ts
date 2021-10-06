@@ -12,17 +12,17 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
 import { ApproveDenyUserAPI } from './user-api.entity';
+import { UserConnectionService } from './user.connection.service';
 
 @Controller('user/pending')
 @UseInterceptors(NotFoundInterceptor)
 export class UserPendingController {
   constructor(
     private readonly userService: UserService,
-    private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Get()
@@ -82,7 +82,12 @@ export class UserPendingController {
     @PrismaUser('id') id: string,
     @Body() data: ApproveDenyUserAPI,
   ) {
-    const connection = await this.insService.getConnection(id, data.insID);
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: id,
+        insId: data.insID,
+      },
+    });
     if (!connection || connection.role === UserRole.PENDING) {
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
@@ -99,7 +104,12 @@ export class UserPendingController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('users-pending')
   async deny(@PrismaUser('id') id: string, @Body() data: ApproveDenyUserAPI) {
-    const connection = await this.insService.getConnection(id, data.insID);
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: id,
+        insId: data.insID,
+      },
+    });
     if (!connection || connection.role === UserRole.PENDING) {
       throw new UnauthorizedException(
         "You're not allowed to deny members for this INS!",
