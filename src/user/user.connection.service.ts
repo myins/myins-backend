@@ -6,16 +6,18 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class UserConnectionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getConnection(where: Prisma.UserInsConnectionWhereUniqueInput) {
-    const connection = await this.prisma.userInsConnection.findUnique({
+  async getConnection(
+    where: Prisma.UserInsConnectionWhereUniqueInput,
+  ): Promise<UserInsConnection | null> {
+    return this.prisma.userInsConnection.findUnique({
       where,
     });
-    return connection;
   }
 
-  async getConnections(params: Prisma.UserInsConnectionFindManyArgs) {
-    const connection = await this.prisma.userInsConnection.findMany(params);
-    return connection;
+  async getConnections(
+    params: Prisma.UserInsConnectionFindManyArgs,
+  ): Promise<UserInsConnection[]> {
+    return this.prisma.userInsConnection.findMany(params);
   }
 
   async createMany(data: Prisma.UserInsConnectionCreateManyInput[]) {
@@ -57,8 +59,10 @@ export class UserConnectionService {
     ]);
   }
 
-  async removeMember(where: Prisma.UserInsConnectionWhereUniqueInput) {
-    await this.prisma.userInsConnection.delete({
+  async removeMember(
+    where: Prisma.UserInsConnectionWhereUniqueInput,
+  ): Promise<UserInsConnection> {
+    return this.prisma.userInsConnection.delete({
       where,
     });
   }

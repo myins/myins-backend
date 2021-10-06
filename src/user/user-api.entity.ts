@@ -2,42 +2,50 @@ import {
   IsBoolean,
   IsNotEmpty,
   IsPhoneNumber,
-  Max,
-  Min,
+  IsString,
 } from 'class-validator';
 
 export class CreateUserAPI {
+  @IsString()
   @IsNotEmpty()
   firstName: string;
 
+  @IsString()
   @IsNotEmpty()
   lastName: string;
 
   @IsPhoneNumber()
+  @IsNotEmpty()
   phoneNumber: string;
 
+  @IsString()
   @IsNotEmpty()
   password: string;
 }
 
 export class UpdateUserAPI {
+  @IsString()
   @IsNotEmpty()
   firstName: string;
 
+  @IsString()
   @IsNotEmpty()
   lastName: string;
 
   @IsPhoneNumber()
+  @IsNotEmpty()
   phone: string;
 
+  @IsString()
   @IsNotEmpty()
   username: string;
 
-  //@IsNotEmpty() - allow empty description for now
+  @IsString()
   description: string;
 }
 
 export class UpdatePushTokenAPI {
+  @IsString()
   @IsNotEmpty()
   pushToken: string;
 
@@ -45,25 +53,18 @@ export class UpdatePushTokenAPI {
   isSandbox: boolean;
 }
 
-export class GetUserPostsAPI {
-  @Min(0)
-  @Max(1000)
-  skip: number;
-
-  @Min(0)
-  @Max(20)
-  take: number;
-}
-
 export class ApproveDenyUserAPI {
+  @IsString()
   @IsNotEmpty()
   userID: string;
 
+  @IsString()
   @IsNotEmpty()
   insID: string;
 }
 
 export class SetLastNotificationAPI {
+  @IsString()
   @IsNotEmpty()
   notifID: string;
 }

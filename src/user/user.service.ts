@@ -122,15 +122,13 @@ export class UserService {
     return this.prisma.user.update(params);
   }
 
-  async deleteUser(userId: string): Promise<User> {
+  async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
     return this.prisma.user.delete({
-      where: {
-        id: userId,
-      },
+      where,
     });
   }
 
-  async logoutUser(userID: string) {
+  async logoutUser(userID: string): Promise<User> {
     return this.updateUser({
       where: {
         id: userID,
@@ -172,7 +170,10 @@ export class UserService {
     });
   }
 
-  async setLastReadNotificationID(userID: string, notifID: string) {
+  async setLastReadNotificationID(
+    userID: string,
+    notifID: string,
+  ): Promise<User> {
     return this.updateUser({
       where: {
         id: userID,
@@ -183,7 +184,7 @@ export class UserService {
     });
   }
 
-  getCloudfrontToken(phone: string, userID: string) {
+  getCloudfrontToken(phone: string, userID: string): string {
     return this.jwtService.getCloudfrontToken({ phone, sub: userID });
   }
 }

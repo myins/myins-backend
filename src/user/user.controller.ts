@@ -187,6 +187,6 @@ export class UserController {
     if (!user) {
       throw new NotFoundException('Could not find this user!');
     }
-    return this.userService.deleteUser(userId);
+    return this.userService.deleteUser({ id: userId });
   }
 }
