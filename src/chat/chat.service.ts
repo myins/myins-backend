@@ -94,14 +94,10 @@ export class ChatService {
       id: { $in: insIds },
     });
     const user = await this.getUser(userID);
-    const myUser = <UserResponse>(
-      omit(user, 'created_at', 'updated_at', 'last_active')
-    );
-
     return Promise.all(
       channels.map(async (channel) => {
         await channel.sendMessage({
-          user: myUser,
+          user_id: user.id,
           text: message,
         });
       }),
