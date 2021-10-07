@@ -22,9 +22,6 @@ export class CreatePostAPI {
 
 export class AttachMediaAPI {
   @IsString()
-  setCover: string;
-
-  @IsString()
   @IsNotEmpty()
   width: string;
 
@@ -41,6 +38,9 @@ export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
   @IsString()
   @IsNotEmpty()
   claimToken: string;
+
+  @IsString()
+  setCover: string;
 }
 
 export class AttachCoverAPI {
