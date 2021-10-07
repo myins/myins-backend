@@ -35,10 +35,12 @@ export class MiddlewareService {
           const channels = await chatService.getChannelsINS({
             id: insResult.id,
           });
-          await channels[0].update({
-            name: insResult.name,
-            image: insResult.cover,
-          });
+          if (channels.length) {
+            await channels[0].update({
+              name: insResult.name,
+              image: insResult.cover,
+            });
+          }
         }
       }
       return result;

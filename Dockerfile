@@ -25,4 +25,6 @@ COPY --from=builder /app/backend/runProd.sh ./
 COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/prisma ./prisma
 
+EXPOSE 3000
+
 #CMD ["sh", "runProd.sh"]

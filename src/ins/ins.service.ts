@@ -19,6 +19,7 @@ import {
 } from 'src/prisma-queries-helper/ins-include-count-members';
 import { PostMediaService } from 'src/post/post.media.service';
 import { UserService } from 'src/user/user.service';
+import fetch from 'node-fetch';
 
 @Injectable()
 export class InsService {
@@ -34,7 +35,7 @@ export class InsService {
   async createINS(data: Prisma.INSCreateInput): Promise<INS> {
     // Retry it a couple of times in case the code is taken
     return retry(
-      () =>
+      async () =>
         this.prismaService.iNS.create({
           data,
         }),
@@ -271,5 +272,48 @@ export class InsService {
 
   async deleteMany(params: Prisma.INSDeleteManyArgs) {
     return this.prismaService.iNS.deleteMany(params);
+  }
+
+  async randomCode() {
+    const makeRandom = () => {
+      const length = 20;
+      let result = '';
+      const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const charactersLength = characters.length;
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(
+          Math.floor(Math.random() * charactersLength),
+        );
+      }
+      return result;
+    };
+
+    const res = await fetch(
+      `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${process.env.FIREBASE_API_KEY}`,
+      {
+        body: JSON.stringify({
+          dynamicLinkInfo: {
+            domainUriPrefix: process.env.FIREBASE_DYNAMIC_URL_PREFIX,
+            link: `${process.env.FIREBASE_REDIRECT_URL}/${makeRandom()}`,
+            iosInfo: {
+              iosBundleId: process.env.FIREBASE_IOS_BUNDLE_ID,
+              iosAppStoreId: process.env.FIREBASE_APP_STORE_ID,
+            },
+          },
+          suffix: {
+            option: 'SHORT',
+          },
+        }),
+        method: 'POST',
+      },
+    );
+    const resData = await res.json();
+    const shortLink = resData.shortLink;
+
+    const parts = shortLink.split('/');
+    const lastSegment = parts.pop() || parts.pop(); // handle potential trailing slash
+
+    return lastSegment;
   }
 }
