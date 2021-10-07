@@ -1,3 +1,4 @@
+import { UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -6,6 +7,7 @@ import {
   Param,
   Post,
   Query,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -15,6 +17,8 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import { CreateINSAPI } from './ins-api.entity';
 import { InsService } from './ins.service';
@@ -24,6 +28,8 @@ export class InsController {
   constructor(
     private readonly insService: InsService,
     private readonly chatService: ChatService,
+    private readonly userService: UserService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Post()
@@ -33,7 +39,24 @@ export class InsController {
     @PrismaUser('id') userID: string,
     @Body() data: CreateINSAPI,
   ) {
-    return this.insService.createINS(userID, data);
+    const user = userID ? await this.userService.user({ id: userID }) : null;
+    if (!user && userID) {
+      throw new UnauthorizedException("You're not allowed to do this!");
+    }
+    if (!user?.phoneNumberVerified && userID) {
+      throw new UnauthorizedException("You're not allowed to do this!");
+    }
+
+    return this.insService.createINS({
+      name: data.name,
+      shareCode: await this.insService.randomCode(),
+      members: {
+        create: {
+          userId: userID,
+          role: UserRole.ADMIN,
+        },
+      },
+    });
   }
 
   @Get('code/:code')
@@ -69,7 +92,7 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -79,7 +102,7 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -96,7 +119,7 @@ export class InsController {
     @Query('take') take: number,
     @Query('filter') filter: string,
   ) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -106,7 +129,7 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -117,7 +140,7 @@ export class InsController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -134,10 +157,10 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
-    return toRet[0];
+    return inses[0];
   }
 
   @Post('join/:code')
@@ -157,7 +180,12 @@ export class InsController {
     if (!theINS) {
       throw new BadRequestException('Invalid ins code!');
     }
-    const connection = await this.insService.getConnection(userID, theINS.id);
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: userID,
+        insId: theINS.id,
+      },
+    });
     if (connection) {
       return {
         statusCode: 585858,
@@ -209,9 +237,6 @@ export class InsController {
     }
     const theINS = validINS[0];
 
-    await this.insService.attachCoverToPost(file, theINS.id);
-    return {
-      message: 'Cover set successfully!',
-    };
+    return this.insService.attachCoverToPost(file, theINS.id);
   }
 }

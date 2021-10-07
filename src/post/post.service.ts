@@ -1,34 +1,42 @@
 import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PostService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async post(
     postWhereUniqueInput: Prisma.PostWhereUniqueInput,
-    includeUserInfo: boolean,
+    include?: Prisma.PostInclude,
   ): Promise<Post | null> {
     return this.prisma.post.findUnique({
       where: postWhereUniqueInput,
-      include: includeUserInfo
-        ? {
-            author: {
-              select: ShallowUserSelect,
-            },
-          }
-        : null,
+      include,
     });
   }
 
-  async injectedPost(postID: string, asUserID: string) {
-    const toRet = await this.prisma.post.findUnique({
-      where: {
+  async firstPost(params: Prisma.PostFindFirstArgs): Promise<Post | null> {
+    return this.prisma.post.findFirst(params);
+  }
+
+  async postWithUserInfo(
+    postWhereUniqueInput: Prisma.PostWhereUniqueInput,
+  ): Promise<Post | null> {
+    return this.post(postWhereUniqueInput, {
+      author: {
+        select: ShallowUserSelect,
+      },
+    });
+  }
+
+  async injectedPost(postID: string, asUserID: string): Promise<Post | null> {
+    return this.post(
+      {
         id: postID,
       },
-      include: {
+      {
         author: {
           select: ShallowUserSelect,
         },
@@ -45,58 +53,40 @@ export class PostService {
         },
         mediaContent: true,
       },
-    });
-    return toRet;
+    );
   }
 
-  async posts(params: {
-    skip?: number;
-    take?: number;
-    where?: Prisma.PostWhereInput;
-    orderBy?: Prisma.PostOrderByWithRelationInput;
-    includeRelatedInfo: boolean;
-  }): Promise<Post[]> {
-    const { skip, take, where, orderBy, includeRelatedInfo } = params;
-    return this.prisma.post.findMany({
-      skip,
-      take,
-      where,
-      orderBy,
-      include: includeRelatedInfo
-        ? {
-            author: {
-              select: ShallowUserSelect,
-            },
-            mediaContent: true,
-          }
-        : null,
-    });
+  async posts(params: Prisma.PostFindManyArgs): Promise<Post[]> {
+    return this.prisma.post.findMany(params);
+  }
+
+  async postsWithRelatedInfo(params: Prisma.PostFindManyArgs): Promise<Post[]> {
+    params.include = {
+      author: {
+        select: ShallowUserSelect,
+      },
+      mediaContent: true,
+    };
+    return this.posts(params);
   }
 
   async createPost(data: Prisma.PostCreateInput): Promise<Post> {
-    const toRet = await this.prisma.post.create({
+    return this.prisma.post.create({
       data,
     });
-    return toRet;
   }
 
-  async updatePost(params: {
-    where: Prisma.PostWhereUniqueInput;
-    data: Prisma.PostUpdateInput;
-  }): Promise<Post> {
-    const { data, where } = params;
-    const toRet = await this.prisma.post.update({
-      data,
-      where,
-    });
-    return toRet;
+  async updatePost(params: Prisma.PostUpdateArgs): Promise<Post> {
+    return this.prisma.post.update(params);
   }
 
-  async deletePost(postId: string): Promise<Post> {
+  async updateManyPosts(params: Prisma.PostUpdateManyArgs) {
+    return this.prisma.post.updateMany(params);
+  }
+
+  async deletePost(where: Prisma.PostWhereUniqueInput): Promise<Post> {
     return this.prisma.post.delete({
-      where: {
-        id: postId,
-      },
+      where,
     });
   }
 }

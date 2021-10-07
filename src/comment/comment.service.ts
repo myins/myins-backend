@@ -1,64 +1,47 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { PostService } from 'src/post/post.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
 
 @Injectable()
 export class CommentService {
   constructor(
-    private prismaService: PrismaService,
-    private postService: PostService,
+    private readonly prismaService: PrismaService,
+    private readonly postService: PostService,
   ) {}
 
   async createComment(data: Prisma.CommentCreateInput): Promise<Comment> {
-    const toRet = await this.prismaService.comment.create({
+    return this.prismaService.comment.create({
       data,
     });
-    return toRet;
   }
 
-  async comments(params: {
-    skip?: number;
-    take?: number;
-    where?: Prisma.CommentWhereInput;
-    orderBy?: Prisma.CommentOrderByWithRelationInput;
-    include?: Prisma.CommentInclude;
-  }) {
-    const { skip, take, where, orderBy, include } = params;
-    return this.prismaService.comment.findMany({
-      skip,
-      take,
-      where,
-      orderBy,
-      include,
-    });
+  async comments(params: Prisma.CommentFindManyArgs): Promise<Comment[]> {
+    return this.prismaService.comment.findMany(params);
   }
 
-  async countComments(where: Prisma.CommentWhereInput) {
+  async countComments(where: Prisma.CommentWhereInput): Promise<number> {
     return this.prismaService.comment.count({ where });
   }
 
   async comment(
     commentWhereUniqueInput: Prisma.CommentWhereUniqueInput,
+    commentInclude?: Prisma.CommentInclude,
   ): Promise<Comment | null> {
     return this.prismaService.comment.findUnique({
       where: commentWhereUniqueInput,
+      include: commentInclude,
     });
   }
 
-  async updateComment(params: {
-    where: Prisma.CommentWhereUniqueInput;
-    data: Prisma.CommentUpdateInput;
-  }): Promise<Comment> {
+  async updateComment(params: Prisma.CommentUpdateArgs): Promise<Comment> {
     return this.prismaService.comment.update(params);
   }
 
-  async deleteComment(commentID: string) {
+  async deleteComment(where: Prisma.CommentWhereUniqueInput): Promise<Comment> {
     return this.prismaService.comment.delete({
-      where: {
-        id: commentID,
-      },
+      where,
     });
   }
 
@@ -68,11 +51,11 @@ export class CommentService {
     take: number,
     userID: string,
   ) {
-    const x = await this.postService.post({ id: postID }, false);
+    const x = await this.postService.post({ id: postID });
     if (x == null) {
       throw new BadRequestException('Could not find post!');
     }
-    const toRet = await this.prismaService.comment.findMany({
+    return this.comments({
       skip: skip,
       take: take,
       where: {
@@ -100,6 +83,5 @@ export class CommentService {
         },
       },
     });
-    return toRet;
   }
 }

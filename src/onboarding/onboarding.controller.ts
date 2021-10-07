@@ -64,8 +64,9 @@ export class OnboardingController {
   @ApiTags('onboarding')
   async createGuestINS(@Body() body: CreateINSAPI & CreateGuestPostAPI) {
     const { name, content, totalMediaContent } = body;
-    const ins = await this.insService.createINS(null, {
+    const ins = await this.insService.createINS({
       name: name,
+      shareCode: await this.insService.randomCode(),
     });
     if (!ins) {
       throw new BadRequestException(
@@ -151,7 +152,6 @@ export class OnboardingController {
         },
         id: body.postID,
       },
-      includeRelatedInfo: false,
     });
 
     if (!post || post.length == 0) {

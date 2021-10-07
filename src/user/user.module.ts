@@ -6,6 +6,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { SjwtModule } from 'src/sjwt/sjwt.module';
 import { SmsModule } from 'src/sms/sms.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { UserConnectionService } from './user.connection.service';
 import { UserController } from './user.controller';
 import { UserPendingController } from './user.pending.controller';
 import { UserService } from './user.service';
@@ -22,7 +23,7 @@ import { UserVersionsController } from './user.versions.controller';
     forwardRef(() => ChatModule),
   ],
   controllers: [UserPendingController, UserController, UserVersionsController],
-  providers: [UserService],
-  exports: [UserService],
+  providers: [UserService, UserConnectionService],
+  exports: [UserService, UserConnectionService],
 })
 export class UserModule {}

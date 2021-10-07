@@ -1,66 +1,41 @@
-import { UserRole } from '.prisma/client';
+import { INS, Prisma, UserRole } from '.prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { InsService } from './ins.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
 export class InsAdminService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly insService: InsService,
-    private readonly chatService: ChatService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   async changeAdmin(insId: string, newAdminId: string) {
-    const notInIns = !(await this.insService.getConnection(newAdminId, insId));
+    const notInIns = !(await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: newAdminId,
+        insId: insId,
+      },
+    }));
     if (notInIns) {
       throw new BadRequestException("Can't set a non-member as admin!");
     }
-    await this.prismaService.$transaction([
-      this.prismaService.userInsConnection.updateMany({
-        where: {
-          role: UserRole.ADMIN,
-        },
-        data: {
-          role: UserRole.MEMBER,
-        },
-      }),
-      this.prismaService.userInsConnection.update({
-        where: {
-          userId_insId: {
-            userId: newAdminId,
-            insId: insId,
-          },
-        },
-        data: {
-          role: UserRole.ADMIN,
-        },
-      }),
-    ]);
+    return this.userConnectionService.changeAdmin(insId, newAdminId);
   }
 
-  async removeMember(insId: string, removeMemberId: string) {
-    await this.prismaService.userInsConnection.delete({
-      where: {
-        userId_insId: {
-          userId: removeMemberId,
-          insId: insId,
-        },
-      },
+  async deleteINS(where: Prisma.INSWhereUniqueInput): Promise<INS> {
+    return this.prismaService.iNS.delete({
+      where,
     });
   }
 
-  async deleteINS(insId: string) {
-    await this.prismaService.iNS.delete({
-      where: {
-        id: insId,
+  async isAdmin(userId: string, insId: string): Promise<boolean> {
+    const connection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: userId,
+        insId: insId,
       },
     });
-  }
-
-  async isAdmin(userId: string, insId: string) {
-    const connection = await this.insService.getConnection(userId, insId);
     return connection?.role === UserRole.ADMIN;
   }
 }

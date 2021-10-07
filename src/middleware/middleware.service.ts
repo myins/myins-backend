@@ -32,9 +32,11 @@ export class MiddlewareService {
         }
         if (params.action == 'update') {
           const insResult = <INS>result;
-          const channel = await chatService.getChannel(insResult.id);
-          if (channel) {
-            await channel.update({
+          const channels = await chatService.getChannelsINS({
+            id: insResult.id,
+          });
+          if (channels.length) {
+            await channels[0].update({
               name: insResult.name,
               image: insResult.cover,
             });
@@ -75,11 +77,11 @@ export class MiddlewareService {
       if (params.model == 'User') {
         if (params.action == 'delete') {
           // A user was deleted, remove them from stream.
-          await this.chatService.deleteStreamChatUser(result.id);
+          await this.chatService.deleteStreamUser(result.id);
         } else if (params.action == 'create' || params.action == 'update') {
           // A user was created, create the stream user.
           const userResult = <User>result;
-          await this.chatService.createOrUpdateStreamChatUsers([userResult]);
+          await this.chatService.createOrUpdateStreamUsers([userResult]);
         }
       }
       return result;

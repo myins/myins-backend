@@ -1,17 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { JwtStrategyPayload } from 'src/auth/jwt.strategy';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class SjwtService {
-  constructor(private jwtService: JwtService, private prisma: PrismaService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+  ) {}
 
   async generateNewAuthTokens(phone: string, userID: string) {
     const newRefreshToken = crypto.randomBytes(64).toString('hex');
 
-    await this.prisma.user.update({
+    await this.userService.updateUser({
       where: { id: userID },
       data: {
         refreshToken: newRefreshToken,

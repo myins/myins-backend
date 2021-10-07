@@ -1,7 +1,12 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
 
 export interface JwtStrategyPayload {
   sub: string;
@@ -10,7 +15,10 @@ export interface JwtStrategyPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly prismaService: PrismaService) {
+  constructor(
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -20,9 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtStrategyPayload) {
     const toRet = { userId: payload.sub, username: payload.phone };
-    const user = await this.prismaService.user.findUnique({
-      where: { id: toRet.userId },
-    });
+    const user = await this.userService.user({ id: toRet.userId });
     if (!user) {
       throw new BadRequestException('Could not find user!');
     }

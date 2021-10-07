@@ -153,7 +153,7 @@ export class UserController {
     @Body() dataModel: UpdatePushTokenAPI,
     @PrismaUser('id') userID: string,
   ) {
-    await this.userService.updateUser({
+    return this.userService.updateUser({
       where: {
         id: userID,
       },
@@ -162,9 +162,6 @@ export class UserController {
         sandboxToken: dataModel.isSandbox,
       },
     });
-    return {
-      message: 'Updated token successfully!',
-    };
   }
 
   @Patch('setLastNotification')
@@ -187,6 +184,6 @@ export class UserController {
     if (!user) {
       throw new NotFoundException('Could not find this user!');
     }
-    return this.userService.deleteUser(userId);
+    return this.userService.deleteUser({ id: userId });
   }
 }

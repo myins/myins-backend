@@ -9,18 +9,20 @@ import { User, Prisma, UserRole } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { UserConnectionService } from './user.connection.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: SjwtService,
-    private smsService: SmsService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: SjwtService,
+    private readonly smsService: SmsService,
     @Inject(forwardRef(() => ChatService)) private chatService: ChatService,
-    private insService: InsService,
+    private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   async user(
@@ -30,12 +32,6 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: where,
       include: include,
-    });
-  }
-
-  async firstUser(where: Prisma.UserWhereInput): Promise<User | null> {
-    return this.prisma.user.findFirst({
-      where: where,
     });
   }
 
@@ -73,40 +69,14 @@ export class UserService {
     return toRet;
   }
 
-  async users(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<User[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-    });
+  async users(params: Prisma.UserFindManyArgs): Promise<User[]> {
+    return this.prisma.user.findMany(params);
   }
 
   //FIXME: also figure out type returns to allow select
-  async shallowUsers(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.Enumerable<Prisma.UserOrderByWithRelationInput>;
-  }) {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-      select: ShallowUserSelect,
-    });
+  async shallowUsers(params: Prisma.UserFindManyArgs): Promise<User[]> {
+    params.select = ShallowUserSelect;
+    return this.users(params);
   }
 
   async createUser(data: Prisma.UserCreateInput) {
@@ -144,29 +114,20 @@ export class UserService {
     return addedTogether;
   }
 
-  async updateUser(params: {
-    where: Prisma.UserWhereUniqueInput;
-    data: Prisma.UserUpdateInput;
-  }): Promise<User> {
-    const { where, data } = params;
-    return this.prisma.user.update({
-      data,
+  async updateUser(params: Prisma.UserUpdateArgs): Promise<User> {
+    return this.prisma.user.update(params);
+  }
+
+  async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
+    return this.prisma.user.delete({
       where,
     });
   }
 
-  async deleteUser(userId: string): Promise<User> {
-    return this.prisma.user.delete({
-      where: {
-        id: userId,
-      },
-    });
-  }
-
-  async logoutUser(userModel: User) {
+  async logoutUser(userID: string): Promise<User> {
     return this.updateUser({
       where: {
-        id: userModel.id,
+        id: userID,
       },
       data: {
         refreshToken: null,
@@ -176,7 +137,7 @@ export class UserService {
   }
 
   async approveUser(userId: string, insId: string) {
-    return this.prisma.userInsConnection.update({
+    return this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -190,7 +151,7 @@ export class UserService {
   }
 
   async denyUser(id: string, userId: string, insId: string) {
-    return this.prisma.userInsConnection.update({
+    return this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -205,7 +166,10 @@ export class UserService {
     });
   }
 
-  async setLastReadNotificationID(userID: string, notifID: string) {
+  async setLastReadNotificationID(
+    userID: string,
+    notifID: string,
+  ): Promise<User> {
     return this.updateUser({
       where: {
         id: userID,
@@ -216,7 +180,7 @@ export class UserService {
     });
   }
 
-  getCloudfrontToken(phone: string, userID: string) {
+  getCloudfrontToken(phone: string, userID: string): string {
     return this.jwtService.getCloudfrontToken({ phone, sub: userID });
   }
 }

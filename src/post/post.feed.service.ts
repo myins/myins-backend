@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { Post, Prisma } from '@prisma/client';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { PostService } from './post.service';
 
 @Injectable()
 export class PostFeedService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly userConnectionService: UserConnectionService,
+  ) {}
 
   richPostInclude(userID: string): Prisma.PostInclude {
     return {
@@ -36,8 +40,8 @@ export class PostFeedService {
     };
   }
 
-  async getFeed(skip: number, take: number, userID: string) {
-    return this.prisma.post.findMany({
+  async getFeed(skip: number, take: number, userID: string): Promise<Post[]> {
+    return this.postService.posts({
       skip: skip,
       take: take,
       include: this.richPostInclude(userID),
@@ -58,8 +62,9 @@ export class PostFeedService {
       },
     });
   }
+
   async getStoriesFeed(userID: string) {
-    const allINS = await this.prisma.userInsConnection.findMany({
+    const allINS = await this.userConnectionService.getConnections({
       where: {
         userId: userID,
       },
@@ -71,7 +76,7 @@ export class PostFeedService {
     const richInclude = this.richPostInclude(userID);
     const toRet = await Promise.all(
       allINS.map((each) => {
-        return this.prisma.post.findFirst({
+        return this.postService.firstPost({
           where: {
             inses: {
               some: {

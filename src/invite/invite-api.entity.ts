@@ -4,9 +4,11 @@ import {
   IsArray,
   IsNotEmpty,
   IsPhoneNumber,
+  IsString,
 } from 'class-validator';
 
 export class InviteUserToINSAPI {
+  @IsString()
   @IsNotEmpty()
   ins: string;
 
@@ -17,6 +19,7 @@ export class InviteUserToINSAPI {
 }
 
 export class InviteExternalUserToINSAPI {
+  @IsString()
   @IsNotEmpty()
   ins: string;
 

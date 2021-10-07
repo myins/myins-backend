@@ -79,7 +79,7 @@ export class CommentController {
         "You're not allowed to delete this comment!",
       );
     }
-    return await this.commentService.deleteComment(commentID);
+    return this.commentService.deleteComment({ id: commentID });
   }
 
   @Post()
@@ -97,7 +97,7 @@ export class CommentController {
       );
     }
 
-    const post = await this.postService.post({ id: postID }, false);
+    const post = await this.postService.post({ id: postID });
     if (!post || !post.authorId) {
       throw new BadRequestException('Could not find that post!');
     }

@@ -17,7 +17,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsInteractionService } from 'src/ins/ins.interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
-import { ShallowUserSelect } from 'src/util/shallow-user';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PostLikeService } from './post.like.service';
 import { PostService } from './post.service';
 
@@ -53,7 +53,6 @@ export class PostLikeController {
           },
         },
       },
-      includeRelatedInfo: false,
     });
 
     if (!postIfValid || postIfValid.length == 0) {
@@ -83,12 +82,9 @@ export class PostLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async likePost(@PrismaUser() user: User, @Param('id') postID: string) {
-    const post = await this.postService.post(
-      {
-        id: postID,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: postID,
+    });
     if (post == null || !post.authorId) {
       throw new NotFoundException('Could not find this post!');
     }
@@ -136,12 +132,9 @@ export class PostLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async unlikePost(@PrismaUser() user: User, @Param('id') postID: string) {
-    const post = await this.postService.post(
-      {
-        id: postID,
-      },
-      false,
-    );
+    const post = await this.postService.post({
+      id: postID,
+    });
     if (post == null) {
       throw new NotFoundException('Could not find this post!');
     }

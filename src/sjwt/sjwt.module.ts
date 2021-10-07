@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { UserModule } from 'src/user/user.module';
 import { SjwtService } from './sjwt.service';
 
 @Module({
@@ -9,7 +9,7 @@ import { SjwtService } from './sjwt.service';
       secret: process.env.JWT_SIGNING_KEY,
       signOptions: { expiresIn: '7d' },
     }),
-    PrismaModule,
+    forwardRef(() => UserModule),
   ],
   providers: [SjwtService],
   exports: [SjwtService],

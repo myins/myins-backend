@@ -7,8 +7,8 @@ import { InsInteractionService } from 'src/ins/ins.interaction.service';
 @Injectable()
 export class CommentLikeService {
   constructor(
-    private commentService: CommentService,
-    private notifsService: NotificationService,
+    private readonly commentService: CommentService,
+    private readonly notifsService: NotificationService,
     private readonly interactionService: InsInteractionService,
   ) {}
 
@@ -27,7 +27,7 @@ export class CommentLikeService {
     await this.interactionService.interactComment(userID, comment.id);
 
     if (comment.authorId != userID) {
-      this.notifsService.createNotification({
+      await this.notifsService.createNotification({
         source: 'LIKE_COMMENT',
         target: {
           connect: {
@@ -54,7 +54,7 @@ export class CommentLikeService {
   }
 
   async unlikeComment(userID: string, comment: Comment) {
-    this.commentService.updateComment({
+    return this.commentService.updateComment({
       where: { id: comment.id },
       data: {
         likes: {
