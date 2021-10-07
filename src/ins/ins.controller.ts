@@ -92,7 +92,7 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -102,7 +102,7 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -119,7 +119,7 @@ export class InsController {
     @Query('take') take: number,
     @Query('filter') filter: string,
   ) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -129,7 +129,7 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -140,7 +140,7 @@ export class InsController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
-    const toRet = await this.insService.inses({
+    const inses = await this.insService.inses({
       where: {
         id: id,
         members: {
@@ -157,10 +157,10 @@ export class InsController {
         },
       },
     });
-    if (!toRet || toRet.length !== 1) {
+    if (!inses || inses.length !== 1) {
       throw new BadRequestException('Could not find that INS!');
     }
-    return toRet[0];
+    return inses[0];
   }
 
   @Post('join/:code')
@@ -237,9 +237,6 @@ export class InsController {
     }
     const theINS = validINS[0];
 
-    await this.insService.attachCoverToPost(file, theINS.id);
-    return {
-      message: 'Cover set successfully!',
-    };
+    return this.insService.attachCoverToPost(file, theINS.id);
   }
 }

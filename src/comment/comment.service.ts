@@ -12,10 +12,9 @@ export class CommentService {
   ) {}
 
   async createComment(data: Prisma.CommentCreateInput): Promise<Comment> {
-    const toRet = await this.prismaService.comment.create({
+    return this.prismaService.comment.create({
       data,
     });
-    return toRet;
   }
 
   async comments(params: Prisma.CommentFindManyArgs): Promise<Comment[]> {

@@ -37,22 +37,16 @@ export class PostMediaService {
     });
   }
 
-  async getMediaForPost(
-    where: Prisma.PostContentWhereInput,
-  ): Promise<PostContent[]> {
-    return this.prismaService.postContent.findMany({
-      where,
-    });
-  }
-
   async getMedias(
     params: Prisma.PostContentFindManyArgs,
   ): Promise<PostContent[]> {
     return this.prismaService.postContent.findMany(params);
   }
 
-  async create(params: Prisma.PostContentCreateArgs): Promise<PostContent> {
-    return this.prismaService.postContent.create(params);
+  async create(data: Prisma.PostContentCreateInput): Promise<PostContent> {
+    return this.prismaService.postContent.create({
+      data,
+    });
   }
 
   async attachMediaToPost(
@@ -118,18 +112,16 @@ export class PostMediaService {
     this.logger.debug('Uploading new post content...');
 
     const toRet = await this.create({
-      data: {
-        content: dataURL,
-        post: {
-          connect: {
-            id: postID,
-          },
+      content: dataURL,
+      post: {
+        connect: {
+          id: postID,
         },
-        thumbnail: thumbnailURL,
-        width: postInfo.width,
-        height: postInfo.height,
-        isVideo: postInfo.isVideo,
       },
+      thumbnail: thumbnailURL,
+      width: postInfo.width,
+      height: postInfo.height,
+      isVideo: postInfo.isVideo,
     });
 
     this.logger.debug('Done uploading, time to run transaction...');
@@ -196,7 +188,7 @@ export class PostMediaService {
 
   async deletePostMedia(
     where: Prisma.PostContentWhereUniqueInput,
-  ): Promise<PostContent | null> {
+  ): Promise<PostContent> {
     return this.prismaService.postContent.delete({
       where,
     });

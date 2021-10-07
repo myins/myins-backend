@@ -7,9 +7,9 @@ import { UserService } from 'src/user/user.service';
 @Injectable()
 export class SjwtService {
   constructor(
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
     @Inject(forwardRef(() => UserService))
-    private userService: UserService,
+    private readonly userService: UserService,
   ) {}
 
   async generateNewAuthTokens(phone: string, userID: string) {

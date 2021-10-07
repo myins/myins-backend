@@ -94,10 +94,7 @@ export class UserPendingController {
       );
     }
 
-    await this.userService.approveUser(data.userID, data.insID);
-    return {
-      message: 'Member approved!',
-    };
+    return this.userService.approveUser(data.userID, data.insID);
   }
 
   @Patch('deny')
@@ -116,9 +113,6 @@ export class UserPendingController {
       );
     }
 
-    await this.userService.denyUser(id, data.userID, data.insID);
-    return {
-      message: 'Member denied!',
-    };
+    return this.userService.denyUser(id, data.userID, data.insID);
   }
 }

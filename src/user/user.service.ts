@@ -12,15 +12,17 @@ import { SmsService } from 'src/sms/sms.service';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { UserConnectionService } from './user.connection.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: SjwtService,
-    private smsService: SmsService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: SjwtService,
+    private readonly smsService: SmsService,
     @Inject(forwardRef(() => ChatService)) private chatService: ChatService,
-    private insService: InsService,
+    private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   async user(
@@ -30,12 +32,6 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: where,
       include: include,
-    });
-  }
-
-  async firstUser(where: Prisma.UserWhereInput): Promise<User | null> {
-    return this.prisma.user.findFirst({
-      where: where,
     });
   }
 
@@ -141,7 +137,7 @@ export class UserService {
   }
 
   async approveUser(userId: string, insId: string) {
-    return this.prisma.userInsConnection.update({
+    return this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -155,7 +151,7 @@ export class UserService {
   }
 
   async denyUser(id: string, userId: string, insId: string) {
-    return this.prisma.userInsConnection.update({
+    return this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,

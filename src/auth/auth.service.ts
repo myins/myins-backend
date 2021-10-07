@@ -32,7 +32,7 @@ export class AuthService {
     if (user.phoneNumberVerified) {
       throw new BadRequestException('Phone already verified!');
     }
-    await this.smsService.sendVerificationCode(user);
+    return this.smsService.sendVerificationCode(user);
   }
 
   async resetPassword(phone: string) {
@@ -42,7 +42,7 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
-    await this.smsService.sendForgotPasswordCode(user);
+    return this.smsService.sendForgotPasswordCode(user);
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
@@ -108,7 +108,7 @@ export class AuthService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
 
-    await this.usersService.updateUser({
+    return this.usersService.updateUser({
       where: {
         id: user.id,
       },
@@ -132,7 +132,7 @@ export class AuthService {
     if (!res) {
       throw new BadRequestException('Invalid code!');
     }
-    await this.usersService.updateUser({
+    return this.usersService.updateUser({
       where: {
         id: user.id,
       },
@@ -196,11 +196,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const res = await this.jwtService.generateNewAuthTokens(
-      user.phoneNumber,
-      user.id,
-    );
-    return res;
+    return this.jwtService.generateNewAuthTokens(user.phoneNumber, user.id);
   }
 
   async logout(user: User) {

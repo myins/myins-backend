@@ -28,7 +28,7 @@ export class ChatService {
       phoneNumber: user.phoneNumber,
       image: user.profilePicture,
     }));
-    await this.streamChat.upsertUsers(data);
+    return this.streamChat.upsertUsers(data);
   }
 
   async getStreamUser(id: string) {
@@ -37,7 +37,7 @@ export class ChatService {
   }
 
   async deleteStreamUser(userID: string) {
-    await this.streamChat.deleteUser(userID, {
+    return this.streamChat.deleteUser(userID, {
       mark_messages_deleted: false,
     });
   }
@@ -49,17 +49,16 @@ export class ChatService {
       created_by_id: userID,
       image: ins.cover,
     });
-    return await channel.create();
+    return channel.create();
   }
 
   async getChannelsINS(where: ChannelFilters) {
-    const channels = await this.streamChat.queryChannels(where);
-    return channels;
+    return this.streamChat.queryChannels(where);
   }
 
   async deleteChannelINS(insID: string) {
     const channels = await this.getChannelsINS({ id: insID });
-    await channels[0].delete();
+    return channels[0].delete();
   }
 
   async addMembersToChannel(userIDs: string[], insId: string) {
@@ -72,12 +71,12 @@ export class ChatService {
       },
     });
     await this.createOrUpdateStreamUsers(users);
-    await channels[0].addMembers(userIDs);
+    return channels[0].addMembers(userIDs);
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
     const channels = await this.getChannelsINS({ id: insId });
-    await channels[0].removeMembers([userID]);
+    return channels[0].removeMembers([userID]);
   }
 
   async sendMessageWhenPost(insIds: string[], userID: string, content: string) {

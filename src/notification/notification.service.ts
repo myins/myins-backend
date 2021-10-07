@@ -161,7 +161,7 @@ export class NotificationService {
       await Promise.all(flatMapped.flatMap((each) => each))
     ).filter(notEmpty);
 
-    await Promise.all(
+    return Promise.all(
       notif.map(async (each) => {
         const authorUser = users.find(
           (each2) => each2.id == each.authorId,

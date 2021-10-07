@@ -60,7 +60,7 @@ export class UserVersionsController {
     const currentVersions = await this.currentVersionsService.getByType({
       type: body.documentType,
     });
-    await this.userService.updateUser({
+    return this.userService.updateUser({
       where: {
         id: userID,
       },
@@ -75,8 +75,5 @@ export class UserVersionsController {
             : undefined,
       },
     });
-    return {
-      message: 'Updated version successfully!',
-    };
   }
 }

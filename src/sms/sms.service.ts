@@ -16,9 +16,7 @@ export class SmsService {
       return;
     }
 
-    const toRet = await this.sendVerificationSMS(user.phoneNumber);
-
-    return toRet;
+    return this.sendVerificationSMS(user.phoneNumber);
   }
 
   async sendSMS(target: string, message: string) {
@@ -34,16 +32,15 @@ export class SmsService {
       return;
     }
     try {
-      const toRet = await this.client.verify
+      return this.client.verify
         .services(process.env.TWILIO_SERVICE_SID ?? '')
         .verifications.create({ to: target, channel: 'sms' });
-      return toRet;
     } catch (e) {
       return e;
     }
   }
 
   async sendForgotPasswordCode(user: User) {
-    await this.sendVerificationSMS(user.phoneNumber);
+    return this.sendVerificationSMS(user.phoneNumber);
   }
 }

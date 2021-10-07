@@ -36,11 +36,7 @@ export class CommentLikeController {
       );
     }
 
-    await this.commentLikeService.likeComment(user.id, comment);
-
-    return {
-      message: 'Liked comment successfully!',
-    };
+    return this.commentLikeService.likeComment(user.id, comment);
   }
 
   @Post(':id/unlike')
@@ -61,11 +57,7 @@ export class CommentLikeController {
         'You must verify your phone before liking posts!',
       );
     }
-    this.commentLikeService.unlikeComment(user.id, comment);
-
-    return {
-      message: 'Unliked comment successfully!',
-    };
+    return this.commentLikeService.unlikeComment(user.id, comment);
   }
 
   // @Get(':id/likes')

@@ -35,8 +35,8 @@ export class UserConnectionService {
   }
 
   async changeAdmin(insId: string, newAdminId: string) {
-    return this.prisma.$transaction([
-      this.prisma.userInsConnection.updateMany({
+    return this.prisma.$transaction(async () => {
+      await this.updateMany({
         where: {
           role: UserRole.ADMIN,
           insId: insId,
@@ -44,8 +44,8 @@ export class UserConnectionService {
         data: {
           role: UserRole.MEMBER,
         },
-      }),
-      this.prisma.userInsConnection.update({
+      });
+      await this.update({
         where: {
           userId_insId: {
             userId: newAdminId,
@@ -55,8 +55,8 @@ export class UserConnectionService {
         data: {
           role: UserRole.ADMIN,
         },
-      }),
-    ]);
+      });
+    });
   }
 
   async removeMember(

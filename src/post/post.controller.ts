@@ -137,8 +137,10 @@ export class PostController {
     }
     await this.postMediaService.deletePostMedia({ id: postMediaID });
 
-    const remainingMedia = await this.postMediaService.getMediaForPost({
-      postId: post.id,
+    const remainingMedia = await this.postMediaService.getMedias({
+      where: {
+        postId: post.id,
+      },
     });
     if (!remainingMedia.length) {
       await this.postService.deletePost({ id: post.id });

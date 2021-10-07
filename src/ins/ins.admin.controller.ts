@@ -38,10 +38,7 @@ export class InsAdminController {
       );
     }
 
-    await this.insAdminService.changeAdmin(data.insID, data.memberID);
-    return {
-      message: 'Admin changed!',
-    };
+    return this.insAdminService.changeAdmin(data.insID, data.memberID);
   }
 
   @Delete('/remove-member')
@@ -58,15 +55,12 @@ export class InsAdminController {
       );
     }
 
-    await this.userConnectionService.removeMember({
+    return this.userConnectionService.removeMember({
       userId_insId: {
         userId: data.memberID,
         insId: data.insID,
       },
     });
-    return {
-      message: 'Member removed from INS!',
-    };
   }
 
   @Delete(':id')

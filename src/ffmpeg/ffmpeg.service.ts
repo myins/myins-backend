@@ -81,7 +81,6 @@ export class FfmpegService {
     const inputForFFMPEG = new stream.PassThrough();
     inputForFFMPEG.push(file.buffer);
 
-    const toRet = await this.uploadFile(file);
-    return toRet;
+    return this.uploadFile(file);
   }
 }

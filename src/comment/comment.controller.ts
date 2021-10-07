@@ -79,7 +79,7 @@ export class CommentController {
         "You're not allowed to delete this comment!",
       );
     }
-    return await this.commentService.deleteComment({ id: commentID });
+    return this.commentService.deleteComment({ id: commentID });
   }
 
   @Post()

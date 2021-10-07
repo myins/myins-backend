@@ -30,11 +30,7 @@ export class InviteController {
     @PrismaUser('id') userID: string,
     @Body() body: InviteUserToINSAPI,
   ) {
-    await this.inviteService.inviteINSUser(userID, body.userIDs, body.ins);
-
-    return {
-      message: 'Invited successfully!',
-    };
+    return this.inviteService.inviteINSUser(userID, body.userIDs, body.ins);
   }
 
   @Post('external-users')
@@ -44,15 +40,11 @@ export class InviteController {
     @PrismaUser('id') userID: string,
     @Body() body: InviteExternalUserToINSAPI,
   ) {
-    await this.inviteService.inviteExternalUser(
+    return this.inviteService.inviteExternalUser(
       userID,
       body.phoneNumbers,
       body.ins,
     );
-
-    return {
-      message: 'Invited successfully!',
-    };
   }
 
   @Get('search')
