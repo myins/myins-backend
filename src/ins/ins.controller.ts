@@ -20,7 +20,6 @@ import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
-import { randomCode } from 'src/util/random';
 import { CreateINSAPI } from './ins-api.entity';
 import { InsService } from './ins.service';
 
@@ -50,7 +49,7 @@ export class InsController {
 
     return this.insService.createINS({
       name: data.name,
-      shareCode: randomCode(6),
+      shareCode: await this.insService.randomCode(),
       members: {
         create: {
           userId: userID,
