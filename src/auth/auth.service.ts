@@ -117,7 +117,7 @@ export class AuthService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
 
-    this.logger.log('Update user');
+    this.logger.log(`Update user ${user.id}`);
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -145,7 +145,7 @@ export class AuthService {
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log('Update user');
+    this.logger.log(`Update user ${user.id}`);
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -200,7 +200,7 @@ export class AuthService {
     this.logger.log('Create stream user');
     await this.chatService.createOrUpdateStreamUsers([user]);
 
-    this.logger.log('User logged');
+    this.logger.log(`User logged ${addedTogether.id}`);
     return addedTogether;
   }
 
@@ -216,7 +216,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token!');
     }
 
-    this.logger.log('Generate token');
+    this.logger.log(`Generate token for user ${user.id}`);
     return this.jwtService.generateNewAuthTokens(user.phoneNumber, user.id);
   }
 

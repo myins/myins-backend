@@ -35,7 +35,7 @@ export class AuthController {
   @ApiTags('auth')
   @Post('login')
   async login(@Request() req: { user: User }) {
-    this.logger.log('User login');
+    this.logger.log(`Login user ${req.user.id}`);
     return this.authService.login(req.user);
   }
 
@@ -43,7 +43,7 @@ export class AuthController {
   @ApiTags('auth')
   @ApiBearerAuth()
   async refreshAuth(@Body() postData: RefreshTokenBodyAPI) {
-    this.logger.log('Refresh token');
+    this.logger.log(`Refresh token for user ${postData.userID}`);
     return this.authService.refreshToken(
       postData.userID,
       postData.refreshToken,
@@ -55,15 +55,15 @@ export class AuthController {
   @ApiTags('auth')
   @ApiBearerAuth()
   async logout(@PrismaUser() user: User) {
-    this.logger.log('User logout');
+    this.logger.log(`Logout user ${user.id}`);
     return this.authService.logout(user);
   }
 
   @Post('verifyCode')
   @ApiTags('auth')
   async verifyUser(@Body() accountData: CodePhoneAPI) {
-    this.logger.log('Verify user');
     const { phone, code } = accountData;
+    this.logger.log(`Verify user by phone ${phone} with code ${code}`);
     await this.authService.verifyUser(phone, code);
     return {
       message: 'User verified!',
@@ -73,8 +73,8 @@ export class AuthController {
   @Post('checkResetCode')
   @ApiTags('auth')
   async checkResetCode(@Body() accountData: CodePhoneAPI) {
-    this.logger.log('Check reset code');
     const { phone, code } = accountData;
+    this.logger.log(`Check reset code ${code} with phone ${phone}`);
     const res = await this.authService.checkIfCodeCorrect(phone, code);
     if (!res) {
       return {
@@ -93,9 +93,11 @@ export class AuthController {
   @Post('completeReset')
   @ApiTags('auth')
   async completeResetPassword(@Body() accountData: ResetPasswordAPI) {
-    this.logger.log('Confirm reset password');
     const { phone, resetToken, newPassword } = accountData;
+    this.logger.log(`Confirm reset password for phone ${phone}`);
     await this.authService.confirmResetPassword(phone, resetToken, newPassword);
+
+    this.logger.log('Updated successfully');
     return {
       message: 'Updated successfully!',
     };
@@ -104,7 +106,7 @@ export class AuthController {
   @Post('resend-confirmation')
   @ApiTags('auth')
   async resendConfirmation(@Body() data: PhoneBodyAPI) {
-    this.logger.log('Resend confirmation');
+    this.logger.log(`Resend confirmation for phone ${data.phone}`);
     await this.authService.resendConfirmation(data.phone);
 
     this.logger.log('Successfully sent confirmation sms');
@@ -116,7 +118,7 @@ export class AuthController {
   @Post('forgot-password')
   @ApiTags('auth')
   async resetPassword(@Body() data: PhoneBodyAPI) {
-    this.logger.log('Reset password');
+    this.logger.log(`Reset password for phone ${data.phone}`);
     await this.authService.resetPassword(data.phone);
 
     this.logger.log('Code sent successfully');
@@ -128,7 +130,7 @@ export class AuthController {
   @Post('phone-exists')
   @ApiTags('auth')
   async phoneExists(@Body() data: PhoneBodyAPI) {
-    this.logger.log('Check if phone exists');
+    this.logger.log(`Check if phone ${data.phone} exists`);
     return this.authService.phoneExists(data.phone);
   }
 }
