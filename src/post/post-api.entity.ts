@@ -40,7 +40,7 @@ export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
   claimToken: string;
 
   @IsString()
-  setCover: string;
+  setCover?: string;
 }
 
 export class AttachCoverAPI {
