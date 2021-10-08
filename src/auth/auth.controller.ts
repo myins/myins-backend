@@ -57,7 +57,10 @@ export class AuthController {
   @ApiTags('auth')
   async verifyUser(@Body() accountData: CodePhoneAPI) {
     const { phone, code } = accountData;
-    return this.authService.verifyUser(phone, code);
+    await this.authService.verifyUser(phone, code);
+    return {
+      message: 'User verified!',
+    };
   }
 
   @Post('checkResetCode')
@@ -82,11 +85,10 @@ export class AuthController {
   @ApiTags('auth')
   async completeResetPassword(@Body() accountData: ResetPasswordAPI) {
     const { phone, resetToken, newPassword } = accountData;
-    return this.authService.confirmResetPassword(
-      phone,
-      resetToken,
-      newPassword,
-    );
+    await this.authService.confirmResetPassword(phone, resetToken, newPassword);
+    return {
+      message: 'Updated successfully!',
+    };
   }
 
   @Post('resend-confirmation')
