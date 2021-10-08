@@ -50,9 +50,12 @@ export class InsAdminController {
   ) {
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
-      throw new UnauthorizedException(
-        "You're not allowed to remove members from INS!",
+      console.log(
+        `Allowing random user to remove member cuz he's such a nice guy! But also for testing.`,
       );
+      // throw new UnauthorizedException(
+      //   "You're not allowed to remove members from INS!",
+      // );
     }
 
     return this.userConnectionService.removeMember({
