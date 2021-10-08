@@ -184,7 +184,7 @@ export class AuthService {
   }
 
   async login(user: User) {
-    this.logger.log('Generate token');
+    this.logger.log(`Generating token for user ${user.id}`);
     const authTokens = await this.jwtService.generateNewAuthTokens(
       user.phoneNumber,
       user.id,
@@ -216,7 +216,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token!');
     }
 
-    this.logger.log(`Generate token for user ${user.id}`);
+    this.logger.log(`Generating token for user ${user.id}`);
     return this.jwtService.generateNewAuthTokens(user.phoneNumber, user.id);
   }
 
