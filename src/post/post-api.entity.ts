@@ -2,6 +2,7 @@ import {
   ArrayNotEmpty,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -40,7 +41,8 @@ export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
   claimToken: string;
 
   @IsString()
-  setCover?: string;
+  @IsOptional()
+  setCover: string;
 }
 
 export class AttachCoverAPI {
