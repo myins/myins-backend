@@ -39,6 +39,7 @@ export class MiddlewareService {
             await channels[0].update({
               name: insResult.name,
               image: insResult.cover,
+              insChannel: true,
             });
           }
         }
