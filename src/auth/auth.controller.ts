@@ -5,6 +5,7 @@ import {
   Request,
   Body,
   Get,
+  Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -23,6 +24,8 @@ import { JwtStrategyPayload } from './jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: SjwtService,
@@ -32,14 +35,16 @@ export class AuthController {
   @ApiTags('auth')
   @Post('login')
   async login(@Request() req: { user: User }) {
-    return await this.authService.login(req.user);
+    this.logger.log(`Login user ${req.user.id}`);
+    return this.authService.login(req.user);
   }
 
   @Post('refresh-auth')
   @ApiTags('auth')
   @ApiBearerAuth()
   async refreshAuth(@Body() postData: RefreshTokenBodyAPI) {
-    return await this.authService.refreshToken(
+    this.logger.log(`Refresh token for user ${postData.userID}`);
+    return this.authService.refreshToken(
       postData.userID,
       postData.refreshToken,
     );
@@ -50,6 +55,7 @@ export class AuthController {
   @ApiTags('auth')
   @ApiBearerAuth()
   async logout(@PrismaUser() user: User) {
+    this.logger.log(`Logout user ${user.id}`);
     return this.authService.logout(user);
   }
 
@@ -57,6 +63,7 @@ export class AuthController {
   @ApiTags('auth')
   async verifyUser(@Body() accountData: CodePhoneAPI) {
     const { phone, code } = accountData;
+    this.logger.log(`Verify user by phone ${phone} with code ${code}`);
     await this.authService.verifyUser(phone, code);
     return {
       message: 'User verified!',
@@ -67,13 +74,15 @@ export class AuthController {
   @ApiTags('auth')
   async checkResetCode(@Body() accountData: CodePhoneAPI) {
     const { phone, code } = accountData;
-
+    this.logger.log(`Check reset code ${code} with phone ${phone}`);
     const res = await this.authService.checkIfCodeCorrect(phone, code);
     if (!res) {
       return {
         correct: false,
       };
     }
+
+    this.logger.log('Sign with very quick expiration');
     const payload: JwtStrategyPayload = { sub: phone, phone: phone };
     return {
       correct: true,
@@ -85,7 +94,10 @@ export class AuthController {
   @ApiTags('auth')
   async completeResetPassword(@Body() accountData: ResetPasswordAPI) {
     const { phone, resetToken, newPassword } = accountData;
+    this.logger.log(`Confirm reset password for phone ${phone}`);
     await this.authService.confirmResetPassword(phone, resetToken, newPassword);
+
+    this.logger.log('Updated successfully');
     return {
       message: 'Updated successfully!',
     };
@@ -94,7 +106,10 @@ export class AuthController {
   @Post('resend-confirmation')
   @ApiTags('auth')
   async resendConfirmation(@Body() data: PhoneBodyAPI) {
+    this.logger.log(`Resend confirmation for phone ${data.phone}`);
     await this.authService.resendConfirmation(data.phone);
+
+    this.logger.log('Successfully sent confirmation sms');
     return {
       message: 'Successfully sent confirmation sms!',
     };
@@ -103,7 +118,10 @@ export class AuthController {
   @Post('forgot-password')
   @ApiTags('auth')
   async resetPassword(@Body() data: PhoneBodyAPI) {
+    this.logger.log(`Reset password for phone ${data.phone}`);
     await this.authService.resetPassword(data.phone);
+
+    this.logger.log('Code sent successfully');
     return {
       message: 'Code sent successfully!',
     };
@@ -112,6 +130,7 @@ export class AuthController {
   @Post('phone-exists')
   @ApiTags('auth')
   async phoneExists(@Body() data: PhoneBodyAPI) {
+    this.logger.log(`Check if phone ${data.phone} exists`);
     return this.authService.phoneExists(data.phone);
   }
 }
