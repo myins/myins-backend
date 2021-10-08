@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import { isTestNumber } from 'src/util/test-numbers';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UserService,
     private readonly jwtService: SjwtService,
@@ -32,6 +35,8 @@ export class AuthService {
     if (user.phoneNumberVerified) {
       throw new BadRequestException('Phone already verified!');
     }
+
+    this.logger.log('Send verification code');
     return this.smsService.sendVerificationCode(user);
   }
 
@@ -42,6 +47,8 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
+
+    this.logger.log('Send forgot password code');
     return this.smsService.sendForgotPasswordCode(user);
   }
 
@@ -96,6 +103,8 @@ export class AuthService {
     if (user == null) {
       throw new BadRequestException('Could not find user with that phone!');
     }
+
+    this.logger.log('Decrypt reset token');
     const decrypted = await this.jwtService.decrypt(resetToken);
     if (typeof decrypted == 'string') {
       throw new BadRequestException(
@@ -108,6 +117,7 @@ export class AuthService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
 
+    this.logger.log('Update user');
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -128,10 +138,14 @@ export class AuthService {
     if (user.phoneNumberVerified) {
       throw new BadRequestException('User already verified!');
     }
+
+    this.logger.log('Check code');
     const res = await this.checkIfCodeCorrect(phone, code);
     if (!res) {
       throw new BadRequestException('Invalid code!');
     }
+
+    this.logger.log('Update user');
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -170,17 +184,23 @@ export class AuthService {
   }
 
   async login(user: User) {
+    this.logger.log('Generate token');
     const authTokens = await this.jwtService.generateNewAuthTokens(
       user.phoneNumber,
       user.id,
     );
+
+    this.logger.log('Get user profile');
     const userProfile = await this.usersService.getUserProfile(user.id);
     const addedTogether = { ...userProfile, ...authTokens };
 
+    this.logger.log('Send verification code');
     this.smsService.sendVerificationCode(user);
 
+    this.logger.log('Create stream user');
     await this.chatService.createOrUpdateStreamUsers([user]);
 
+    this.logger.log('User logged');
     return addedTogether;
   }
 
@@ -189,13 +209,14 @@ export class AuthService {
       id: userID,
     });
     if (user == null) {
-      throw new NotFoundException();
+      throw new NotFoundException('Could not find user!');
     }
 
     if (user.refreshToken != refreshToken) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid refresh token!');
     }
 
+    this.logger.log('Generate token');
     return this.jwtService.generateNewAuthTokens(user.phoneNumber, user.id);
   }
 

@@ -2,6 +2,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,6 +17,8 @@ import { UserConnectionService } from './user.connection.service';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: SjwtService,
@@ -47,7 +50,7 @@ export class UserService {
       },
     );
     if (userModel == null) {
-      throw new NotFoundException();
+      throw new NotFoundException('Could not find user!');
     }
     let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };
     if (userID === asUserID) {
@@ -125,6 +128,7 @@ export class UserService {
   }
 
   async logoutUser(userID: string): Promise<User> {
+    this.logger.log('Update user');
     return this.updateUser({
       where: {
         id: userID,
