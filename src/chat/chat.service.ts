@@ -48,6 +48,7 @@ export class ChatService {
       members: [userID],
       created_by_id: userID,
       image: ins.cover,
+      insChannel: true,
     });
     return channel.create();
   }
