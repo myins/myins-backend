@@ -131,7 +131,7 @@ export class PostCreateController {
       }
     }
 
-    return await this.postService.createPost({
+    return this.postService.createPost({
       content: postData.content,
       author: {
         connect: {
