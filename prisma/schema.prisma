@@ -65,7 +65,7 @@ model Post {
   authorId     String? // Optional because of guest posts, see onboarding service
   comments     Comment[]
 
-  pending           Boolean @default(false)
+  pending           Boolean @default(true)
   totalMediaContent Int
 
   notifications Notification[] // Some notifications have a post
