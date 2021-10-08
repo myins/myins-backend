@@ -62,7 +62,6 @@ export class PostCreateController {
       throw new BadRequestException('No thumbnail!');
     }
 
-    const setCover = body.setCover === 'true';
     const width = parseInt(body.width);
     const height = parseInt(body.height);
     if (!width || !height) {
@@ -79,7 +78,7 @@ export class PostCreateController {
           width,
           height,
           isVideo: isVideoPost,
-          setCover,
+          setCover: false,
         },
       );
     } catch (err) {
