@@ -30,6 +30,7 @@ export class PostFeedService {
       mediaContent: true,
       inses: {
         select: {
+          id: true,
           name: true,
           cover: true,
         },
