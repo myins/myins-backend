@@ -197,7 +197,12 @@ export class PostController {
         },
       },
     });
-    await this.chatService.sendMessageWhenPost(ins, userID, post.content);
+    await this.chatService.sendMessageWhenPost(
+      ins,
+      userID,
+      postID,
+      post.content,
+    );
 
     return {
       message: 'Post shared!',

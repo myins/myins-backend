@@ -99,6 +99,7 @@ export class OnboardingService {
           await this.chatService.sendMessageWhenPost(
             [insID],
             post.authorId,
+            post.id,
             post.content,
           );
         }
