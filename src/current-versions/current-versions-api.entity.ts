@@ -6,3 +6,8 @@ export class ChangeCurrentVersionsAPI {
   @IsNotEmpty()
   documentType: DocumentType;
 }
+
+export interface Links {
+  TC: string | undefined;
+  PP: string | undefined;
+}
