@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentVersionsService } from './current-versions.service';
@@ -9,6 +9,13 @@ export class CurrentVersionsController {
   constructor(
     private readonly currentVersionsService: CurrentVersionsService,
   ) {}
+
+  @Get('links')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('current-versions')
+  async getLinks() {
+    return this.currentVersionsService.getLinks();
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
