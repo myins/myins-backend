@@ -80,15 +80,23 @@ export class ChatService {
     return channels[0].removeMembers([userID]);
   }
 
-  async sendMessageWhenPost(insIds: string[], userID: string, content: string) {
+  async sendMessageWhenPost(
+    insIds: string[],
+    userID: string,
+    postID: string,
+    content: string,
+  ) {
     const message = `Post created by ${userID}: "${content}"`;
-    return this.sendMessageToChannels(insIds, userID, message);
+    return this.sendMessageToChannels(insIds, userID, message, {
+      post_id: postID,
+    });
   }
 
   async sendMessageToChannels(
     insIds: string[],
     userID: string,
     message: string,
+    data: Record<string, unknown>,
   ) {
     const channels = await this.getChannelsINS({
       id: { $in: insIds },
@@ -99,6 +107,7 @@ export class ChatService {
         await channel.sendMessage({
           user_id: user.id,
           text: message,
+          data,
         });
       }),
     );

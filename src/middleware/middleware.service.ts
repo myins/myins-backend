@@ -100,6 +100,7 @@ export class MiddlewareService {
                 (ins: { id: string }) => ins.id,
               ),
               postResult.authorId,
+              postResult.id,
               postResult.content,
             );
           }
