@@ -44,7 +44,7 @@ export const photoOrVideoOptions: MulterOptions = {
     callback(null, true);
   },
   limits: {
-    fileSize: 1024 * 1024 * 50, // largest of the 2
+    fileSize: 1024 * 1024 * 100, // largest of the 2
   },
 };
 
