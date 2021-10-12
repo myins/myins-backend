@@ -40,7 +40,6 @@ export class CommentController {
     @Body() postData: PatchCommentAPI,
     @PrismaUser('id') userID: string,
   ) {
-    this.logger.log(`Updating comment ${commentID} by user ${userID}`);
     const { content } = postData;
 
     const comment = await this.commentService.comment({
@@ -74,7 +73,6 @@ export class CommentController {
     @Param('id') commentID: string,
     @PrismaUser('id') userID: string,
   ) {
-    this.logger.log(`Deleting comment ${commentID} by user ${userID}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -86,6 +84,8 @@ export class CommentController {
         "You're not allowed to delete this comment!",
       );
     }
+
+    this.logger.log(`Deleting comment ${commentID} by user ${userID}`);
     return this.commentService.deleteComment({ id: commentID });
   }
 
@@ -97,7 +97,6 @@ export class CommentController {
     @PrismaUser() user: User,
   ) {
     const { content, postID } = postData;
-    this.logger.log(`Creating comment for post ${postID} by user ${user.id}`);
 
     if (!user.phoneNumberVerified) {
       throw new BadRequestException(
@@ -116,7 +115,9 @@ export class CommentController {
       throw new BadRequestException('Could not find that author!');
     }
 
-    this.logger.log(`Creating comment with content: ${content}`);
+    this.logger.log(
+      `Creating comment for post ${postID} by user ${user.id} with content: ${content}`,
+    );
     const toCreate: Prisma.CommentCreateInput = {
       content: content,
       author: {

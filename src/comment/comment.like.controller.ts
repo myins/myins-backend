@@ -27,7 +27,6 @@ export class CommentLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('comments')
   async likeComment(@PrismaUser() user: User, @Param('id') commentID: string) {
-    this.logger.log(`Like comment ${commentID} by user ${user.id}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -40,6 +39,7 @@ export class CommentLikeController {
       );
     }
 
+    this.logger.log(`Like comment ${commentID} by user ${user.id}`);
     return this.commentLikeService.likeComment(user.id, comment);
   }
 
@@ -50,7 +50,6 @@ export class CommentLikeController {
     @PrismaUser() user: User,
     @Param('id') commentID: string,
   ) {
-    this.logger.log(`Unlike comment ${commentID} by user ${user.id}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -62,6 +61,8 @@ export class CommentLikeController {
         'You must verify your phone before liking posts!',
       );
     }
+
+    this.logger.log(`Unlike comment ${commentID} by user ${user.id}`);
     return this.commentLikeService.unlikeComment(user.id, comment);
   }
 }

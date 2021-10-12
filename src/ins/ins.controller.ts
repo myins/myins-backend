@@ -42,7 +42,6 @@ export class InsController {
     @PrismaUser('id') userID: string,
     @Body() data: CreateINSAPI,
   ) {
-    this.logger.log(`Creating ins ${data.name} by user ${userID}`);
     const user = userID ? await this.userService.user({ id: userID }) : null;
     if (!user && userID) {
       throw new UnauthorizedException("You're not allowed to do this!");
@@ -51,6 +50,7 @@ export class InsController {
       throw new UnauthorizedException("You're not allowed to do this!");
     }
 
+    this.logger.log(`Creating ins ${data.name} by user ${userID}`);
     return this.insService.createINS({
       name: data.name,
       shareCode: await this.insService.randomCode(),
@@ -69,10 +69,11 @@ export class InsController {
   @UseInterceptors(NotFoundInterceptor)
   //@UseGuards(JwtAuthGuard)
   async getInsByCode(@Param('code') insCode: string) {
-    this.logger.log(`Getting ins by code ${insCode}`);
     if (insCode.length <= 0) {
       throw new BadRequestException('Invalid code!');
     }
+
+    this.logger.log(`Getting ins by code ${insCode}`);
     return this.insService.ins({
       shareCode: insCode,
     });
@@ -100,7 +101,6 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    this.logger.log(`Checking if user ${userID} is a member of ins ${id}`);
     const inses = await this.insService.inses({
       where: {
         id: id,
@@ -129,7 +129,6 @@ export class InsController {
     @Query('take') take: number,
     @Query('filter') filter: string,
   ) {
-    this.logger.log(`Checking if user ${userID} is a member of ins ${id}`);
     const inses = await this.insService.inses({
       where: {
         id: id,
@@ -228,7 +227,7 @@ export class InsController {
     );
     await this.chatService.addMembersToChannel([userID], theINS.id);
 
-    this.logger.log(`User ${userID} successfully joined to ins ${theINS.id}`);
+    this.logger.log('Joined the INS');
     return {
       message: 'Joined the INS!',
     };

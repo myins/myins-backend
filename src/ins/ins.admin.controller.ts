@@ -35,10 +35,6 @@ export class InsAdminController {
     @Body() data: UpdateINSAdminAPI,
   ) {
     this.logger.log(`Changing admin for ins ${data.insID}`);
-
-    this.logger.log(
-      `Checking if user ${userID} is admin for ins ${data.insID}`,
-    );
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
       throw new UnauthorizedException(
@@ -59,9 +55,6 @@ export class InsAdminController {
     @PrismaUser('id') userID: string,
     @Body() data: UpdateINSAdminAPI,
   ) {
-    this.logger.log(
-      `Checking if user ${userID} is admin for ins ${data.insID}`,
-    );
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
       console.log(
@@ -88,7 +81,6 @@ export class InsAdminController {
     @Param('id') insID: string,
     @PrismaUser('id') userID: string,
   ) {
-    this.logger.log(`Checking if ins ${insID} exists before deleting it`);
     const ins = await this.insService.ins({
       id: insID,
     });
@@ -96,7 +88,6 @@ export class InsAdminController {
       throw new NotFoundException('Could not find this INS!');
     }
 
-    this.logger.log(`Checking if user ${userID} is admin for ins ${insID}`);
     const isAdmin = await this.insAdminService.isAdmin(userID, insID);
     if (!isAdmin) {
       throw new UnauthorizedException("You're not allowed to delete this INS!");

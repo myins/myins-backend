@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,6 +22,8 @@ import {
 
 @Injectable()
 export class InviteService {
+  private readonly logger = new Logger(InviteService.name);
+
   constructor(
     private readonly smsService: SmsService,
     private readonly userService: UserService,
@@ -69,6 +72,11 @@ export class InviteService {
       },
     });
     if (existedUsers.length) {
+      this.logger.log(
+        `Inviting users that already exists ${existedUsers.map(
+          (user) => user.id,
+        )} in ins ${ins} by user ${userID}`,
+      );
       await this.inviteINSUser(
         userID,
         existedUsers.map((user) => user.id),
@@ -82,6 +90,9 @@ export class InviteService {
     );
     if (otherUsersPhoneNumbers.length) {
       //FIXME: look into integrating twilio mass messaging tool to avoid multiple api calls
+      this.logger.log(
+        `Sending invitation by sms for phones ${otherUsersPhoneNumbers} for inviting in ins ${ins} by user ${userID}`,
+      );
       await Promise.all(
         otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
           await this.smsService.sendSMS(
@@ -89,6 +100,10 @@ export class InviteService {
             `You've been invited to MyINS! Click this link to get the app: https://myins.com/join/${theINS[0].shareCode}`,
           );
         }),
+      );
+
+      this.logger.log(
+        `Adding phones ${otherUsersPhoneNumbers} as invited phone numbers for ins ${theINS[0].id}`,
       );
       await this.insService.addAsInvitedPhoneNumbers(
         theINS[0].id,
@@ -143,6 +158,10 @@ export class InviteService {
       // the addMembersToChannel from line 139 will be moved to approve user function from user service
       role: UserRole.MEMBER,
     }));
+
+    this.logger.log(
+      `Update ins ${theINS[0].id}. Adding members ${usersNotInINS}`,
+    );
     await this.insService.update({
       where: {
         id: theINS[0].id,
@@ -155,6 +174,10 @@ export class InviteService {
         },
       },
     });
+
+    this.logger.log(
+      `Adding stream users ${otherUsers} as members in channel ${theINS[0].id}`,
+    );
     await this.chatService.addMembersToChannel(otherUsers, theINS[0].id);
   }
 
@@ -220,6 +243,7 @@ export class InviteService {
           },
     };
 
+    this.logger.log('Getting shallow users');
     return this.userService.shallowUsers({
       where: profileInfo,
       orderBy: [

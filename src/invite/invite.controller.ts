@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Post,
   Query,
   UseGuards,
@@ -19,6 +20,8 @@ import { InviteService } from './invite.service';
 
 @Controller('invite')
 export class InviteController {
+  private readonly logger = new Logger(InviteController.name);
+
   constructor(private readonly inviteService: InviteService) {}
 
   // invite by phone number, invite by user id
@@ -30,7 +33,12 @@ export class InviteController {
     @PrismaUser('id') userID: string,
     @Body() body: InviteUserToINSAPI,
   ) {
+    this.logger.log(
+      `Inviting users ${body.userIDs} in ins ${body.ins} by user ${userID}`,
+    );
     await this.inviteService.inviteINSUser(userID, body.userIDs, body.ins);
+
+    this.logger.log('Invited successfully');
     return {
       message: 'Invited successfully!',
     };
@@ -43,11 +51,16 @@ export class InviteController {
     @PrismaUser('id') userID: string,
     @Body() body: InviteExternalUserToINSAPI,
   ) {
+    this.logger.log(
+      `Inviting external phones ${body.phoneNumbers} in ins ${body.ins} by user ${userID}`,
+    );
     await this.inviteService.inviteExternalUser(
       userID,
       body.phoneNumbers,
       body.ins,
     );
+
+    this.logger.log('Invited successfully');
     return {
       message: 'Invited successfully!',
     };
@@ -74,6 +87,8 @@ export class InviteController {
     if (!insID) {
       throw new BadRequestException('Must specify INS!');
     }
+
+    this.logger.log(`Searching for invited users by user ${userID}`);
     return this.inviteService.invitesList(
       allNumber === 1,
       skip,
