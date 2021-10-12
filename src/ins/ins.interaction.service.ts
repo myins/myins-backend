@@ -1,4 +1,3 @@
-import { UserInsConnection } from '.prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
@@ -19,22 +18,6 @@ export class InsInteractionService {
     private readonly userConnectionService: UserConnectionService,
     private readonly postService: PostService,
   ) {}
-
-  async interact(userId: string, insId: string): Promise<UserInsConnection> {
-    return this.userConnectionService.update({
-      where: {
-        userId_insId: {
-          userId: userId,
-          insId: insId,
-        },
-      },
-      data: {
-        interactions: {
-          increment: 1,
-        },
-      },
-    });
-  }
 
   async interactPost(userId: string, postId: string) {
     const postWithIns = await this.postService.post(

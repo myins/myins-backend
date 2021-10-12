@@ -39,24 +39,4 @@ export class NotificationController {
       ),
     };
   }
-
-  // @Get('test')
-  // async testFunction() {
-  //   await this.notifService.pushSingleNotification({
-  //     source: 'FOLLOW_ACCEPTED',
-  //     target: {
-  //       connect: {
-  //         id: 70
-  //       }
-  //     },
-  //     author: {
-  //       connect: {
-  //         id: 1
-  //       }
-  //     }
-  //   })
-  //   return {
-  //     status: 'ok'
-  //   }
-  // }
 }

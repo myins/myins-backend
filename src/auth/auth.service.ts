@@ -190,14 +190,14 @@ export class AuthService {
       user.id,
     );
 
-    this.logger.log('Getting user profile');
+    this.logger.log(`Getting profile for user ${user.id}`);
     const userProfile = await this.usersService.getUserProfile(user.id);
     const addedTogether = { ...userProfile, ...authTokens };
 
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(user);
 
-    this.logger.log('Creating stream user');
+    this.logger.log(`Creating stream user for user ${user.id}`);
     await this.chatService.createOrUpdateStreamUsers([user]);
 
     this.logger.log(`User logged ${addedTogether.id}`);

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -18,6 +19,8 @@ import { InsService } from './ins.service';
 
 @Controller('ins/admin')
 export class InsAdminController {
+  private readonly logger = new Logger(InsAdminController.name);
+
   constructor(
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
@@ -31,6 +34,11 @@ export class InsAdminController {
     @PrismaUser('id') userID: string,
     @Body() data: UpdateINSAdminAPI,
   ) {
+    this.logger.log(`Changing admin for ins ${data.insID}`);
+
+    this.logger.log(
+      `Checking if user ${userID} is admin for ins ${data.insID}`,
+    );
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
       throw new UnauthorizedException(
@@ -38,6 +46,9 @@ export class InsAdminController {
       );
     }
 
+    this.logger.log(
+      `Removing all admins for ins ${data.insID} and changing user ${data.memberID} as admin`,
+    );
     return this.insAdminService.changeAdmin(data.insID, data.memberID);
   }
 
@@ -48,6 +59,9 @@ export class InsAdminController {
     @PrismaUser('id') userID: string,
     @Body() data: UpdateINSAdminAPI,
   ) {
+    this.logger.log(
+      `Checking if user ${userID} is admin for ins ${data.insID}`,
+    );
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
       console.log(
@@ -58,6 +72,7 @@ export class InsAdminController {
       // );
     }
 
+    this.logger.log(`Removing member ${data.memberID} from ins ${data.insID}`);
     return this.userConnectionService.removeMember({
       userId_insId: {
         userId: data.memberID,
@@ -73,16 +88,21 @@ export class InsAdminController {
     @Param('id') insID: string,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Checking if ins ${insID} exists before deleting it`);
     const ins = await this.insService.ins({
       id: insID,
     });
     if (!ins) {
       throw new NotFoundException('Could not find this INS!');
     }
+
+    this.logger.log(`Checking if user ${userID} is admin for ins ${insID}`);
     const isAdmin = await this.insAdminService.isAdmin(userID, insID);
     if (!isAdmin) {
       throw new UnauthorizedException("You're not allowed to delete this INS!");
     }
+
+    this.logger.log(`Deleting ins ${insID}`);
     return this.insAdminService.deleteINS({ id: insID });
   }
 }
