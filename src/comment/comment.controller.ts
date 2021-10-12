@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -22,6 +23,8 @@ import { CommentService } from './comment.service';
 
 @Controller('comment')
 export class CommentController {
+  private readonly logger = new Logger(CommentController.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly postService: PostService,
@@ -37,6 +40,7 @@ export class CommentController {
     @Body() postData: PatchCommentAPI,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Updating comment ${commentID} by user ${userID}`);
     const { content } = postData;
 
     const comment = await this.commentService.comment({
@@ -50,6 +54,8 @@ export class CommentController {
         "You're not allowed to edit this comment!",
       );
     }
+
+    this.logger.log(`Updating content for comment ${commentID}: ${postData}`);
     return this.commentService.updateComment({
       where: {
         id: commentID,
@@ -68,6 +74,7 @@ export class CommentController {
     @Param('id') commentID: string,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Deleting comment ${commentID} by user ${userID}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -90,6 +97,7 @@ export class CommentController {
     @PrismaUser() user: User,
   ) {
     const { content, postID } = postData;
+    this.logger.log(`Creating comment for post ${postID} by user ${user.id}`);
 
     if (!user.phoneNumberVerified) {
       throw new BadRequestException(
@@ -108,6 +116,7 @@ export class CommentController {
       throw new BadRequestException('Could not find that author!');
     }
 
+    this.logger.log(`Creating comment with content: ${content}`);
     const toCreate: Prisma.CommentCreateInput = {
       content: content,
       author: {
@@ -123,6 +132,7 @@ export class CommentController {
     };
     const toRet = await this.commentService.createComment(toCreate);
 
+    this.logger.log(`Creating notification for comment ${toRet.id}`);
     await this.notificationService.createNotification(
       {
         source: 'COMMENT',
@@ -150,6 +160,7 @@ export class CommentController {
       false,
     );
 
+    this.logger.log('Successfully created comment');
     return toRet;
   }
 }

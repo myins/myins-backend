@@ -1,5 +1,6 @@
 import {
   Controller,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -15,6 +16,8 @@ import { CommentService } from './comment.service';
 
 @Controller('comment')
 export class CommentLikeController {
+  private readonly logger = new Logger(CommentLikeController.name);
+
   constructor(
     private readonly commentService: CommentService,
     private readonly commentLikeService: CommentLikeService,
@@ -24,6 +27,7 @@ export class CommentLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('comments')
   async likeComment(@PrismaUser() user: User, @Param('id') commentID: string) {
+    this.logger.log(`Like comment ${commentID} by user ${user.id}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -46,6 +50,7 @@ export class CommentLikeController {
     @PrismaUser() user: User,
     @Param('id') commentID: string,
   ) {
+    this.logger.log(`Unlike comment ${commentID} by user ${user.id}`);
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -59,24 +64,4 @@ export class CommentLikeController {
     }
     return this.commentLikeService.unlikeComment(user.id, comment);
   }
-
-  // @Get(':id/likes')
-  // @UseGuards(JwtAuthGuard)
-  // @ApiTags('posts')
-  // async getLikesForComment(@Param('id') commentID: string, @Query('skip') skip: number, @Query('take') take: number) {
-  //   return this.userService.users({
-  //     where: {
-  //       likedComments: {
-  //         some: {
-  //           id: commentID
-  //         }
-  //       }
-  //     },
-  //     skip: skip,
-  //     take: take,
-  //     orderBy: {
-  //       firstName: 'desc'
-  //     }
-  //   })
-  // }
 }

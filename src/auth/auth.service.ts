@@ -36,7 +36,7 @@ export class AuthService {
       throw new BadRequestException('Phone already verified!');
     }
 
-    this.logger.log('Send verification code');
+    this.logger.log('Sending verification code');
     return this.smsService.sendVerificationCode(user);
   }
 
@@ -48,7 +48,7 @@ export class AuthService {
       throw new BadRequestException('Could not find user with that phone!');
     }
 
-    this.logger.log('Send forgot password code');
+    this.logger.log('Sending forgot password code');
     return this.smsService.sendForgotPasswordCode(user);
   }
 
@@ -104,7 +104,7 @@ export class AuthService {
       throw new BadRequestException('Could not find user with that phone!');
     }
 
-    this.logger.log('Decrypt reset token');
+    this.logger.log('Decrypting reset token');
     const decrypted = await this.jwtService.decrypt(resetToken);
     if (typeof decrypted == 'string') {
       throw new BadRequestException(
@@ -117,7 +117,7 @@ export class AuthService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
 
-    this.logger.log(`Update user ${user.id}`);
+    this.logger.log(`Updating user ${user.id}`);
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -139,13 +139,13 @@ export class AuthService {
       throw new BadRequestException('User already verified!');
     }
 
-    this.logger.log('Check code');
+    this.logger.log('Checking code');
     const res = await this.checkIfCodeCorrect(phone, code);
     if (!res) {
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log(`Update user ${user.id}`);
+    this.logger.log(`Updating user ${user.id}`);
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -190,14 +190,14 @@ export class AuthService {
       user.id,
     );
 
-    this.logger.log('Get user profile');
+    this.logger.log('Getting user profile');
     const userProfile = await this.usersService.getUserProfile(user.id);
     const addedTogether = { ...userProfile, ...authTokens };
 
-    this.logger.log('Send verification code');
+    this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(user);
 
-    this.logger.log('Create stream user');
+    this.logger.log('Creating stream user');
     await this.chatService.createOrUpdateStreamUsers([user]);
 
     this.logger.log(`User logged ${addedTogether.id}`);
