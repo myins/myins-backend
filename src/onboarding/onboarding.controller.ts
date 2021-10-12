@@ -47,12 +47,14 @@ export class OnboardingController {
   async claimINS(@Body() body: ClaimINSAPI, @PrismaUser('id') userID: string) {
     const { claimToken } = body;
 
+    this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
       throw new BadRequestException('Unrecognized claim token!');
     }
     const insID: string = decrypted.sub;
 
+    this.logger.log(`Claim ins ${insID} by user ${userID}`);
     await this.onboardingService.claimINS(insID, userID);
 
     return {
@@ -64,6 +66,8 @@ export class OnboardingController {
   @ApiTags('onboarding')
   async createGuestINS(@Body() body: CreateINSAPI & CreateGuestPostAPI) {
     const { name, content, totalMediaContent } = body;
+
+    this.logger.log(`Creating ins with name ${name}`);
     const ins = await this.insService.createINS({
       name: name,
       shareCode: await this.insService.randomCode(),
@@ -73,6 +77,8 @@ export class OnboardingController {
         'Could not create ins! Please try again later!',
       );
     }
+
+    this.logger.log(`Creating post for ins ${ins.id} with content ${content}`);
     const post = await this.postService.createPost({
       content: content,
       totalMediaContent: totalMediaContent,
@@ -85,11 +91,13 @@ export class OnboardingController {
       },
     });
 
+    this.logger.log('Signing with very quick expiration');
     const claimToken = await this.signService.signWithQuickExpiration({
       sub: ins.id,
       phone: '',
     });
 
+    this.logger.log(`Successfully create ins ${ins.id} and post ${post.id}`);
     return {
       postID: post.id,
       insID: ins.id,
@@ -108,6 +116,7 @@ export class OnboardingController {
     },
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
+    this.logger.log(`Attach media with claim token for post ${body.postID}`);
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -134,6 +143,7 @@ export class OnboardingController {
 
     const { claimToken } = body;
 
+    this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
       throw new BadRequestException('Unrecognized claim token!');
@@ -203,6 +213,7 @@ export class OnboardingController {
 
     const { claimToken } = body;
 
+    this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
       throw new BadRequestException('Unrecognized claim token!');
@@ -221,6 +232,7 @@ export class OnboardingController {
     }
 
     try {
+      this.logger.log(`Attach cover for ins ${insID}`);
       return this.insService.attachCoverToPost(file, insID);
     } catch (err) {
       if (err instanceof BadRequestException) {

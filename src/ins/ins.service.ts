@@ -264,7 +264,7 @@ export class InsService {
       originalname: postName,
     };
 
-    this.logger.log('Upload file to S3');
+    this.logger.log(`Upload file to S3 with original name ${postName}`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,

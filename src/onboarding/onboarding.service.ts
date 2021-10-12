@@ -52,9 +52,11 @@ export class OnboardingService {
 
     // Firstly, we want to create the chat channel
 
+    this.logger.log(`Create channel ${insID} by user stream ${userID}`);
     await this.chatService.createChannelINS(ins, userID);
     await this.prismaService.$transaction(async () => {
       // First we connect the user to that INS
+      this.logger.log(`Udating ins ${insID}. Adding user ${userID} as admin`);
       await this.insService.update({
         where: {
           id: insID,
@@ -68,7 +70,11 @@ export class OnboardingService {
           },
         },
       });
+
       //Then we also make him the owner of all the posts (should be one post)
+      this.logger.log(
+        `Udating posts for ins ${insID}. Adding user ${userID} as author`,
+      );
       await this.postService.updateManyPosts({
         where: {
           inses: {
@@ -83,6 +89,7 @@ export class OnboardingService {
         },
       });
     });
+
     const posts = await this.postService.posts({
       where: {
         inses: {
@@ -93,6 +100,11 @@ export class OnboardingService {
         authorId: userID,
       },
     });
+    this.logger.log(
+      `Send message by ${userID} in ins ${insID} with new posts ${posts.map(
+        (post) => post.id,
+      )}`,
+    );
     await Promise.all(
       posts.map(async (post) => {
         if (post.authorId) {

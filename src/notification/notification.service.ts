@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Prisma, Notification, User, NotificationSource } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -8,6 +8,8 @@ import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly users: UserService,
@@ -23,6 +25,7 @@ export class NotificationService {
   }
 
   async getFeed(userID: string, skip: number, take: number) {
+    this.logger.log(`Getting count and notifications for user ${userID}`);
     const count = await this.prisma.notification.count({
       where: { targetId: userID },
     });
@@ -53,6 +56,7 @@ export class NotificationService {
       },
     });
 
+    this.logger.log('Adding isSeen prop for every notification');
     const user = await this.users.user({ id: userID });
     const notification = user?.lastReadNotificationID
       ? await this.getById({ id: user?.lastReadNotificationID })
@@ -64,6 +68,7 @@ export class NotificationService {
       };
     });
 
+    this.logger.log('Successfully getting feed notifications');
     return {
       count: count,
       data: dataReturn,
@@ -237,6 +242,9 @@ export class NotificationService {
   ): Promise<number> {
     let data = {};
     if (lastReadNotificationID) {
+      this.logger.log(
+        `Getting notifications newer than notification ${lastReadNotificationID}`,
+      );
       const notification = await this.getById({ id: lastReadNotificationID });
       data = {
         where: {

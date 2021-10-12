@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Logger,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,8 @@ import { NotificationService } from './notification.service';
 
 @Controller('notification')
 export class NotificationController {
+  private readonly logger = new Logger(NotificationController.name);
+
   constructor(private readonly notifService: NotificationService) {}
 
   @Get('feed')
@@ -26,6 +29,7 @@ export class NotificationController {
     if (take > 20) {
       throw new BadRequestException("Don't get greedy!");
     }
+    this.logger.log(`Getting feed notifications for user ${userID}`);
     return this.notifService.getFeed(userID, skip, take);
   }
 
@@ -33,6 +37,7 @@ export class NotificationController {
   @ApiTags('notification')
   @UseGuards(JwtAuthGuard)
   async countUnreadNotifications(@PrismaUser() user: User) {
+    this.logger.log(`Counting unread notificaions for user ${user.id}`);
     return {
       countUnread: await this.notifService.countUnreadNotifications(
         user.lastReadNotificationID,
