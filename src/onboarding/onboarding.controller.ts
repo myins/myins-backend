@@ -99,7 +99,7 @@ export class OnboardingController {
       phone: '',
     });
 
-    this.logger.log(`Successfully create ins ${ins.id} and post ${post.id}`);
+    this.logger.log(`Successfully created ins ${ins.id} and post ${post.id}`);
     return {
       postID: post.id,
       insID: ins.id,
