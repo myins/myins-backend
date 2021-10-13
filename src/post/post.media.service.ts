@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import * as path from 'path';
+import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import {
   PostWithInsesAndCountMedia,
@@ -25,6 +26,8 @@ export class PostMediaService {
     @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
     private readonly postService: PostService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
@@ -157,14 +160,36 @@ export class PostMediaService {
       }
 
       this.logger.log(`Updating post ${post.id}. Set pending to false`);
-      return this.postService.updatePost({
+      const updatedPost = await this.postService.updatePost({
         data: {
           pending: false,
         },
         where: {
           id: post.id,
         },
+        include: PostWithInsesAndCountMediaInclude,
       });
+
+      if (
+        updatedPost.authorId &&
+        (<PostWithInsesAndCountMedia>updatedPost).inses.length
+      ) {
+        this.logger.log(
+          `Send message by ${userID} in inses ${(<PostWithInsesAndCountMedia>(
+            updatedPost
+          )).inses.map((ins: { id: string }) => ins.id)} with new posts ${
+            updatedPost.id
+          }`,
+        );
+        await this.chatService.sendMessageWhenPost(
+          (<PostWithInsesAndCountMedia>updatedPost).inses.map(
+            (ins: { id: string }) => ins.id,
+          ),
+          updatedPost.authorId,
+          updatedPost.id,
+          updatedPost.content,
+        );
+      }
     });
 
     if (postInfo.setCover && !postInfo.isVideo) {

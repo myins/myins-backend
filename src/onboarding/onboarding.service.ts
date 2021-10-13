@@ -89,33 +89,5 @@ export class OnboardingService {
         },
       });
     });
-
-    const posts = await this.postService.posts({
-      where: {
-        inses: {
-          some: {
-            id: ins.id,
-          },
-        },
-        authorId: userID,
-      },
-    });
-    this.logger.log(
-      `Send message by ${userID} in ins ${insID} with new posts ${posts.map(
-        (post) => post.id,
-      )}`,
-    );
-    await Promise.all(
-      posts.map(async (post) => {
-        if (post.authorId) {
-          await this.chatService.sendMessageWhenPost(
-            [insID],
-            post.authorId,
-            post.id,
-            post.content,
-          );
-        }
-      }),
-    );
   }
 }

@@ -87,8 +87,13 @@ export class ChatService {
     content: string,
   ) {
     const message = `Post created by ${userID}: "${content}"`;
+    const user = await this.userService.user({
+      id: userID,
+    });
     return this.sendMessageToChannels(insIds, userID, message, {
+      custom_type: 'new_post',
       post_id: postID,
+      user_name: `${user?.firstName} ${user?.lastName}`,
     });
   }
 
