@@ -88,7 +88,6 @@ export class PostCreateController {
       } else {
         this.logger.error('Error attaching media to post!');
         this.logger.error(err);
-
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }

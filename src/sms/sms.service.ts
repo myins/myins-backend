@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { InjectTwilio, TwilioClient } from 'nestjs-twilio';
 import { isTestNumber } from 'src/util/test-numbers';
 
 @Injectable()
 export class SmsService {
+  private readonly logger = new Logger(SmsService.name);
+
   constructor(@InjectTwilio() private readonly client: TwilioClient) {}
 
   async sendVerificationCode(user: {
@@ -36,6 +38,8 @@ export class SmsService {
         .services(process.env.TWILIO_SERVICE_SID ?? '')
         .verifications.create({ to: target, channel: 'sms' });
     } catch (e) {
+      this.logger.error('Error sending sms!');
+      this.logger.error(e);
       return e;
     }
   }

@@ -147,6 +147,8 @@ export class UserController {
       this.logger.log(`Updated successfully. Return user ${user.id}`);
       return this.getUser(user.id, user.id);
     } catch (err) {
+      this.logger.error('Error updating user!');
+      this.logger.error(err);
       throw new BadRequestException('That username / phone is already taken!');
     }
   }
@@ -174,6 +176,8 @@ export class UserController {
       );
       return this.userService.createUser(toCreate); // This calls sendVerificationCode
     } catch (error) {
+      this.logger.error('Error creating user!');
+      this.logger.error(error);
       throw new BadRequestException(
         'Could not create user, maybe it already exists?',
       );
