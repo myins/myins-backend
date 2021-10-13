@@ -50,7 +50,7 @@ export class InsController {
       throw new UnauthorizedException("You're not allowed to do this!");
     }
 
-    this.logger.log(`Creating ins ${data.name} by user ${userID}`);
+    this.logger.log(`Creating ins with name '${data.name}' by user ${userID}`);
     return this.insService.createINS({
       name: data.name,
       shareCode: await this.insService.randomCode(),
@@ -87,7 +87,7 @@ export class InsController {
     @Query('filter') filter: string,
   ) {
     this.logger.log(
-      `Getting ins list for user ${userID} with filter ${filter}`,
+      `Getting ins list for user ${userID} with filter '${filter}'`,
     );
     return this.insService.insList(userID, filter);
   }
@@ -263,7 +263,7 @@ export class InsController {
     }
     const theINS = validINS[0];
 
-    this.logger.log(`Attach cover with name ${file.originalname}`);
+    this.logger.log(`Attach cover with name '${file.originalname}'`);
     return this.insService.attachCoverToPost(file, theINS.id);
   }
 }

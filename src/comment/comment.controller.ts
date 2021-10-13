@@ -54,7 +54,7 @@ export class CommentController {
     }
 
     this.logger.log(
-      `Updating comment ${commentID} by user ${userID}. Changing content: ${content}`,
+      `Updating comment ${commentID} by user ${userID}. Changing content: '${content}'`,
     );
     return this.commentService.updateComment({
       where: {
@@ -117,7 +117,7 @@ export class CommentController {
     }
 
     this.logger.log(
-      `Creating comment for post ${postID} by user ${user.id} with content: ${content}`,
+      `Creating comment for post ${postID} by user ${user.id} with content: '${content}'`,
     );
     const toCreate: Prisma.CommentCreateInput = {
       content: content,

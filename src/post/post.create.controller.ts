@@ -134,7 +134,7 @@ export class PostCreateController {
     this.logger.log(
       `Creating post by user ${user.id} in inses ${mappedINSIDs.map(
         (ins) => ins.id,
-      )} with content: ${postData.content}`,
+      )} with content: '${postData.content}'`,
     );
     return this.postService.createPost({
       content: postData.content,

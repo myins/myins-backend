@@ -84,7 +84,7 @@ export class PostController {
     }
 
     this.logger.log(
-      `Updating post ${postID} by user ${userID}. Changing content: ${content}`,
+      `Updating post ${postID} by user ${userID}. Changing content: '${content}'`,
     );
     return this.postService.updatePost({
       where: {

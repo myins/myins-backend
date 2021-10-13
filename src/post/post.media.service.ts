@@ -96,7 +96,7 @@ export class PostMediaService {
         originalname: thumbnailName,
       };
       this.logger.log(
-        `Uploading file to S3 with original name ${thumbnailName}`,
+        `Uploading file to S3 with original name '${thumbnailName}'`,
       );
       thumbnailURL = await this.storageService.uploadFile(
         x,
@@ -109,14 +109,14 @@ export class PostMediaService {
       ...x,
       originalname: postName,
     };
-    this.logger.log(`Uploading file to S3 with original name ${postName}`);
+    this.logger.log(`Uploading file to S3 with original name '${postName}'`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,
     );
 
     this.logger.log(
-      `Creating new post media for post ${postID} with content ${dataURL}`,
+      `Creating new post media for post ${postID} with content '${dataURL}'`,
     );
     const toRet = await this.create({
       content: dataURL,
@@ -197,7 +197,7 @@ export class PostMediaService {
       this.logger.log(
         `Updating inses ${(<PostWithInsesAndCountMedia>post).inses.map(
           (ins) => ins.id,
-        )}. Setting cover ${dataURL}`,
+        )}. Setting cover '${dataURL}'`,
       );
       for (const eachINS of (<PostWithInsesAndCountMedia>post).inses) {
         await this.insService.update({

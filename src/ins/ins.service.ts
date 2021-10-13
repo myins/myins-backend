@@ -97,7 +97,7 @@ export class InsService {
       });
 
     this.logger.log(
-      `Ins list successfully returned for user ${userID} with filter ${filter}`,
+      `Ins list successfully returned for user ${userID} with filter '${filter}'`,
     );
     return orderedByIDs;
   }
@@ -268,13 +268,13 @@ export class InsService {
       originalname: postName,
     };
 
-    this.logger.log(`Uploading file to S3 with original name ${postName}`);
+    this.logger.log(`Uploading file to S3 with original name '${postName}'`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,
     );
 
-    this.logger.log(`Updating ins ${insID}. Changing cover to ${dataURL}`);
+    this.logger.log(`Updating ins ${insID}. Changing cover '${dataURL}'`);
     return this.update({
       where: {
         id: insID,

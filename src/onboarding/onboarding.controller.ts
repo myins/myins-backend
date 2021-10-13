@@ -67,7 +67,7 @@ export class OnboardingController {
   async createGuestINS(@Body() body: CreateINSAPI & CreateGuestPostAPI) {
     const { name, content, totalMediaContent } = body;
 
-    this.logger.log(`Creating ins with name ${name}`);
+    this.logger.log(`Creating ins with name '${name}'`);
     const ins = await this.insService.createINS({
       name: name,
       shareCode: await this.insService.randomCode(),
@@ -78,7 +78,9 @@ export class OnboardingController {
       );
     }
 
-    this.logger.log(`Creating post for ins ${ins.id} with content ${content}`);
+    this.logger.log(
+      `Creating post for ins ${ins.id} with content '${content}'`,
+    );
     const post = await this.postService.createPost({
       content: content,
       totalMediaContent: totalMediaContent,

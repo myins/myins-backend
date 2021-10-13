@@ -93,14 +93,14 @@ export class UserController {
       originalname: name,
     };
 
-    this.logger.log(`Uploading file to S3 with original name ${name}`);
+    this.logger.log(`Uploading file to S3 with original name '${name}'`);
     const resLink = await this.storageService.uploadFile(
       file,
       StorageContainer.profilepictures,
     );
 
     this.logger.log(
-      `Updating user ${user.id}. Changing profile picture to ${resLink}`,
+      `Updating user ${user.id}. Changing profile picture to '${resLink}'`,
     );
     await this.userService.updateUser({
       where: { id: user.id },
