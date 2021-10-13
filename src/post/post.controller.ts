@@ -72,13 +72,12 @@ export class PostController {
       id: postID,
     });
     if (post == null) {
-      throw new NotFoundException('Could not find this comment!');
+      throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId != userID) {
-      throw new UnauthorizedException(
-        "You're not allowed to edit this comment!",
-      );
+      throw new UnauthorizedException("You're not allowed to edit this post!");
     }
+
     return this.postService.updatePost({
       where: {
         id: postID,
