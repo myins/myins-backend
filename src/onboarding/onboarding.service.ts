@@ -83,7 +83,7 @@ export class OnboardingService {
         },
       });
     });
-    const posts = await this.postService.posts({
+    await this.postService.posts({
       where: {
         inses: {
           some: {
@@ -93,17 +93,5 @@ export class OnboardingService {
         authorId: userID,
       },
     });
-    await Promise.all(
-      posts.map(async (post) => {
-        if (post.authorId) {
-          await this.chatService.sendMessageWhenPost(
-            [insID],
-            post.authorId,
-            post.id,
-            post.content,
-          );
-        }
-      }),
-    );
   }
 }

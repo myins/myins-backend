@@ -1,4 +1,4 @@
-import { INS, Post, User, UserInsConnection } from '.prisma/client';
+import { INS, User, UserInsConnection } from '.prisma/client';
 import { Injectable } from '@nestjs/common';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -83,27 +83,6 @@ export class MiddlewareService {
           // A user was created, create the stream user.
           const userResult = <User>result;
           await this.chatService.createOrUpdateStreamUsers([userResult]);
-        }
-      }
-      return result;
-    });
-
-    this.prismaService.$use(async (params, next) => {
-      const result = await next(params);
-      if (params.model == 'Post') {
-        if (params.action == 'create') {
-          // A post was created, send message to all channels.
-          const postResult = <Post>result;
-          if (postResult.authorId && params.args.data.inses.connect.length) {
-            await this.chatService.sendMessageWhenPost(
-              params.args.data.inses.connect.map(
-                (ins: { id: string }) => ins.id,
-              ),
-              postResult.authorId,
-              postResult.id,
-              postResult.content,
-            );
-          }
         }
       }
       return result;
