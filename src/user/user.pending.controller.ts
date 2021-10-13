@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Patch,
   Query,
   UnauthorizedException,
@@ -20,6 +21,8 @@ import { UserConnectionService } from './user.connection.service';
 @Controller('user/pending')
 @UseInterceptors(NotFoundInterceptor)
 export class UserPendingController {
+  private readonly logger = new Logger(UserPendingController.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
@@ -33,6 +36,9 @@ export class UserPendingController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
+    this.logger.log(
+      `Getting pending users for inses where user ${id} is a member`,
+    );
     return this.userService.users({
       where: {
         inses: {
@@ -94,6 +100,9 @@ export class UserPendingController {
       );
     }
 
+    this.logger.log(
+      `Approving user ${data.userID} in ins ${data.insID} by user ${id}`,
+    );
     return this.userService.approveUser(data.userID, data.insID);
   }
 
@@ -113,6 +122,9 @@ export class UserPendingController {
       );
     }
 
+    this.logger.log(
+      `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
+    );
     return this.userService.denyUser(id, data.userID, data.insID);
   }
 }

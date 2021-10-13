@@ -95,7 +95,9 @@ export class PostMediaService {
         ...x,
         originalname: thumbnailName,
       };
-      this.logger.log(`Upload file to S3 with original name ${thumbnailName}`);
+      this.logger.log(
+        `Uploading file to S3 with original name ${thumbnailName}`,
+      );
       thumbnailURL = await this.storageService.uploadFile(
         x,
         StorageContainer.posts,
@@ -107,7 +109,7 @@ export class PostMediaService {
       ...x,
       originalname: postName,
     };
-    this.logger.log(`Upload file to S3 with original name ${postName}`);
+    this.logger.log(`Uploading file to S3 with original name ${postName}`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,
@@ -175,11 +177,10 @@ export class PostMediaService {
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
         this.logger.log(
-          `Send message by ${userID} in inses ${(<PostWithInsesAndCountMedia>(
-            updatedPost
-          )).inses.map((ins: { id: string }) => ins.id)} with new posts ${
-            updatedPost.id
-          }`,
+          `Send message by user ${userID} in inses 
+          ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(
+            (ins: { id: string }) => ins.id,
+          )} with new posts ${updatedPost.id}`,
         );
         await this.chatService.sendMessageWhenPost(
           (<PostWithInsesAndCountMedia>updatedPost).inses.map(

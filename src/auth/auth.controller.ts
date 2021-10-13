@@ -63,7 +63,9 @@ export class AuthController {
   @ApiTags('auth')
   async verifyUser(@Body() accountData: CodePhoneAPI) {
     const { phone, code } = accountData;
-    this.logger.log(`Verifying user by phone ${phone} with code ${code}`);
+    this.logger.log(
+      `Verifying user by phone number ${phone} with code ${code}`,
+    );
     await this.authService.verifyUser(phone, code);
     return {
       message: 'User verified!',
@@ -74,7 +76,7 @@ export class AuthController {
   @ApiTags('auth')
   async checkResetCode(@Body() accountData: CodePhoneAPI) {
     const { phone, code } = accountData;
-    this.logger.log(`Checking reset code ${code} with phone ${phone}`);
+    this.logger.log(`Checking reset code ${code} with phone number ${phone}`);
     const res = await this.authService.checkIfCodeCorrect(phone, code);
     if (!res) {
       return {
@@ -94,7 +96,7 @@ export class AuthController {
   @ApiTags('auth')
   async completeResetPassword(@Body() accountData: ResetPasswordAPI) {
     const { phone, resetToken, newPassword } = accountData;
-    this.logger.log(`Confirming reset password for phone ${phone}`);
+    this.logger.log(`Confirming reset password for phone number ${phone}`);
     await this.authService.confirmResetPassword(phone, resetToken, newPassword);
 
     this.logger.log('Updated successfully');
@@ -106,7 +108,7 @@ export class AuthController {
   @Post('resend-confirmation')
   @ApiTags('auth')
   async resendConfirmation(@Body() data: PhoneBodyAPI) {
-    this.logger.log(`Resending confirmation for phone ${data.phone}`);
+    this.logger.log(`Resending confirmation for phone number ${data.phone}`);
     await this.authService.resendConfirmation(data.phone);
 
     this.logger.log('Successfully sent confirmation sms');
@@ -118,7 +120,7 @@ export class AuthController {
   @Post('forgot-password')
   @ApiTags('auth')
   async resetPassword(@Body() data: PhoneBodyAPI) {
-    this.logger.log(`Reseting password for phone ${data.phone}`);
+    this.logger.log(`Reseting password for phone number ${data.phone}`);
     await this.authService.resetPassword(data.phone);
 
     this.logger.log('Code sent successfully');
@@ -130,7 +132,7 @@ export class AuthController {
   @Post('phone-exists')
   @ApiTags('auth')
   async phoneExists(@Body() data: PhoneBodyAPI) {
-    this.logger.log(`Checking if phone ${data.phone} exists`);
+    this.logger.log(`Checking if phone number ${data.phone} exists`);
     return this.authService.phoneExists(data.phone);
   }
 }

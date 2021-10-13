@@ -91,7 +91,7 @@ export class InviteService {
     if (otherUsersPhoneNumbers.length) {
       //FIXME: look into integrating twilio mass messaging tool to avoid multiple api calls
       this.logger.log(
-        `Sending invitation by sms for phones ${otherUsersPhoneNumbers} for inviting in ins ${ins} by user ${userID}`,
+        `Sending invitation by sms for phone numbers ${otherUsersPhoneNumbers} for inviting in ins ${ins} by user ${userID}`,
       );
       await Promise.all(
         otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
@@ -103,7 +103,7 @@ export class InviteService {
       );
 
       this.logger.log(
-        `Adding phones ${otherUsersPhoneNumbers} as invited phone numbers for ins ${theINS[0].id}`,
+        `Adding phone numbers ${otherUsersPhoneNumbers} as invited phone numbers for ins ${theINS[0].id}`,
       );
       await this.insService.addAsInvitedPhoneNumbers(
         theINS[0].id,

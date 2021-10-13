@@ -52,7 +52,7 @@ export class InviteController {
     @Body() body: InviteExternalUserToINSAPI,
   ) {
     this.logger.log(
-      `Inviting external phones ${body.phoneNumbers} in ins ${body.ins} by user ${userID}`,
+      `Inviting external phone numbers ${body.phoneNumbers} in ins ${body.ins} by user ${userID}`,
     );
     await this.inviteService.inviteExternalUser(
       userID,

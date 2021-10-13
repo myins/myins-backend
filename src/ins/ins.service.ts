@@ -195,6 +195,10 @@ export class InsService {
       userId: userID,
     }));
     await this.userConnectionService.createMany(data);
+
+    this.logger.log(
+      `Remove phone number ${phoneNumber} as invited phone number from inses ${insIDs}`,
+    );
     return Promise.all(
       insIDs.map(async (insID) => {
         const ins = await this.ins({ id: insID });
@@ -264,7 +268,7 @@ export class InsService {
       originalname: postName,
     };
 
-    this.logger.log(`Upload file to S3 with original name ${postName}`);
+    this.logger.log(`Uploading file to S3 with original name ${postName}`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,

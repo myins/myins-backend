@@ -220,7 +220,7 @@ export class PostController {
     });
 
     this.logger.log(
-      `Send message by ${userID} in inses ${ins} with new post ${postID}`,
+      `Send message by user ${userID} in inses ${ins} with new post ${postID}`,
     );
     await this.chatService.sendMessageWhenPost(
       ins,

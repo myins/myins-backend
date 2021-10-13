@@ -87,18 +87,21 @@ export class UserService {
       data,
     });
 
+    this.logger.log(`Generating token for user ${newUserModel.id}`);
     const authTokens = await this.jwtService.generateNewAuthTokens(
       newUserModel.phoneNumber,
       newUserModel.id,
     );
 
     // Get the new user profile, this includes following counts, etc.
+    this.logger.log(`Getting profile for user ${newUserModel.id}`);
     const newUserProfile = await this.getUserProfile(newUserModel.id);
     const addedTogether = {
       ...newUserProfile,
       ...authTokens,
     };
 
+    this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(newUserModel);
 
     const inses = await this.insService.inses({
@@ -108,12 +111,19 @@ export class UserService {
         },
       },
     });
+
+    this.logger.log(
+      `Adding new user ${newUserModel.id} in inses ${inses.map(
+        (ins) => ins.id,
+      )}`,
+    );
     await this.insService.addInvitedExternalUserIntoINSes(
       inses.map((ins) => ins.id),
       newUserProfile.id,
       newUserProfile.phoneNumber,
     );
 
+    this.logger.log(`User created ${addedTogether.id}`);
     return addedTogether;
   }
 
@@ -174,6 +184,9 @@ export class UserService {
     userID: string,
     notifID: string,
   ): Promise<User> {
+    this.logger.log(
+      `Updating user ${userID}. Set last notification ${notifID}`,
+    );
     return this.updateUser({
       where: {
         id: userID,
