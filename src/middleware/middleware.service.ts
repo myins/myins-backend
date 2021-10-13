@@ -1,10 +1,12 @@
 import { INS, User, UserInsConnection } from '.prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class MiddlewareService {
+  private readonly logger = new Logger(MiddlewareService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
@@ -16,6 +18,9 @@ export class MiddlewareService {
       if (params.model == 'INS') {
         if (params.action == 'delete') {
           // An INS was deleted, remove it's channel
+          this.logger.log(
+            `Delete ins ${result.id} => delete channel ${result.id}`,
+          );
           await this.chatService.deleteChannelINS(result.id);
         }
         if (params.action == 'create') {
@@ -27,6 +32,9 @@ export class MiddlewareService {
           if (createMembers) {
             // This is a claimed INS
             const createdOwnerID = <string>createMembers.create.userId;
+            this.logger.log(
+              `Create ins ${insResult.id} with owner ${createdOwnerID} => create channel ${insResult.id} by user stream ${createdOwnerID}`,
+            );
             await this.chatService.createChannelINS(insResult, createdOwnerID);
           }
         }
@@ -36,6 +44,9 @@ export class MiddlewareService {
             id: insResult.id,
           });
           if (channels.length) {
+            this.logger.log(
+              `Update ins ${insResult.id} => update channel ${insResult.id}`,
+            );
             await channels[0].update({
               name: insResult.name,
               image: insResult.cover,
@@ -52,17 +63,35 @@ export class MiddlewareService {
 
       if (params.model == 'UserInsConnection') {
         if (params.action == 'createMany') {
-          params.args.data.forEach(
-            async (userInsConnection: { userId: string; insId: string }) => {
-              await chatService.addMembersToChannel(
-                [userInsConnection.userId],
+          this.logger.log(
+            `Add user ${
+              params.args.data[0].userId
+            } to inses ${params.args.data.map(
+              (userInsConnection: { userId: string; insId: string }) =>
                 userInsConnection.insId,
-              );
-            },
+            )} => add user stream ${
+              params.args.data[0].userId
+            } to channels ${params.args.data.map(
+              (userInsConnection: { userId: string; insId: string }) =>
+                userInsConnection.insId,
+            )}`,
+          );
+          await Promise.all(
+            params.args.data.map(
+              async (userInsConnection: { userId: string; insId: string }) => {
+                await chatService.addMembersToChannel(
+                  [userInsConnection.userId],
+                  userInsConnection.insId,
+                );
+              },
+            ),
           );
         } else if (params.action == 'delete') {
           // A user left an INS, remove them from the channel.
           const userInsResult = <UserInsConnection>result;
+          this.logger.log(
+            `Remove user ${userInsResult.userId} from ins ${userInsResult.insId} => remove user stream ${userInsResult.userId} from channel ${userInsResult.insId}`,
+          );
           await this.chatService.removeMemberFromChannel(
             userInsResult.userId,
             userInsResult.insId,
@@ -78,10 +107,18 @@ export class MiddlewareService {
       if (params.model == 'User') {
         if (params.action == 'delete') {
           // A user was deleted, remove them from stream.
+          this.logger.log(
+            `Delete user ${result.id} => delete user stream ${result.id}`,
+          );
           await this.chatService.deleteStreamUser(result.id);
         } else if (params.action == 'create' || params.action == 'update') {
           // A user was created, create the stream user.
           const userResult = <User>result;
+          this.logger.log(
+            `${params.action == 'create' ? 'Create' : 'Update'} user ${
+              userResult.id
+            } => ${params.action} user stream ${userResult.id}`,
+          );
           await this.chatService.createOrUpdateStreamUsers([userResult]);
         }
       }

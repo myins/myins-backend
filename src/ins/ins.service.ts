@@ -3,6 +3,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { INS, PostContent, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -23,6 +24,8 @@ import fetch from 'node-fetch';
 
 @Injectable()
 export class InsService {
+  private readonly logger = new Logger(InsService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
@@ -65,6 +68,7 @@ export class InsService {
     const onlyIDs = connectionQuery.map((each) => each.insId);
 
     // Now get all the inses, using the in query
+    this.logger.log(`Getting all inses where user ${userID} is a member`);
     const toRet = await this.inses({
       where: {
         id: {
@@ -92,6 +96,9 @@ export class InsService {
         return each !== undefined;
       });
 
+    this.logger.log(
+      `Ins list successfully returned for user ${userID} with filter '${filter}'`,
+    );
     return orderedByIDs;
   }
 
@@ -188,6 +195,10 @@ export class InsService {
       userId: userID,
     }));
     await this.userConnectionService.createMany(data);
+
+    this.logger.log(
+      `Remove phone number ${phoneNumber} as invited phone number from inses ${insIDs}`,
+    );
     return Promise.all(
       insIDs.map(async (insID) => {
         const ins = await this.ins({ id: insID });
@@ -256,10 +267,14 @@ export class InsService {
       ...x,
       originalname: postName,
     };
+
+    this.logger.log(`Uploading file to S3 with original name '${postName}'`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,
     );
+
+    this.logger.log(`Updating ins ${insID}. Changing cover '${dataURL}'`);
     return this.update({
       where: {
         id: insID,

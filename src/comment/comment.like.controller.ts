@@ -1,5 +1,6 @@
 import {
   Controller,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -15,6 +16,8 @@ import { CommentService } from './comment.service';
 
 @Controller('comment')
 export class CommentLikeController {
+  private readonly logger = new Logger(CommentLikeController.name);
+
   constructor(
     private readonly commentService: CommentService,
     private readonly commentLikeService: CommentLikeService,
@@ -36,6 +39,7 @@ export class CommentLikeController {
       );
     }
 
+    this.logger.log(`Like comment ${commentID} by user ${user.id}`);
     return this.commentLikeService.likeComment(user.id, comment);
   }
 
@@ -57,26 +61,8 @@ export class CommentLikeController {
         'You must verify your phone before liking posts!',
       );
     }
+
+    this.logger.log(`Unlike comment ${commentID} by user ${user.id}`);
     return this.commentLikeService.unlikeComment(user.id, comment);
   }
-
-  // @Get(':id/likes')
-  // @UseGuards(JwtAuthGuard)
-  // @ApiTags('posts')
-  // async getLikesForComment(@Param('id') commentID: string, @Query('skip') skip: number, @Query('take') take: number) {
-  //   return this.userService.users({
-  //     where: {
-  //       likedComments: {
-  //         some: {
-  //           id: commentID
-  //         }
-  //       }
-  //     },
-  //     skip: skip,
-  //     take: take,
-  //     orderBy: {
-  //       firstName: 'desc'
-  //     }
-  //   })
-  // }
 }

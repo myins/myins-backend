@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -22,6 +23,8 @@ import { CommentService } from './comment.service';
 
 @Controller('comment')
 export class CommentController {
+  private readonly logger = new Logger(CommentController.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly postService: PostService,
@@ -34,11 +37,10 @@ export class CommentController {
   @ApiTags('comments')
   async patchComment(
     @Param('id') commentID: string,
-    @Body() postData: PatchCommentAPI,
+    @Body() commentData: PatchCommentAPI,
     @PrismaUser('id') userID: string,
   ) {
-    const { content } = postData;
-
+    const { content } = commentData;
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -50,6 +52,10 @@ export class CommentController {
         "You're not allowed to edit this comment!",
       );
     }
+
+    this.logger.log(
+      `Updating comment ${commentID} by user ${userID}. Changing content: '${content}'`,
+    );
     return this.commentService.updateComment({
       where: {
         id: commentID,
@@ -79,6 +85,8 @@ export class CommentController {
         "You're not allowed to delete this comment!",
       );
     }
+
+    this.logger.log(`Deleting comment ${commentID} by user ${userID}`);
     return this.commentService.deleteComment({ id: commentID });
   }
 
@@ -108,6 +116,9 @@ export class CommentController {
       throw new BadRequestException('Could not find that author!');
     }
 
+    this.logger.log(
+      `Creating comment for post ${postID} by user ${user.id} with content: '${content}'`,
+    );
     const toCreate: Prisma.CommentCreateInput = {
       content: content,
       author: {
@@ -123,6 +134,7 @@ export class CommentController {
     };
     const toRet = await this.commentService.createComment(toCreate);
 
+    this.logger.log(`Creating notification for comment ${toRet.id}`);
     await this.notificationService.createNotification(
       {
         source: 'COMMENT',
@@ -150,6 +162,7 @@ export class CommentController {
       false,
     );
 
+    this.logger.log('Successfully created comment');
     return toRet;
   }
 }

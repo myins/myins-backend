@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -34,6 +35,8 @@ import {
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
 export class UserController {
+  private readonly logger = new Logger(UserController.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly storageService: StorageService,
@@ -44,10 +47,15 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')
   async getUserJWT(@PrismaUser() user: User) {
-    const newToken = await this.userService.getCloudfrontToken(
+    this.logger.log(
+      `Getting cloud front token for user ${user.id} with phone number ${user.phoneNumber}`,
+    );
+    const newToken = this.userService.getCloudfrontToken(
       user.phoneNumber,
       user.id,
     );
+
+    this.logger.log('Cloud front token successfully generated');
     return {
       cloudfrontToken: newToken,
     };
@@ -57,6 +65,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('users')
   async getUser(@Param('id') id: string, @PrismaUser('id') asUserID: string) {
+    this.logger.log(`Getting profile for user ${id} by user ${asUserID}`);
     return this.userService.getUserProfile(id, asUserID);
   }
 
@@ -72,17 +81,26 @@ export class UserController {
     if (!file) {
       throw new BadRequestException('Could not find picture file!');
     }
+
+    this.logger.log(`Updating profile picture for user ${user.id}`);
     const randomString = crypto.randomBytes(16).toString('hex');
     //FIXME: delete the old picture here if it exists!
 
     const ext = path.extname(file.originalname);
+    const name = `photo_${user.id}_${randomString}${ext}`;
     file = {
       ...file,
-      originalname: `photo_${user.id}_${randomString}${ext}`,
+      originalname: name,
     };
+
+    this.logger.log(`Uploading file to S3 with original name '${name}'`);
     const resLink = await this.storageService.uploadFile(
       file,
       StorageContainer.profilepictures,
+    );
+
+    this.logger.log(
+      `Updating user ${user.id}. Changing profile picture to '${resLink}'`,
     );
     await this.userService.updateUser({
       where: { id: user.id },
@@ -91,6 +109,9 @@ export class UserController {
       },
     });
 
+    this.logger.log(
+      `Profile picture successfully changed. Return user ${user.id}`,
+    );
     return this.getUser(user.id, user.id);
   }
 
@@ -106,6 +127,8 @@ export class UserController {
       if (existingPhoneNumber == undefined) {
         throw new BadRequestException('Could not find your user!');
       }
+
+      this.logger.log(`Updating user ${user.id}`);
       const didChangePhone = data.phone != existingPhoneNumber;
       const toRet = await this.userService.updateUser({
         where: {
@@ -117,10 +140,15 @@ export class UserController {
         },
       });
       if (didChangePhone) {
+        this.logger.log('Phone number changed. Sending verification code');
         this.smsService.sendVerificationCode(toRet);
       }
+
+      this.logger.log(`Updated successfully. Return user ${user.id}`);
       return this.getUser(user.id, user.id);
     } catch (err) {
+      this.logger.error('Error updating user!');
+      this.logger.error(err);
       throw new BadRequestException('That username / phone is already taken!');
     }
   }
@@ -128,7 +156,12 @@ export class UserController {
   @Post()
   @ApiTags('users')
   async signupUser(@Body() userData: CreateUserAPI) {
+    this.logger.log(
+      `Signing up user with phone number ${userData.phoneNumber}`,
+    );
     const saltOrRounds = 10;
+
+    this.logger.log('Encrypting password');
     const hashedPassword = await bcrypt.hash(userData.password, saltOrRounds);
 
     const toCreate: Prisma.UserCreateInput = {
@@ -138,8 +171,13 @@ export class UserController {
       password: hashedPassword,
     };
     try {
+      this.logger.log(
+        `Creating user with phone number ${toCreate.phoneNumber}`,
+      );
       return this.userService.createUser(toCreate); // This calls sendVerificationCode
     } catch (error) {
+      this.logger.error('Error creating user!');
+      this.logger.error(error);
       throw new BadRequestException(
         'Could not create user, maybe it already exists?',
       );
@@ -153,6 +191,7 @@ export class UserController {
     @Body() dataModel: UpdatePushTokenAPI,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Updating user ${userID}. Adding tokens`);
     await this.userService.updateUser({
       where: {
         id: userID,
@@ -162,6 +201,8 @@ export class UserController {
         sandboxToken: dataModel.isSandbox,
       },
     });
+
+    this.logger.log(`'Updated token successfully`);
     return {
       message: 'Updated token successfully!',
     };
@@ -187,6 +228,8 @@ export class UserController {
     if (!user) {
       throw new NotFoundException('Could not find this user!');
     }
+
+    this.logger.log(`Deleting user ${userId}`);
     return this.userService.deleteUser({ id: userId });
   }
 }

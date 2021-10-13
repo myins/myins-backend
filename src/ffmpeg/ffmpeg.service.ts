@@ -40,9 +40,9 @@ export class FfmpegService {
         })
         .setDuration(0)
         .on('error', function (err, _stdout, stderr) {
-          logger.log(`An error occured: ${err.message}`);
-          logger.log(err);
-          logger.log(stderr);
+          logger.error(`An error occured: ${err.message}`);
+          logger.error(err);
+          logger.error(stderr);
           return reject(new Error(err));
         })
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -60,8 +60,8 @@ export class FfmpegService {
                 const toRes = fs.readFileSync(`${tempDir}/${ourFilename}`);
                 resolve(toRes);
               } catch (error) {
-                logger.log('Generation crashed, please retry!');
-                logger.log(error);
+                logger.error('Generation crashed, please retry!');
+                logger.error(error);
                 return reject(new Error('Thumbnail generation crashed!'));
               }
             },

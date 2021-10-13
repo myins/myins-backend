@@ -45,6 +45,7 @@ export class PostCreateController {
     @PrismaUser('id') userID: string,
     @Body() body: AttachMediaAPI,
   ) {
+    this.logger.log(`Attach media to post ${postID2} by user ${userID}`);
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -87,7 +88,6 @@ export class PostCreateController {
       } else {
         this.logger.error('Error attaching media to post!');
         this.logger.error(err);
-
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }
@@ -131,6 +131,11 @@ export class PostCreateController {
       }
     }
 
+    this.logger.log(
+      `Creating post by user ${user.id} in inses ${mappedINSIDs.map(
+        (ins) => ins.id,
+      )} with content: '${postData.content}'`,
+    );
     return this.postService.createPost({
       content: postData.content,
       author: {

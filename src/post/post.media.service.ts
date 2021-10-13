@@ -95,7 +95,9 @@ export class PostMediaService {
         ...x,
         originalname: thumbnailName,
       };
-
+      this.logger.log(
+        `Uploading file to S3 with original name '${thumbnailName}'`,
+      );
       thumbnailURL = await this.storageService.uploadFile(
         x,
         StorageContainer.posts,
@@ -107,13 +109,15 @@ export class PostMediaService {
       ...x,
       originalname: postName,
     };
+    this.logger.log(`Uploading file to S3 with original name '${postName}'`);
     const dataURL = await this.storageService.uploadFile(
       x,
       StorageContainer.posts,
     );
 
-    this.logger.debug('Uploading new post content...');
-
+    this.logger.log(
+      `Creating new post media for post ${postID} with content '${dataURL}'`,
+    );
     const toRet = await this.create({
       content: dataURL,
       post: {
@@ -127,8 +131,6 @@ export class PostMediaService {
       isVideo: postInfo.isVideo,
     });
 
-    this.logger.debug('Done uploading, time to run transaction...');
-
     // Time to update the post's pending state. This is a transaction in case we add async loading
     // And 2 pictures get uploaded at aprox the same time.
     await this.prismaService.$transaction(async () => {
@@ -140,15 +142,13 @@ export class PostMediaService {
         },
         PostWithInsesAndCountMediaInclude,
       );
-      this.logger.debug(`Got post, ${transactionPost?.id}`);
-
       if (!transactionPost) {
         throw new BadRequestException(
           'Could not find the post for some reason!',
         );
       }
       if (!transactionPost.pending) {
-        this.logger.debug(`Post isn't pending, returning early!`);
+        this.logger.log(`Post isn't pending, returning early!`);
         return; // Nothing to do here, looks like the other thread
       }
 
@@ -156,16 +156,12 @@ export class PostMediaService {
         (<PostWithInsesAndCountMedia>transactionPost)._count?.mediaContent ?? 0;
       const isReady = realMediaCount >= transactionPost.totalMediaContent;
 
-      this.logger.debug(`Is ready? ${isReady}`);
-      console.log(transactionPost);
-
       if (!isReady) {
-        this.logger.debug(`Post isn't ready, returning early!`);
+        this.logger.log(`Post isn't ready, returning early!`);
         return; // Nothing to do here, it's not ready yet
       }
 
-      this.logger.debug(`Setting pending to false!`);
-
+      this.logger.log(`Updating post ${post.id}. Setting pending to false`);
       const updatedPost = await this.postService.updatePost({
         data: {
           pending: false,
@@ -180,6 +176,12 @@ export class PostMediaService {
         updatedPost.authorId &&
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
+        this.logger.log(
+          `Send message by user ${userID} in inses 
+          ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(
+            (ins: { id: string }) => ins.id,
+          )} with new posts ${updatedPost.id}`,
+        );
         await this.chatService.sendMessageWhenPost(
           (<PostWithInsesAndCountMedia>updatedPost).inses.map(
             (ins: { id: string }) => ins.id,
@@ -192,6 +194,11 @@ export class PostMediaService {
     });
 
     if (postInfo.setCover && !postInfo.isVideo) {
+      this.logger.log(
+        `Updating inses ${(<PostWithInsesAndCountMedia>post).inses.map(
+          (ins) => ins.id,
+        )}. Setting cover '${dataURL}'`,
+      );
       for (const eachINS of (<PostWithInsesAndCountMedia>post).inses) {
         await this.insService.update({
           where: eachINS,
@@ -201,6 +208,8 @@ export class PostMediaService {
         });
       }
     }
+
+    this.logger.log(`Successfully attached media for post ${postID}`);
     return toRet;
   }
 

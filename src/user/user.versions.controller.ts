@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Post,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,8 @@ import { UserService } from 'src/user/user.service';
 @Controller('user/versions')
 @UseInterceptors(NotFoundInterceptor)
 export class UserVersionsController {
+  private readonly logger = new Logger(UserVersionsController.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly currentVersionsService: CurrentVersionsService,
@@ -27,10 +30,15 @@ export class UserVersionsController {
   @ApiTags('users-versions')
   @UseGuards(JwtAuthGuard)
   async getAcceptStatus(@PrismaUser() user: User) {
+    this.logger.log(
+      `Getting status for last accepted versions of TC and PP for user ${user.id}`,
+    );
     const {
       lastAcceptedPrivacyPolicyVersion,
       lastAcceptedTermsAndConditionsVersion,
     } = user;
+
+    this.logger.log('Getting current versions of TC and PP');
     const tAndCVersions = await this.currentVersionsService.getByType({
       type: DocumentType.TERMS_AND_CONDITIONS,
     });
@@ -38,6 +46,9 @@ export class UserVersionsController {
       type: DocumentType.PRIVACY_POLICY,
     });
 
+    this.logger.log(
+      `Checking if user ${user.id} has accepted current versions and return the result`,
+    );
     const isTermsAndConditionsAccepted =
       lastAcceptedTermsAndConditionsVersion?.getTime() ===
       tAndCVersions.updatedAt?.getTime();
@@ -57,9 +68,20 @@ export class UserVersionsController {
     @PrismaUser('id') userID: string,
     @Body() body: ChangeCurrentVersionsAPI,
   ) {
+    this.logger.log(
+      `Accepting last version of document type ${body.documentType} by user ${userID}`,
+    );
+
+    this.logger.log(
+      `Getting current version of document type ${body.documentType}`,
+    );
     const currentVersions = await this.currentVersionsService.getByType({
       type: body.documentType,
     });
+
+    this.logger.log(
+      `Updating user ${userID}. Set last accepted version of document type ${body.documentType}`,
+    );
     await this.userService.updateUser({
       where: {
         id: userID,
@@ -75,6 +97,8 @@ export class UserVersionsController {
             : undefined,
       },
     });
+
+    this.logger.log('Updated version successfully');
     return {
       message: 'Updated version successfully!',
     };

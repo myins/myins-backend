@@ -4,6 +4,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   Post,
   Query,
@@ -25,6 +26,8 @@ import { InsService } from './ins.service';
 
 @Controller('ins')
 export class InsController {
+  private readonly logger = new Logger(InsController.name);
+
   constructor(
     private readonly insService: InsService,
     private readonly chatService: ChatService,
@@ -47,6 +50,7 @@ export class InsController {
       throw new UnauthorizedException("You're not allowed to do this!");
     }
 
+    this.logger.log(`Creating ins with name '${data.name}' by user ${userID}`);
     return this.insService.createINS({
       name: data.name,
       shareCode: await this.insService.randomCode(),
@@ -68,6 +72,8 @@ export class InsController {
     if (insCode.length <= 0) {
       throw new BadRequestException('Invalid code!');
     }
+
+    this.logger.log(`Getting ins by code ${insCode}`);
     return this.insService.ins({
       shareCode: insCode,
     });
@@ -80,6 +86,9 @@ export class InsController {
     @PrismaUser('id') userID: string,
     @Query('filter') filter: string,
   ) {
+    this.logger.log(
+      `Getting ins list for user ${userID} with filter '${filter}'`,
+    );
     return this.insService.insList(userID, filter);
   }
 
@@ -106,6 +115,7 @@ export class InsController {
       throw new BadRequestException('Could not find that INS!');
     }
 
+    this.logger.log(`Getting media for ins ${id}`);
     return this.insService.mediaForIns(id, skip, take);
   }
 
@@ -133,6 +143,7 @@ export class InsController {
       throw new BadRequestException('Could not find that INS!');
     }
 
+    this.logger.log(`Getting members for ins ${id}`);
     return this.insService.membersForIns(id, skip, take, filter);
   }
 
@@ -140,6 +151,7 @@ export class InsController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
+    this.logger.log(`Getting ins by id ${id}`);
     const inses = await this.insService.inses({
       where: {
         id: id,
@@ -171,6 +183,7 @@ export class InsController {
     @Param('code') insCode: string,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Trying user ${userID} to join group with code ${insCode}`);
     if (insCode.length <= 0) {
       throw new BadRequestException('Invalid code!');
     }
@@ -180,6 +193,10 @@ export class InsController {
     if (!theINS) {
       throw new BadRequestException('Invalid ins code!');
     }
+
+    this.logger.log(
+      `Checking if user ${userID} already a member of ins ${theINS.id}`,
+    );
     const connection = await this.userConnectionService.getConnection({
       userId_insId: {
         userId: userID,
@@ -192,6 +209,8 @@ export class InsController {
         message: 'Already in INS!',
       };
     }
+
+    this.logger.log(`Adding user ${userID} as member in ins ${theINS.id}`);
     await this.insService.update({
       where: { id: theINS.id },
       data: {
@@ -202,7 +221,13 @@ export class InsController {
         },
       },
     });
+
+    this.logger.log(
+      `Adding stream user ${userID} as member in channel ${theINS.id}`,
+    );
     await this.chatService.addMembersToChannel([userID], theINS.id);
+
+    this.logger.log('Joined the INS');
     return {
       message: 'Joined the INS!',
     };
@@ -218,6 +243,7 @@ export class InsController {
     @UploadedFile()
     file: Express.Multer.File,
   ) {
+    this.logger.log(`Update cover for ins ${insID} by user ${userID}`);
     if (!file) {
       throw new BadRequestException('Could not find picture file!');
     }
@@ -237,6 +263,7 @@ export class InsController {
     }
     const theINS = validINS[0];
 
+    this.logger.log(`Attach cover with name '${file.originalname}'`);
     return this.insService.attachCoverToPost(file, theINS.id);
   }
 }
