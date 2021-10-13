@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Param,
   Query,
   UseGuards,
@@ -15,6 +16,8 @@ import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostCommentsController {
+  private readonly logger = new Logger(PostCommentsController.name);
+
   constructor(private readonly commentService: CommentService) {}
 
   @Get(':id/comments')
@@ -26,6 +29,7 @@ export class PostCommentsController {
     @Query('take') take: number,
     @PrismaUser('id') userID: string,
   ) {
+    this.logger.log(`Get comments for post ${id} by user ${userID}`);
     return this.commentService.commentsForPost(id, skip, take, userID);
   }
 }

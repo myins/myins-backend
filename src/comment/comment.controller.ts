@@ -37,11 +37,10 @@ export class CommentController {
   @ApiTags('comments')
   async patchComment(
     @Param('id') commentID: string,
-    @Body() postData: PatchCommentAPI,
+    @Body() commentData: PatchCommentAPI,
     @PrismaUser('id') userID: string,
   ) {
-    const { content } = postData;
-
+    const { content } = commentData;
     const comment = await this.commentService.comment({
       id: commentID,
     });
@@ -54,7 +53,9 @@ export class CommentController {
       );
     }
 
-    this.logger.log(`Updating content for comment ${commentID}: ${postData}`);
+    this.logger.log(
+      `Updating comment ${commentID} by user ${userID}. Changing content: ${content}`,
+    );
     return this.commentService.updateComment({
       where: {
         id: commentID,

@@ -159,7 +159,7 @@ export class PostMediaService {
         return; // Nothing to do here, it's not ready yet
       }
 
-      this.logger.log(`Updating post ${post.id}. Set pending to false`);
+      this.logger.log(`Updating post ${post.id}. Setting pending to false`);
       const updatedPost = await this.postService.updatePost({
         data: {
           pending: false,
@@ -196,7 +196,7 @@ export class PostMediaService {
       this.logger.log(
         `Updating inses ${(<PostWithInsesAndCountMedia>post).inses.map(
           (ins) => ins.id,
-        )}. Set cover ${dataURL}`,
+        )}. Setting cover ${dataURL}`,
       );
       for (const eachINS of (<PostWithInsesAndCountMedia>post).inses) {
         await this.insService.update({

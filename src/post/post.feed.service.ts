@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -6,6 +6,8 @@ import { PostService } from './post.service';
 
 @Injectable()
 export class PostFeedService {
+  private readonly logger = new Logger(PostFeedService.name);
+
   constructor(
     private readonly postService: PostService,
     private readonly userConnectionService: UserConnectionService,
@@ -65,6 +67,7 @@ export class PostFeedService {
   }
 
   async getStoriesFeed(userID: string) {
+    this.logger.log(`Getting all ins connections for user ${userID}`);
     const allINS = await this.userConnectionService.getConnections({
       where: {
         userId: userID,
@@ -74,6 +77,9 @@ export class PostFeedService {
       },
     });
 
+    this.logger.log(
+      `Getting first post for every ins from ins connections for user ${userID}`,
+    );
     const richInclude = this.richPostInclude(userID);
     const toRet = await Promise.all(
       allINS.map((each) => {

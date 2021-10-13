@@ -270,7 +270,7 @@ export class InsService {
       StorageContainer.posts,
     );
 
-    this.logger.log(`Updating ins ${insID}`);
+    this.logger.log(`Updating ins ${insID}. Changing cover to ${dataURL}`);
     return this.update({
       where: {
         id: insID,

@@ -68,7 +68,7 @@ export class NotificationService {
       };
     });
 
-    this.logger.log('Successfully getting feed notifications');
+    this.logger.log('Successfully getting notifications feed');
     return {
       count: count,
       data: dataReturn,

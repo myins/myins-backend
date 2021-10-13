@@ -29,7 +29,7 @@ export class NotificationController {
     if (take > 20) {
       throw new BadRequestException("Don't get greedy!");
     }
-    this.logger.log(`Getting feed notifications for user ${userID}`);
+    this.logger.log(`Getting notifications feed for user ${userID}`);
     return this.notifService.getFeed(userID, skip, take);
   }
 

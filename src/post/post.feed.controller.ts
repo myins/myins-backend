@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Logger,
   Query,
   UseGuards,
   UseInterceptors,
@@ -15,6 +16,8 @@ import { PostFeedService } from './post.feed.service';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostFeedController {
+  private readonly logger = new Logger(PostFeedController.name);
+
   constructor(private readonly postFeedService: PostFeedService) {}
 
   @Get('feed')
@@ -34,6 +37,8 @@ export class PostFeedController {
     if (Number.isNaN(take) || Number.isNaN(skip)) {
       throw new BadRequestException('Invalid skip / take!');
     }
+
+    this.logger.log(`Getting posts feed for user ${userID}`);
     return this.postFeedService.getFeed(skip, take, userID);
   }
 
@@ -54,6 +59,8 @@ export class PostFeedController {
     if (Number.isNaN(take) || Number.isNaN(skip)) {
       throw new BadRequestException('Invalid skip / take!');
     }
+
+    this.logger.log(`Getting stories feed for user ${userID}`);
     return this.postFeedService.getStoriesFeed(userID);
   }
 }

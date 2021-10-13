@@ -128,7 +128,7 @@ export class UserService {
   }
 
   async logoutUser(userID: string): Promise<User> {
-    this.logger.log(`Updating user ${userID}`);
+    this.logger.log(`Updating user ${userID}. Removing tokens`);
     return this.updateUser({
       where: {
         id: userID,

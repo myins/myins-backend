@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Patch,
@@ -26,6 +27,8 @@ import { ChatService } from 'src/chat/chat.service';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostController {
+  private readonly logger = new Logger(PostController.name);
+
   constructor(
     private readonly postService: PostService,
     private readonly insService: InsService,
@@ -37,6 +40,7 @@ export class PostController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async getPendingPosts(@PrismaUser('id') userID: string) {
+    this.logger.log(`Get pending posts by user ${userID}`);
     return this.postService.postsWithRelatedInfo({
       where: {
         authorId: userID,
@@ -52,6 +56,7 @@ export class PostController {
     @Param('id') id: string,
     @PrismaUser('id') userID: string,
   ): Promise<PostModel | null> {
+    this.logger.log(`Get post by id ${id} by user ${userID}`);
     return this.postService.injectedPost(id, userID);
   }
 
@@ -78,6 +83,9 @@ export class PostController {
       throw new UnauthorizedException("You're not allowed to edit this post!");
     }
 
+    this.logger.log(
+      `Updating post ${postID} by user ${userID}. Changing content: ${content}`,
+    );
     return this.postService.updatePost({
       where: {
         id: postID,
@@ -107,6 +115,8 @@ export class PostController {
         "You're not allowed to delete this post!",
       );
     }
+
+    this.logger.log(`Deleting post ${postID} by user ${userID}`);
     return this.postService.deletePost({ id: postID });
   }
 
@@ -134,6 +144,10 @@ export class PostController {
         "You're not allowed to delete this post media!",
       );
     }
+
+    this.logger.log(
+      `Deleting post media ${postMediaID} from post ${post.id} by user ${userID}`,
+    );
     await this.postMediaService.deletePostMedia({ id: postMediaID });
 
     const remainingMedia = await this.postMediaService.getMedias({
@@ -142,9 +156,13 @@ export class PostController {
       },
     });
     if (!remainingMedia.length) {
+      this.logger.log(
+        `No media remaining for post ${post.id}. Deleting post by user ${userID}`,
+      );
       await this.postService.deletePost({ id: post.id });
     }
 
+    this.logger.log('Post media deleted');
     return {
       message: 'Post media deleted!',
     };
@@ -158,6 +176,8 @@ export class PostController {
     @PrismaUser('id') userID: string,
     @Body() shareData: SharePostAPI,
   ) {
+    const { ins } = shareData;
+    this.logger.log(`Sharing post ${postID} in inses ${ins} by user ${userID}`);
     const post = await this.postService.post({
       id: postID,
     });
@@ -168,7 +188,6 @@ export class PostController {
       throw new UnauthorizedException("You're not allowed to share this post!");
     }
 
-    const { ins } = shareData;
     const inses = (
       await this.insService.insesSelectIDs({
         members: {
@@ -186,6 +205,9 @@ export class PostController {
       }
     }
 
+    this.logger.log(
+      `Updating post ${postID}. Adding connections with inses ${ins}`,
+    );
     await this.postService.updatePost({
       where: {
         id: postID,
@@ -196,6 +218,10 @@ export class PostController {
         },
       },
     });
+
+    this.logger.log(
+      `Send message by ${userID} in inses ${ins} with new post ${postID}`,
+    );
     await this.chatService.sendMessageWhenPost(
       ins,
       userID,
@@ -203,6 +229,7 @@ export class PostController {
       post.content,
     );
 
+    this.logger.log('Post shared');
     return {
       message: 'Post shared!',
     };

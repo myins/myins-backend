@@ -116,7 +116,7 @@ export class OnboardingController {
     },
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
-    this.logger.log(`Attach media with claim token for post ${body.postID}`);
+    this.logger.log(`Attach media with claim token to post ${body.postID}`);
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {

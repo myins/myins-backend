@@ -117,7 +117,7 @@ export class AuthService {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltOrRounds);
 
-    this.logger.log(`Updating user ${user.id}`);
+    this.logger.log(`Updating user ${user.id}. Changing password`);
     return this.usersService.updateUser({
       where: {
         id: user.id,
@@ -145,7 +145,9 @@ export class AuthService {
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log(`Updating user ${user.id}`);
+    this.logger.log(
+      `Updating user ${user.id}. Setting phone verification to true`,
+    );
     return this.usersService.updateUser({
       where: {
         id: user.id,

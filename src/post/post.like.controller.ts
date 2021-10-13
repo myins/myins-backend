@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -24,6 +25,8 @@ import { PostService } from './post.service';
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostLikeController {
+  private readonly logger = new Logger(PostLikeController.name);
+
   constructor(
     private readonly postService: PostService,
     private readonly notificationsService: NotificationService,
@@ -40,6 +43,9 @@ export class PostLikeController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
+    this.logger.log(
+      `Getting post ${postID} with all inses where user ${userID} is a member`,
+    );
     const postIfValid = await this.postService.posts({
       where: {
         id: postID,
@@ -59,6 +65,7 @@ export class PostLikeController {
       throw new BadRequestException('Could not find post!');
     }
 
+    this.logger.log(`Getting all likes for post ${postID}`);
     return this.postLikeService.postLikes({
       where: {
         postId: postID,
@@ -82,6 +89,7 @@ export class PostLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async likePost(@PrismaUser() user: User, @Param('id') postID: string) {
+    this.logger.log(`Like post ${postID} by user ${user.id}`);
     const post = await this.postService.post({
       id: postID,
     });
@@ -93,6 +101,10 @@ export class PostLikeController {
         'You must verify your phone before liking posts!',
       );
     }
+
+    this.logger.log(
+      `Updating post ${postID}. Adding like connection with user ${user.id}`,
+    );
     const toRet = await this.postService.updatePost({
       where: { id: postID },
       data: {
@@ -103,9 +115,16 @@ export class PostLikeController {
         },
       },
     });
+
+    this.logger.log(
+      `Incrementing interaction between user ${user.id} and post ${postID}`,
+    );
     await this.insInteractionService.interactPost(user.id, toRet.id);
 
     if (post.authorId !== user.id) {
+      this.logger.log(
+        `Creating notification for liking post ${postID} by user ${user.id}`,
+      );
       this.notificationsService.createNotification({
         source: 'LIKE_POST',
         target: {
@@ -132,6 +151,7 @@ export class PostLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async unlikePost(@PrismaUser() user: User, @Param('id') postID: string) {
+    this.logger.log(`Unlike post ${postID} by user ${user.id}`);
     const post = await this.postService.post({
       id: postID,
     });
@@ -143,6 +163,10 @@ export class PostLikeController {
         'You must verify your phone before liking posts!',
       );
     }
+
+    this.logger.log(
+      `Updating post ${postID}. Deleting like connection with user ${user.id}`,
+    );
     return this.postService.updatePost({
       where: { id: postID },
       data: {

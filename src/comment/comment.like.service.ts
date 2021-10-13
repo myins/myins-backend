@@ -15,7 +15,9 @@ export class CommentLikeService {
   ) {}
 
   async likeComment(userID: string, comment: Comment) {
-    this.logger.log(`Updating comment ${comment.id}`);
+    this.logger.log(
+      `Updating comment ${comment.id}. Adding like connection with user ${userID}`,
+    );
     await this.commentService.updateComment({
       where: { id: comment.id },
       data: {
@@ -63,7 +65,9 @@ export class CommentLikeService {
   }
 
   async unlikeComment(userID: string, comment: Comment) {
-    this.logger.log(`Updating comment ${comment.id}`);
+    this.logger.log(
+      `Updating comment ${comment.id}. Deleting like connection with user ${userID}`,
+    );
     return this.commentService.updateComment({
       where: { id: comment.id },
       data: {
