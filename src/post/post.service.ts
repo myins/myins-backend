@@ -31,28 +31,42 @@ export class PostService {
     });
   }
 
+  richPostInclude(userID: string): Prisma.PostInclude {
+    return {
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+      likes: {
+        where: {
+          userId: userID,
+        },
+        select: {
+          userId: true,
+        },
+      },
+      mediaContent: true,
+      inses: {
+        select: {
+          id: true,
+          name: true,
+          cover: true,
+        },
+      },
+      author: {
+        select: ShallowUserSelect,
+      },
+    };
+  }
+
   async injectedPost(postID: string, asUserID: string): Promise<Post | null> {
     return this.post(
       {
         id: postID,
       },
-      {
-        author: {
-          select: ShallowUserSelect,
-        },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-        likes: {
-          where: {
-            userId: asUserID,
-          },
-        },
-        mediaContent: true,
-      },
+      this.richPostInclude(asUserID),
     );
   }
 
