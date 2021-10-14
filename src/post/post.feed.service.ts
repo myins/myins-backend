@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Post, Prisma } from '@prisma/client';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { Post } from '@prisma/client';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { PostService } from './post.service';
 
@@ -13,41 +12,11 @@ export class PostFeedService {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  richPostInclude(userID: string): Prisma.PostInclude {
-    return {
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
-      likes: {
-        where: {
-          userId: userID,
-        },
-        select: {
-          userId: true,
-        },
-      },
-      mediaContent: true,
-      inses: {
-        select: {
-          id: true,
-          name: true,
-          cover: true,
-        },
-      },
-      author: {
-        select: ShallowUserSelect,
-      },
-    };
-  }
-
   async getFeed(skip: number, take: number, userID: string): Promise<Post[]> {
     return this.postService.posts({
       skip: skip,
       take: take,
-      include: this.richPostInclude(userID),
+      include: this.postService.richPostInclude(userID),
       orderBy: {
         createdAt: 'desc',
       },
@@ -80,7 +49,7 @@ export class PostFeedService {
     this.logger.log(
       `Getting first post for every ins from ins connections for user ${userID}`,
     );
-    const richInclude = this.richPostInclude(userID);
+    const richInclude = this.postService.richPostInclude(userID);
     const toRet = await Promise.all(
       allINS.map((each) => {
         return this.postService.firstPost({
