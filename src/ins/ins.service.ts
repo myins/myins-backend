@@ -108,6 +108,7 @@ export class InsService {
             id: insID,
           },
         },
+        pending: false,
       },
       include: {
         mediaContent: {
