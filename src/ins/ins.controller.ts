@@ -115,7 +115,7 @@ export class InsController {
       throw new BadRequestException('Could not find that INS!');
     }
 
-    this.logger.log(`Getting media for ins ${id}`);
+    this.logger.log(`Getting posts with all media for ins ${id}`);
     return this.insService.mediaForIns(id, skip, take);
   }
 

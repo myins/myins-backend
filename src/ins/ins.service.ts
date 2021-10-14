@@ -1,11 +1,5 @@
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import { INS, PostContent, Prisma, User } from '@prisma/client';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { INS, Post, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -18,9 +12,9 @@ import {
   InsWithCountMembers,
   InsWithCountMembersInclude,
 } from 'src/prisma-queries-helper/ins-include-count-members';
-import { PostMediaService } from 'src/post/post.media.service';
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class InsService {
@@ -30,7 +24,7 @@ export class InsService {
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService,
     private readonly userConnectionService: UserConnectionService,
-    private readonly postMediaService: PostMediaService,
+    private readonly postService: PostService,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
   ) {}
@@ -106,17 +100,19 @@ export class InsService {
     insID: string,
     skip: number,
     take: number,
-  ): Promise<PostContent[]> {
-    if (!insID || insID.length == 0) {
-      throw new BadRequestException('Invalid ins ID!');
-    }
-    return this.postMediaService.getMedias({
+  ): Promise<Post[]> {
+    return this.postService.posts({
       where: {
-        post: {
-          inses: {
-            some: {
-              id: insID,
-            },
+        inses: {
+          some: {
+            id: insID,
+          },
+        },
+      },
+      include: {
+        mediaContent: {
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },
