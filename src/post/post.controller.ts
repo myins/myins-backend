@@ -222,12 +222,7 @@ export class PostController {
     this.logger.log(
       `Send message by user ${userID} in inses ${ins} with new post ${postID}`,
     );
-    await this.chatService.sendMessageWhenPost(
-      ins,
-      userID,
-      postID,
-      post.content,
-    );
+    await this.chatService.sendMessageWhenPost(ins, userID, postID);
 
     this.logger.log('Post shared');
     return {
