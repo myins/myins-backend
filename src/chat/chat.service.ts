@@ -1,10 +1,12 @@
 import { INS, User } from '.prisma/client';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   private streamChat: StreamChat;
 
   constructor(
@@ -80,14 +82,8 @@ export class ChatService {
     return channels[0].removeMembers([userID]);
   }
 
-  async sendMessageWhenPost(
-    insIds: string[],
-    userID: string,
-    postID: string,
-    content: string,
-  ) {
-    const message = `Post created by ${userID}: "${content}"`;
-    return this.sendMessageToChannels(insIds, userID, message, {
+  async sendMessageWhenPost(insIds: string[], userID: string, postID: string) {
+    return this.sendMessageToChannels(insIds, userID, '', {
       custom_type: 'new_post',
       post_id: postID,
     });
@@ -110,6 +106,28 @@ export class ChatService {
           text: message,
           data,
         });
+      }),
+    );
+  }
+
+  // For test purpose in specially
+  async removeAll() {
+    const channels = await this.streamChat.queryChannels({});
+    this.logger.log(
+      `Removing channels ${channels.map((channel) => channel.id)}`,
+    );
+    await Promise.all(
+      channels.map(async (channel) => {
+        await channel.delete();
+      }),
+    );
+
+    const allUsers = await this.streamChat.queryUsers({});
+    const users = allUsers.users.filter((user) => user.id !== 'cristipele7');
+    this.logger.log(`Removing users ${users.map((user) => user.id)}`);
+    await Promise.all(
+      users.map(async (user) => {
+        await this.streamChat.deleteUser(user.id);
       }),
     );
   }

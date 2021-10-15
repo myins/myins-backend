@@ -188,7 +188,6 @@ export class PostMediaService {
           ),
           updatedPost.authorId,
           updatedPost.id,
-          updatedPost.content,
         );
       }
     });
