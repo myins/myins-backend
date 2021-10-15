@@ -125,7 +125,7 @@ export class PostLikeController {
       this.logger.log(
         `Creating notification for liking post ${postID} by user ${user.id}`,
       );
-      this.notificationsService.createNotification({
+      await this.notificationsService.createNotification({
         source: 'LIKE_POST',
         target: {
           connect: {
