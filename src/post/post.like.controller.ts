@@ -62,6 +62,7 @@ export class PostLikeController {
     });
 
     if (!postIfValid || postIfValid.length == 0) {
+      this.logger.error('Could not find post!');
       throw new BadRequestException('Could not find post!');
     }
 
@@ -94,9 +95,11 @@ export class PostLikeController {
       id: postID,
     });
     if (post == null || !post.authorId) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (!user.phoneNumberVerified) {
+      this.logger.error('You must verify your phone before liking posts!');
       throw new UnauthorizedException(
         'You must verify your phone before liking posts!',
       );
@@ -156,11 +159,13 @@ export class PostLikeController {
       id: postID,
     });
     if (post == null) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (!user.phoneNumberVerified) {
+      this.logger.error('You must verify your phone before unliking posts!');
       throw new UnauthorizedException(
-        'You must verify your phone before liking posts!',
+        'You must verify your phone before unliking posts!',
       );
     }
 

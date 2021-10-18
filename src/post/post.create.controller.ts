@@ -49,23 +49,27 @@ export class PostCreateController {
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
+      this.logger.error('No file!');
       throw new BadRequestException('No file!');
     }
     const file = firstFiles[0];
     const isVideoPost = isVideo(file.originalname);
     if (!file.buffer) {
+      this.logger.error('No buffer!');
       throw new BadRequestException('No buffer!');
     }
     if (
       isVideoPost &&
       (!thumbnailFiles || !thumbnailFiles.length || !thumbnailFiles[0].buffer)
     ) {
+      this.logger.error('No thumbnail!');
       throw new BadRequestException('No thumbnail!');
     }
 
     const width = parseInt(body.width);
     const height = parseInt(body.height);
     if (!width || !height) {
+      this.logger.error('Invalid width / height!');
       throw new BadRequestException('Invalid width / height!');
     }
 
@@ -83,11 +87,11 @@ export class PostCreateController {
         },
       );
     } catch (err) {
+      this.logger.error('Error attaching media to post!');
+      this.logger.error(err);
       if (err instanceof BadRequestException) {
         throw err; // If it's a bad request, just forward it
       } else {
-        this.logger.error('Error attaching media to post!');
-        this.logger.error(err);
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }
@@ -98,12 +102,15 @@ export class PostCreateController {
   @ApiTags('posts')
   async createPost(@Body() postData: CreatePostAPI, @PrismaUser() user: User) {
     if (postData.content == null || postData.content == undefined) {
+      this.logger.error('Content must be empty, not missing!');
       throw new BadRequestException('Content must be empty, not missing!');
     }
     if (postData.ins.length == 0) {
-      throw new BadRequestException('No inses? How did you even get this far?');
+      this.logger.error('Inses missing!');
+      throw new BadRequestException('Inses missing!');
     }
     if (!user.phoneNumberVerified) {
+      this.logger.error('Please verify your phone before creating posts!');
       throw new BadRequestException(
         'Please verify your phone before creating posts!',
       );
@@ -125,6 +132,7 @@ export class PostCreateController {
 
     for (const each of mappedINSIDs) {
       if (!inses.includes(each.id)) {
+        this.logger.error("You're not allowed to post to that INS!");
         throw new UnauthorizedException(
           "You're not allowed to post to that INS!",
         );

@@ -45,9 +45,11 @@ export class CommentController {
       id: commentID,
     });
     if (comment == null) {
+      this.logger.error('Could not find this comment!');
       throw new NotFoundException('Could not find this comment!');
     }
     if (comment.authorId != userID) {
+      this.logger.error("You're not allowed to edit this comment!");
       throw new UnauthorizedException(
         "You're not allowed to edit this comment!",
       );
@@ -78,9 +80,11 @@ export class CommentController {
       id: commentID,
     });
     if (!comment) {
+      this.logger.error('Could not find this comment!');
       throw new NotFoundException('Could not find this comment!');
     }
     if (comment.authorId !== userID) {
+      this.logger.error("You're not allowed to delete this comment!");
       throw new UnauthorizedException(
         "You're not allowed to delete this comment!",
       );
@@ -100,6 +104,7 @@ export class CommentController {
     const { content, postID } = postData;
 
     if (!user.phoneNumberVerified) {
+      this.logger.error('Please verify your phone before leaving comments!');
       throw new BadRequestException(
         'Please verify your phone before leaving comments!',
       );
@@ -107,12 +112,14 @@ export class CommentController {
 
     const post = await this.postService.post({ id: postID });
     if (!post || !post.authorId) {
+      this.logger.error('Could not find that post!');
       throw new BadRequestException('Could not find that post!');
     }
 
     const author = await this.userService.user({ id: post.authorId });
 
     if (!author) {
+      this.logger.error('Could not find that author!');
       throw new BadRequestException('Could not find that author!');
     }
 

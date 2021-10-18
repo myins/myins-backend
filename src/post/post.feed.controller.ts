@@ -29,12 +29,15 @@ export class PostFeedController {
     @Query('skip') skip: number,
   ) {
     if (take < 0 || take > 20) {
+      this.logger.error('Take must be between 0 and 20!');
       throw new BadRequestException('Take must be between 0 and 20!');
     }
     if (skip < 0 || skip > 1000) {
+      this.logger.error('Skip must be between 0 and 1000!');
       throw new BadRequestException('Skip must be between 0 and 1000!');
     }
     if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
       throw new BadRequestException('Invalid skip / take!');
     }
 
@@ -51,12 +54,15 @@ export class PostFeedController {
     @Query('skip') skip: number,
   ) {
     if (take < 0 || take > 20) {
+      this.logger.error('Take must be between 0 and 20!');
       throw new BadRequestException('Take must be between 0 and 20!');
     }
     if (skip < 0 || skip > 1000) {
+      this.logger.error('Skip must be between 0 and 1000!');
       throw new BadRequestException('Skip must be between 0 and 1000!');
     }
     if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
       throw new BadRequestException('Invalid skip / take!');
     }
 

@@ -37,6 +37,7 @@ export class InsAdminController {
     this.logger.log(`Changing admin for ins ${data.insID}`);
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
+      this.logger.error("You're not allowed to change INS admin!");
       throw new UnauthorizedException(
         "You're not allowed to change INS admin!",
       );
@@ -60,6 +61,7 @@ export class InsAdminController {
       console.log(
         `Allowing random user to remove member cuz he's such a nice guy! But also for testing.`,
       );
+      // this.logger.error("You're not allowed to remove members from INS!");
       // throw new UnauthorizedException(
       //   "You're not allowed to remove members from INS!",
       // );
@@ -85,11 +87,13 @@ export class InsAdminController {
       id: insID,
     });
     if (!ins) {
+      this.logger.error('Could not find this INS!');
       throw new NotFoundException('Could not find this INS!');
     }
 
     const isAdmin = await this.insAdminService.isAdmin(userID, insID);
     if (!isAdmin) {
+      this.logger.error("You're not allowed to delete this INS!");
       throw new UnauthorizedException("You're not allowed to delete this INS!");
     }
 

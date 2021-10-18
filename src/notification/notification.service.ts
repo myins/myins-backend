@@ -107,6 +107,9 @@ export class NotificationService {
     source: 'REQUESTED_FOLLOW' | 'REQUESTED_COMMENT' | 'REQUESTED_COMMENT_EDIT',
   ) {
     if (!targetID || !sourceID) {
+      this.logger.error(
+        "You're supposed to always connect users for notifications!",
+      );
       throw new BadRequestException(
         "You're supposed to always connect users for notifications!",
       );
@@ -131,6 +134,9 @@ export class NotificationService {
     const sourceID = notif.author.connect?.id;
 
     if (!targetID || !sourceID) {
+      this.logger.error(
+        "You're supposed to always connect users for notifications!",
+      );
       throw new BadRequestException(
         "You're supposed to always connect users for notifications!",
       );
@@ -194,6 +200,7 @@ export class NotificationService {
     let body = '';
 
     const unreachable = (x: never) => {
+      this.logger.error(`This shouldn't be possible! ${x}`);
       throw new Error(`This shouldn't be possible! ${x}`);
     };
 

@@ -79,6 +79,7 @@ export class UserController {
     file: Express.Multer.File,
   ) {
     if (!file) {
+      this.logger.error('Could not find picture file!');
       throw new BadRequestException('Could not find picture file!');
     }
 
@@ -125,6 +126,7 @@ export class UserController {
     try {
       const existingPhoneNumber = user.phoneNumber;
       if (existingPhoneNumber == undefined) {
+        this.logger.error('Could not find your user!');
         throw new BadRequestException('Could not find your user!');
       }
 
@@ -226,6 +228,7 @@ export class UserController {
       id: userId,
     });
     if (!user) {
+      this.logger.error('Could not find this user!');
       throw new NotFoundException('Could not find this user!');
     }
 

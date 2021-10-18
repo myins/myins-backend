@@ -50,6 +50,7 @@ export class OnboardingController {
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
+      this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
     const insID: string = decrypted.sub;
@@ -73,6 +74,7 @@ export class OnboardingController {
       shareCode: await this.insService.randomCode(),
     });
     if (!ins) {
+      this.logger.error('Could not create ins! Please try again later!');
       throw new BadRequestException(
         'Could not create ins! Please try again later!',
       );
@@ -122,17 +124,20 @@ export class OnboardingController {
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
+      this.logger.error('No file!');
       throw new BadRequestException('No file!');
     }
     const file = firstFiles[0];
     const isVideoPost = isVideo(file.originalname);
     if (!file.buffer) {
+      this.logger.error('No buffer!');
       throw new BadRequestException('No buffer!');
     }
     if (
       isVideoPost &&
       (!thumbnailFiles || !thumbnailFiles.length || !thumbnailFiles[0].buffer)
     ) {
+      this.logger.error('No thumbnail!');
       throw new BadRequestException('No thumbnail!');
     }
 
@@ -140,6 +145,7 @@ export class OnboardingController {
     const width = parseInt(body.width);
     const height = parseInt(body.height);
     if (!width || !height) {
+      this.logger.error('Invalid width / height!');
       throw new BadRequestException('Invalid width / height!');
     }
 
@@ -148,10 +154,12 @@ export class OnboardingController {
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
+      this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
     const insID: string = decrypted.sub;
     if (!insID) {
+      this.logger.error('Invalid claim token!');
       throw new BadRequestException('Nice try!');
     }
 
@@ -167,6 +175,7 @@ export class OnboardingController {
     });
 
     if (!post || post.length == 0) {
+      this.logger.error('This is not your post!');
       throw new BadRequestException('This is not your post!');
     }
 
@@ -184,11 +193,11 @@ export class OnboardingController {
         },
       );
     } catch (err) {
+      this.logger.error('Error attaching media to post!');
+      this.logger.error(err);
       if (err instanceof BadRequestException) {
         throw err; // If it's a bad request, just forward it
       } else {
-        this.logger.error('Error attaching media to post!');
-        this.logger.error(err);
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }
@@ -202,14 +211,17 @@ export class OnboardingController {
     @Body() body: AttachCoverAPI,
   ) {
     if (!file) {
+      this.logger.error('No file!');
       throw new BadRequestException('No file!');
     }
     if (!file.buffer) {
+      this.logger.error('No buffer!');
       throw new BadRequestException('No buffer!');
     }
     const isVideoPost = isVideo(file.originalname);
 
     if (isVideoPost) {
+      this.logger.error('No posts here!');
       throw new BadRequestException('No posts here!');
     }
 
@@ -218,10 +230,12 @@ export class OnboardingController {
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
     if (decrypted == null) {
+      this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
     const insID: string = decrypted.sub;
     if (!insID) {
+      this.logger.error('Invalid claim token!');
       throw new BadRequestException('Nice try!');
     }
 
@@ -230,6 +244,7 @@ export class OnboardingController {
     });
 
     if (!ins) {
+      this.logger.error('This is not your ins!');
       throw new BadRequestException('This is not your ins!');
     }
 
@@ -237,11 +252,11 @@ export class OnboardingController {
       this.logger.log(`Attach cover for ins ${insID}`);
       return this.insService.attachCoverToPost(file, insID);
     } catch (err) {
+      this.logger.error('Error attaching media to post!');
+      this.logger.error(err);
       if (err instanceof BadRequestException) {
         throw err; // If it's a bad request, just forward it
       } else {
-        this.logger.error('Error attaching media to post!');
-        this.logger.error(err);
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }

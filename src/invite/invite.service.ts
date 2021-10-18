@@ -44,6 +44,7 @@ export class InviteService {
       },
     });
     if (!connection || connection.role === UserRole.PENDING) {
+      this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
       );
@@ -61,6 +62,7 @@ export class InviteService {
     });
 
     if (!theINS.length) {
+      this.logger.error('Could not find that INS!');
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -120,6 +122,7 @@ export class InviteService {
       },
     });
     if (!connection || connection.role === UserRole.PENDING) {
+      this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
       );
@@ -138,11 +141,13 @@ export class InviteService {
     });
 
     if (!theINS.length) {
+      this.logger.error('Could not find that INS!');
       throw new BadRequestException('Could not find that INS!');
     }
     if (
       (<InsWithMembersInUserIDs>theINS[0]).members.length === otherUsers.length
     ) {
+      this.logger.error('All users are already in that INS!');
       throw new BadRequestException('All users are already in that INS!');
     }
 
@@ -202,6 +207,7 @@ export class InviteService {
         (each) => each.userId == userID,
       ) == -1
     ) {
+      this.logger.error('Could not find that INS!');
       throw new NotFoundException('Could not find that INS!');
     }
 

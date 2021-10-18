@@ -30,9 +30,11 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
+      this.logger.error('Could not find user with that phone!');
       throw new BadRequestException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified) {
+      this.logger.error('Phone already verified!');
       throw new BadRequestException('Phone already verified!');
     }
 
@@ -45,6 +47,7 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
+      this.logger.error('Could not find user with that phone!');
       throw new BadRequestException('Could not find user with that phone!');
     }
 
@@ -101,17 +104,20 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
+      this.logger.error('Could not find user with that phone!');
       throw new BadRequestException('Could not find user with that phone!');
     }
 
     this.logger.log('Decrypting reset token');
     const decrypted = await this.jwtService.decrypt(resetToken);
     if (typeof decrypted == 'string') {
+      this.logger.error('Decrypted token is a string!');
       throw new BadRequestException(
         'An error occured, please try again later!',
       );
     }
     if (decrypted?.sub !== phone || decrypted?.phone !== phone) {
+      this.logger.error('Invalid reset token!');
       throw new BadRequestException('Nice try!');
     }
     const saltOrRounds = 10;
@@ -133,15 +139,18 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
+      this.logger.error('Could not find user with that phone!');
       throw new BadRequestException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified) {
-      throw new BadRequestException('User already verified!');
+      this.logger.error('Phone already verified!');
+      throw new BadRequestException('Phone already verified!');
     }
 
     this.logger.log('Checking code');
     const res = await this.checkIfCodeCorrect(phone, code);
     if (!res) {
+      this.logger.error('Invalid code!');
       throw new BadRequestException('Invalid code!');
     }
 
@@ -174,6 +183,7 @@ export class AuthService {
 
     if (user == null) {
       // Invalid user, just throw unauthorized
+      this.logger.error('Invalid phone / password!');
       throw new UnauthorizedException('Invalid phone / password!');
     }
 
@@ -182,6 +192,7 @@ export class AuthService {
     if (user && isMatch) {
       return user;
     }
+    this.logger.error('Invalid phone / password!');
     throw new UnauthorizedException('Invalid phone / password!');
   }
 
@@ -211,10 +222,12 @@ export class AuthService {
       id: userID,
     });
     if (user == null) {
+      this.logger.error('Could not find user!');
       throw new NotFoundException('Could not find user!');
     }
 
     if (user.refreshToken != refreshToken) {
+      this.logger.error('Invalid refresh token!');
       throw new UnauthorizedException('Invalid refresh token!');
     }
 
