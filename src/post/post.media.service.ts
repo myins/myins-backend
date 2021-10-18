@@ -66,16 +66,19 @@ export class PostMediaService {
       PostWithInsesAndCountMediaInclude,
     );
     if (post == null) {
+      this.logger.error('Could not find post!');
       throw new BadRequestException('Could not find post!');
     }
     if (userID) {
       if (post.authorId && post.authorId != userID) {
+        this.logger.error("That's not your post!");
         throw new BadRequestException("That's not your post!");
       }
     }
     const existingContent =
       (<PostWithInsesAndCountMedia>post)._count?.mediaContent ?? 0;
     if (existingContent + 1 > post.totalMediaContent) {
+      this.logger.error('There are too many medias attached already!');
       throw new BadRequestException(
         'There are too many medias attached already!',
       );
@@ -143,9 +146,8 @@ export class PostMediaService {
         PostWithInsesAndCountMediaInclude,
       );
       if (!transactionPost) {
-        throw new BadRequestException(
-          'Could not find the post for some reason!',
-        );
+        this.logger.error('Could not find the post!');
+        throw new BadRequestException('Could not find the post for!');
       }
       if (!transactionPost.pending) {
         this.logger.log(`Post isn't pending, returning early!`);

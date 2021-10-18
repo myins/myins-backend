@@ -1,10 +1,16 @@
 import { CurrentVersions, DocumentType, Prisma } from '.prisma/client';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI, Links } from './current-versions-api.entity';
 
 @Injectable()
 export class CurrentVersionsService {
+  private readonly logger = new Logger(CurrentVersionsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getByType(
@@ -14,6 +20,7 @@ export class CurrentVersionsService {
       where,
     });
     if (!currentVersionsValues) {
+      this.logger.error('There is no current version!');
       throw new InternalServerErrorException('There is no current version!');
     }
     return currentVersionsValues;

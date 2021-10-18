@@ -95,6 +95,7 @@ export class UserPendingController {
       },
     });
     if (!connection || connection.role === UserRole.PENDING) {
+      this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
       );
@@ -117,6 +118,7 @@ export class UserPendingController {
       },
     });
     if (!connection || connection.role === UserRole.PENDING) {
+      this.logger.error("You're not allowed to deny members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to deny members for this INS!",
       );

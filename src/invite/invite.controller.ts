@@ -79,12 +79,15 @@ export class InviteController {
     @Query('ins') insID: string,
   ) {
     if (Number.isNaN(skip) || Number.isNaN(take)) {
+      this.logger.error('Invalid skip / take values!');
       throw new BadRequestException('Invalid skip / take values!');
     }
     if (allNumber != 0 && allNumber != 1) {
+      this.logger.error('Invalid all param!');
       throw new BadRequestException('Invalid all param!');
     }
     if (!insID) {
+      this.logger.error('Must specify INS!');
       throw new BadRequestException('Must specify INS!');
     }
 

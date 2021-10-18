@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
 import {
@@ -13,6 +13,8 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
 export class InsInteractionService {
+  private readonly logger = new Logger(InsInteractionService.name);
+
   constructor(
     private readonly commentService: CommentService,
     private readonly userConnectionService: UserConnectionService,
@@ -27,6 +29,7 @@ export class InsInteractionService {
       PostWithInsesIdInclude,
     );
     if (!postWithIns) {
+      this.logger.error('Invalid post ID!');
       throw new BadRequestException('Invalid post ID!');
     }
     const insIDs = (<PostWithInsesId>postWithIns).inses.map((each) => each.id);
@@ -53,7 +56,8 @@ export class InsInteractionService {
       CommentWithPostWithInsesIDInclude,
     );
     if (!commentWithPost) {
-      throw new BadRequestException('Invalid post ID!');
+      this.logger.error('Invalid comment ID!');
+      throw new BadRequestException('Invalid comment ID!');
     }
     const insIDs = (<CommentWithPostWithInsesID>commentWithPost).post.inses.map(
       (each) => each.id,

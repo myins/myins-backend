@@ -31,11 +31,13 @@ export class CommentLikeController {
       id: commentID,
     });
     if (comment == null) {
+      this.logger.error('Could not find this comment!');
       throw new NotFoundException('Could not find this comment!');
     }
     if (!user.phoneNumberVerified) {
+      this.logger.error('You must verify your phone before liking comments!');
       throw new UnauthorizedException(
-        'You must verify your phone before liking posts!',
+        'You must verify your phone before liking comments!',
       );
     }
 
@@ -54,11 +56,13 @@ export class CommentLikeController {
       id: commentID,
     });
     if (comment == null) {
+      this.logger.error('Could not find this comment!');
       throw new NotFoundException('Could not find this comment!');
     }
     if (!user.phoneNumberVerified) {
+      this.logger.error('You must verify your phone before unliking comments!');
       throw new UnauthorizedException(
-        'You must verify your phone before liking posts!',
+        'You must verify your phone before unliking comments!',
       );
     }
 

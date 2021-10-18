@@ -44,10 +44,14 @@ export class InsController {
   ) {
     const user = userID ? await this.userService.user({ id: userID }) : null;
     if (!user && userID) {
-      throw new UnauthorizedException("You're not allowed to do this!");
+      this.logger.error('Could not find this user!');
+      throw new UnauthorizedException('Could not find this user!');
     }
     if (!user?.phoneNumberVerified && userID) {
-      throw new UnauthorizedException("You're not allowed to do this!");
+      this.logger.error('You must verify your phone before creating an INS!');
+      throw new UnauthorizedException(
+        'You must verify your phone before creating an INS!',
+      );
     }
 
     this.logger.log(`Creating ins with name '${data.name}' by user ${userID}`);
@@ -70,6 +74,7 @@ export class InsController {
   //@UseGuards(JwtAuthGuard)
   async getInsByCode(@Param('code') insCode: string) {
     if (insCode.length <= 0) {
+      this.logger.error('Invalid code!');
       throw new BadRequestException('Invalid code!');
     }
 
@@ -112,6 +117,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
+      this.logger.error('Could not find that INS!');
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -140,6 +146,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
+      this.logger.error('Could not find that INS!');
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -170,6 +177,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
+      this.logger.error('Could not find that INS!');
       throw new BadRequestException('Could not find that INS!');
     }
     return inses[0];
@@ -185,12 +193,14 @@ export class InsController {
   ) {
     this.logger.log(`Trying user ${userID} to join group with code ${insCode}`);
     if (insCode.length <= 0) {
+      this.logger.error('Invalid code!');
       throw new BadRequestException('Invalid code!');
     }
     const theINS = await this.insService.ins({
       shareCode: insCode,
     });
     if (!theINS) {
+      this.logger.error('Invalid code!');
       throw new BadRequestException('Invalid ins code!');
     }
 
@@ -245,6 +255,7 @@ export class InsController {
   ) {
     this.logger.log(`Update cover for ins ${insID} by user ${userID}`);
     if (!file) {
+      this.logger.error('Could not find picture file!');
       throw new BadRequestException('Could not find picture file!');
     }
     const validINS = await this.insService.inses({
@@ -259,6 +270,7 @@ export class InsController {
     });
 
     if (!validINS || validINS.length != 1) {
+      this.logger.error('Not your ins!!');
       throw new BadRequestException('Not your ins!!');
     }
     const theINS = validINS[0];

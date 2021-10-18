@@ -70,6 +70,7 @@ export class PostController {
   ) {
     const { content } = postData;
     if (content == null || content == undefined) {
+      this.logger.error('Content must be empty, not missing!');
       throw new BadRequestException('Content must be empty, not missing!');
     }
 
@@ -77,9 +78,11 @@ export class PostController {
       id: postID,
     });
     if (post == null) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId != userID) {
+      this.logger.error("You're not allowed to edit this post!");
       throw new UnauthorizedException("You're not allowed to edit this post!");
     }
 
@@ -108,9 +111,11 @@ export class PostController {
       id: postID,
     });
     if (!post) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
+      this.logger.error("You're not allowed to delete this post!");
       throw new UnauthorizedException(
         "You're not allowed to delete this post!",
       );
@@ -131,15 +136,18 @@ export class PostController {
       id: postMediaID,
     });
     if (!postMedia) {
+      this.logger.error('Could not find this post media!');
       throw new NotFoundException('Could not find this post media!');
     }
     const post = await this.postService.post({
       id: postMedia.postId,
     });
     if (!post) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
+      this.logger.error("You're not allowed to delete this post media!");
       throw new UnauthorizedException(
         "You're not allowed to delete this post media!",
       );
@@ -182,9 +190,11 @@ export class PostController {
       id: postID,
     });
     if (!post) {
+      this.logger.error('Could not find this post!');
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
+      this.logger.error("You're not allowed to share this post!");
       throw new UnauthorizedException("You're not allowed to share this post!");
     }
 
@@ -199,6 +209,7 @@ export class PostController {
     ).map((each) => each.id);
     for (const each of ins) {
       if (!inses.includes(each)) {
+        this.logger.error("You're not allowed to post to one of that INS!");
         throw new UnauthorizedException(
           "You're not allowed to post to one of that INS!",
         );

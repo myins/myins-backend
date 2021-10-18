@@ -27,6 +27,7 @@ export class NotificationController {
     @Query('take') take: number,
   ) {
     if (take > 20) {
+      this.logger.error('Take param bigger than 20!');
       throw new BadRequestException("Don't get greedy!");
     }
     this.logger.log(`Getting notifications feed for user ${userID}`);

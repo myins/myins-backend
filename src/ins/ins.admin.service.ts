@@ -1,10 +1,12 @@
 import { INS, Prisma, UserRole } from '.prisma/client';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
 export class InsAdminService {
+  private readonly logger = new Logger(InsAdminService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly userConnectionService: UserConnectionService,
@@ -18,6 +20,7 @@ export class InsAdminService {
       },
     }));
     if (notInIns) {
+      this.logger.error("Can't set a non-member as admin!");
       throw new BadRequestException("Can't set a non-member as admin!");
     }
     return this.userConnectionService.changeAdmin(insId, newAdminId);
