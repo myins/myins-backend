@@ -50,7 +50,7 @@ export class UserService {
       },
     );
     if (userModel == null) {
-      this.logger.error('Could not find user!');
+      this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }
     let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };

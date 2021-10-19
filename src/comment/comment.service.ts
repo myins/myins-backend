@@ -55,7 +55,7 @@ export class CommentService {
   ) {
     const x = await this.postService.post({ id: postID });
     if (x == null) {
-      this.logger.error('Could not find post!');
+      this.logger.error(`Could not find post ${postID}!`);
       throw new BadRequestException('Could not find post!');
     }
     return this.comments({

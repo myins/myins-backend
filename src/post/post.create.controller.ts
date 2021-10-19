@@ -110,7 +110,9 @@ export class PostCreateController {
       throw new BadRequestException('Inses missing!');
     }
     if (!user.phoneNumberVerified) {
-      this.logger.error('Please verify your phone before creating posts!');
+      this.logger.error(
+        `Please verify phone ${user.phoneNumber} before creating posts!`,
+      );
       throw new BadRequestException(
         'Please verify your phone before creating posts!',
       );

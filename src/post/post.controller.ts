@@ -78,11 +78,11 @@ export class PostController {
       id: postID,
     });
     if (post == null) {
-      this.logger.error('Could not find this post!');
+      this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId != userID) {
-      this.logger.error("You're not allowed to edit this post!");
+      this.logger.error(`You're not allowed to edit post ${postID}!`);
       throw new UnauthorizedException("You're not allowed to edit this post!");
     }
 
@@ -111,11 +111,11 @@ export class PostController {
       id: postID,
     });
     if (!post) {
-      this.logger.error('Could not find this post!');
+      this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
-      this.logger.error("You're not allowed to delete this post!");
+      this.logger.error(`You're not allowed to delete post ${postID}!`);
       throw new UnauthorizedException(
         "You're not allowed to delete this post!",
       );
@@ -136,18 +136,20 @@ export class PostController {
       id: postMediaID,
     });
     if (!postMedia) {
-      this.logger.error('Could not find this post media!');
+      this.logger.error(`Could not find post media ${postMediaID}!`);
       throw new NotFoundException('Could not find this post media!');
     }
     const post = await this.postService.post({
       id: postMedia.postId,
     });
     if (!post) {
-      this.logger.error('Could not find this post!');
+      this.logger.error(`Could not find post ${postMedia.postId}!`);
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
-      this.logger.error("You're not allowed to delete this post media!");
+      this.logger.error(
+        `You're not allowed to delete post media ${postMediaID}!`,
+      );
       throw new UnauthorizedException(
         "You're not allowed to delete this post media!",
       );
@@ -190,11 +192,11 @@ export class PostController {
       id: postID,
     });
     if (!post) {
-      this.logger.error('Could not find this post!');
+      this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }
     if (post.authorId !== userID) {
-      this.logger.error("You're not allowed to share this post!");
+      this.logger.error(`You're not allowed to share post ${postID}!`);
       throw new UnauthorizedException("You're not allowed to share this post!");
     }
 

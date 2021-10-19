@@ -30,11 +30,11 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
-      this.logger.error('Could not find user with that phone!');
+      this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified) {
-      this.logger.error('Phone already verified!');
+      this.logger.error(`Phone ${phone} already verified!`);
       throw new BadRequestException('Phone already verified!');
     }
 
@@ -47,7 +47,7 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
-      this.logger.error('Could not find user with that phone!');
+      this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
 
@@ -104,7 +104,7 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
-      this.logger.error('Could not find user with that phone!');
+      this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
 
@@ -139,18 +139,18 @@ export class AuthService {
       phoneNumber: phone,
     });
     if (user == null) {
-      this.logger.error('Could not find user with that phone!');
+      this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified) {
-      this.logger.error('Phone already verified!');
+      this.logger.error(`Phone ${phone} already verified!`);
       throw new BadRequestException('Phone already verified!');
     }
 
     this.logger.log('Checking code');
     const res = await this.checkIfCodeCorrect(phone, code);
     if (!res) {
-      this.logger.error('Invalid code!');
+      this.logger.error(`Invalid code ${code} for phone ${phone}!`);
       throw new BadRequestException('Invalid code!');
     }
 
@@ -183,7 +183,7 @@ export class AuthService {
 
     if (user == null) {
       // Invalid user, just throw unauthorized
-      this.logger.error('Invalid phone / password!');
+      this.logger.error(`Could not find user with phone ${phone}!`);
       throw new UnauthorizedException('Invalid phone / password!');
     }
 
@@ -192,7 +192,7 @@ export class AuthService {
     if (user && isMatch) {
       return user;
     }
-    this.logger.error('Invalid phone / password!');
+    this.logger.error(`Invalid password for user with phone ${phone}!`);
     throw new UnauthorizedException('Invalid phone / password!');
   }
 
@@ -222,7 +222,7 @@ export class AuthService {
       id: userID,
     });
     if (user == null) {
-      this.logger.error('Could not find user!');
+      this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }
 

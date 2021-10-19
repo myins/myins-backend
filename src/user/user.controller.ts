@@ -126,7 +126,9 @@ export class UserController {
     try {
       const existingPhoneNumber = user.phoneNumber;
       if (existingPhoneNumber == undefined) {
-        this.logger.error('Could not find your user!');
+        this.logger.error(
+          `Could not find user with phone ${user.phoneNumber}!`,
+        );
         throw new BadRequestException('Could not find your user!');
       }
 
@@ -228,7 +230,7 @@ export class UserController {
       id: userId,
     });
     if (!user) {
-      this.logger.error('Could not find this user!');
+      this.logger.error(`Could not find user ${userId}!`);
       throw new NotFoundException('Could not find this user!');
     }
 

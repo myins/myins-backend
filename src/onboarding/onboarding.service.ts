@@ -47,7 +47,7 @@ export class OnboardingService {
       InsWithCountMembersInclude,
     );
     if (!ins || (<InsWithCountMembers>ins)._count?.members != 0) {
-      this.logger.error('Could not find INS!');
+      this.logger.error(`Could not find INS ${insID}!`);
       throw new BadRequestException('Could not find INS!');
     }
 

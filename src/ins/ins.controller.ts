@@ -45,11 +45,13 @@ export class InsController {
   ) {
     const user = userID ? await this.userService.user({ id: userID }) : null;
     if (!user && userID) {
-      this.logger.error('Could not find this user!');
+      this.logger.error(`Could not find user ${userID}!`);
       throw new UnauthorizedException('Could not find this user!');
     }
     if (!user?.phoneNumberVerified && userID) {
-      this.logger.error('You must verify your phone before creating an INS!');
+      this.logger.error(
+        `You must verify phone ${user?.phoneNumber} before creating an INS!`,
+      );
       throw new UnauthorizedException(
         'You must verify your phone before creating an INS!',
       );
@@ -75,7 +77,7 @@ export class InsController {
   //@UseGuards(JwtAuthGuard)
   async getInsByCode(@Param('code') insCode: string) {
     if (insCode.length <= 0) {
-      this.logger.error('Invalid code!');
+      this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
 
@@ -134,7 +136,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
-      this.logger.error('Could not find that INS!');
+      this.logger.error(`Could not find INS ${id}!`);
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -163,7 +165,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
-      this.logger.error('Could not find that INS!');
+      this.logger.error(`Could not find INS ${id}!`);
       throw new BadRequestException('Could not find that INS!');
     }
 
@@ -194,7 +196,7 @@ export class InsController {
       },
     });
     if (!inses || inses.length !== 1) {
-      this.logger.error('Could not find that INS!');
+      this.logger.error(`Could not find INS ${id}!`);
       throw new BadRequestException('Could not find that INS!');
     }
     return inses[0];
@@ -210,14 +212,14 @@ export class InsController {
   ) {
     this.logger.log(`Trying user ${userID} to join group with code ${insCode}`);
     if (insCode.length <= 0) {
-      this.logger.error('Invalid code!');
+      this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
     const theINS = await this.insService.ins({
       shareCode: insCode,
     });
     if (!theINS) {
-      this.logger.error('Invalid code!');
+      this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid ins code!');
     }
 

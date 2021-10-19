@@ -66,7 +66,7 @@ export class PostMediaService {
       PostWithInsesAndCountMediaInclude,
     );
     if (post == null) {
-      this.logger.error('Could not find post!');
+      this.logger.error(`Could not find post ${postID}!`);
       throw new BadRequestException('Could not find post!');
     }
     if (userID) {
@@ -146,7 +146,7 @@ export class PostMediaService {
         PostWithInsesAndCountMediaInclude,
       );
       if (!transactionPost) {
-        this.logger.error('Could not find the post!');
+        this.logger.error(`Could not find post ${postID}!`);
         throw new BadRequestException('Could not find the post for!');
       }
       if (!transactionPost.pending) {
