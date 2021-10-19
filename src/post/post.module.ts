@@ -3,6 +3,7 @@ import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
 import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
 import { InsModule } from 'src/ins/ins.module';
+import { InteractionModule } from 'src/interaction/interaction.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
@@ -27,6 +28,7 @@ import { PostService } from './post.service';
     FfmpegModule,
     forwardRef(() => InsModule),
     ChatModule,
+    InteractionModule,
   ],
   controllers: [
     PostFeedController,
