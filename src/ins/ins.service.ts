@@ -55,9 +55,7 @@ export class InsService {
               }
             : undefined,
       },
-      orderBy: {
-        interactions: 'desc',
-      },
+      orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
     const onlyIDs = connectionQuery.map((each) => each.insId);
 
