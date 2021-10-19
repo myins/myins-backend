@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
 import { Comment } from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
-import { InsInteractionService } from 'src/ins/ins.interaction.service';
 
 @Injectable()
 export class CommentLikeService {
@@ -11,7 +10,6 @@ export class CommentLikeService {
   constructor(
     private readonly commentService: CommentService,
     private readonly notifsService: NotificationService,
-    private readonly interactionService: InsInteractionService,
   ) {}
 
   async likeComment(userID: string, comment: Comment) {
@@ -28,11 +26,6 @@ export class CommentLikeService {
         },
       },
     });
-
-    this.logger.log(
-      `Incrementing interaction between user ${userID} and comment ${comment.id}`,
-    );
-    await this.interactionService.interactComment(userID, comment.id);
 
     if (comment.authorId != userID) {
       this.logger.log(

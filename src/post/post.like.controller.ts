@@ -15,7 +15,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { InsInteractionService } from 'src/ins/ins.interaction.service';
+import { InteractionService } from 'src/interaction/interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
@@ -30,7 +30,7 @@ export class PostLikeController {
   constructor(
     private readonly postService: PostService,
     private readonly notificationsService: NotificationService,
-    private readonly insInteractionService: InsInteractionService,
+    private readonly interactionService: InteractionService,
     private readonly postLikeService: PostLikeService,
   ) {}
 
@@ -120,9 +120,9 @@ export class PostLikeController {
     });
 
     this.logger.log(
-      `Incrementing interaction between user ${user.id} and post ${postID}`,
+      `Adding interaction for user ${user.id} when liking post ${postID}`,
     );
-    await this.insInteractionService.interactPost(user.id, toRet.id);
+    await this.interactionService.interactPost(user.id, toRet.id);
 
     if (post.authorId !== user.id) {
       this.logger.log(
