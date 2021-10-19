@@ -6,6 +6,7 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
   UnauthorizedException,
@@ -95,6 +96,22 @@ export class InsController {
       `Getting ins list for user ${userID} with filter '${filter}'`,
     );
     return this.insService.insList(userID, filter);
+  }
+
+  @Patch(':id/pin')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
+  async pinINS(@PrismaUser('id') userID: string, @Param('id') insID: string) {
+    this.logger.log(`Pinning ins ${insID} for user ${userID}`);
+    return this.userConnectionService.updatePinned(userID, insID, true);
+  }
+
+  @Patch(':id/unpin')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
+  async unpinINS(@PrismaUser('id') userID: string, @Param('id') insID: string) {
+    this.logger.log(`Unpinning ins ${insID} for user ${userID}`);
+    return this.userConnectionService.updatePinned(userID, insID, false);
   }
 
   @Get(':id/media')

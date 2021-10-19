@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { Prisma, UserInsConnection, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UserConnectionService {
+  private readonly logger = new Logger(UserConnectionService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getConnection(
@@ -32,6 +34,40 @@ export class UserConnectionService {
     params: Prisma.UserInsConnectionUpdateArgs,
   ): Promise<UserInsConnection> {
     return this.prisma.userInsConnection.update(params);
+  }
+
+  async updatePinned(
+    userID: string,
+    insID: string,
+    pinned: boolean,
+  ): Promise<UserInsConnection> {
+    const connection = await this.getConnection({
+      userId_insId: {
+        userId: userID,
+        insId: insID,
+      },
+    });
+    if (!connection || connection.role === UserRole.PENDING) {
+      this.logger.error("You're not allowed to do this operation!");
+      throw new UnauthorizedException(
+        "You're not allowed to do this operation!",
+      );
+    }
+
+    this.logger.log(
+      `Update connection between user ${userID} and ins ${insID}. Set pinned flag`,
+    );
+    return this.update({
+      where: {
+        userId_insId: {
+          userId: userID,
+          insId: insID,
+        },
+      },
+      data: {
+        pinned,
+      },
+    });
   }
 
   async changeAdmin(insId: string, newAdminId: string) {
