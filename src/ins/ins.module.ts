@@ -8,7 +8,6 @@ import { UserModule } from 'src/user/user.module';
 import { InsAdminController } from './ins.admin.controller';
 import { InsAdminService } from './ins.admin.service';
 import { InsController } from './ins.controller';
-import { InsInteractionService } from './ins.interaction.service';
 import { InsPinController } from './ins.pin.controller';
 import { InsService } from './ins.service';
 
@@ -22,7 +21,7 @@ import { InsService } from './ins.service';
     PostModule,
   ],
   controllers: [InsController, InsAdminController, InsPinController],
-  providers: [InsService, InsInteractionService, InsAdminService],
-  exports: [InsService, InsInteractionService],
+  providers: [InsService, InsAdminService],
+  exports: [InsService],
 })
 export class InsModule {}

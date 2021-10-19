@@ -15,6 +15,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Prisma, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { InteractionService } from 'src/interaction/interaction.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
 import { UserService } from 'src/user/user.service';
@@ -30,6 +31,7 @@ export class CommentController {
     private readonly postService: PostService,
     private readonly commentService: CommentService,
     private readonly notificationService: NotificationService,
+    private readonly interactionService: InteractionService,
   ) {}
 
   @Patch(':id')
@@ -140,6 +142,11 @@ export class CommentController {
       },
     };
     const toRet = await this.commentService.createComment(toCreate);
+
+    this.logger.log(
+      `Adding interaction for user ${user.id} when creating commment ${toRet.id}`,
+    );
+    await this.interactionService.interactComment(user.id, toRet.id);
 
     this.logger.log(`Creating notification for comment ${toRet.id}`);
     await this.notificationService.createNotification(
