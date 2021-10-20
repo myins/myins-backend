@@ -8,6 +8,7 @@ import { UserModule } from 'src/user/user.module';
 import { InsAdminController } from './ins.admin.controller';
 import { InsAdminService } from './ins.admin.service';
 import { InsController } from './ins.controller';
+import { InsPinController } from './ins.pin.controller';
 import { InsService } from './ins.service';
 
 @Module({
@@ -19,7 +20,7 @@ import { InsService } from './ins.service';
     forwardRef(() => UserModule),
     PostModule,
   ],
-  controllers: [InsController, InsAdminController],
+  controllers: [InsController, InsAdminController, InsPinController],
   providers: [InsService, InsAdminService],
   exports: [InsService],
 })
