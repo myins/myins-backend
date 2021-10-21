@@ -62,11 +62,22 @@ export class UserService {
         },
       };
     }
-    if (!asUserID || userID === asUserID) {
+    const isOwnProfile = !asUserID || userID === asUserID;
+    if (isOwnProfile) {
+      let streamChatToken = '';
+      try {
+        streamChatToken = this.chatService.createStreamChatToken(userID);
+      } catch (err) {
+        const stringErr: string = <string>err;
+        this.logger.error(
+          'Error generating stream chat token! Chat will not work',
+          stringErr,
+        );
+      }
       toRet = {
         ...toRet,
         ...{
-          streamChatToken: this.chatService.createStreamChatToken(userID),
+          streamChatToken: streamChatToken,
         },
       };
     }
