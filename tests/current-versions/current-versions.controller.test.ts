@@ -2,6 +2,7 @@ import { CurrentVersions, DocumentType } from '.prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Links } from 'src/current-versions/current-versions-api.entity';
 import { CurrentVersionsController } from 'src/current-versions/current-versions.controller';
+import { CurrentVersionsService } from 'src/current-versions/current-versions.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { prismaMock } from 'tests/prisma-mock';
 
@@ -25,6 +26,7 @@ describe('CurrentVersionsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CurrentVersionsController,
+        CurrentVersionsService,
         {
           provide: PrismaService,
           useValue: prismaMock,
