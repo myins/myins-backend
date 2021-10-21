@@ -48,13 +48,7 @@ export class PostService {
         },
       },
       mediaContent: true,
-      inses: {
-        select: {
-          id: true,
-          name: true,
-          cover: true,
-        },
-      },
+      inses: true,
       author: {
         select: ShallowUserSelect,
       },
