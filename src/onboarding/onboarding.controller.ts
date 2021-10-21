@@ -105,6 +105,7 @@ export class OnboardingController {
     return {
       postID: post.id,
       insID: ins.id,
+      shareCode: ins.shareCode,
       claimToken: claimToken,
     };
   }
