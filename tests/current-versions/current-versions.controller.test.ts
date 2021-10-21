@@ -2,7 +2,6 @@ import { CurrentVersions, DocumentType } from '.prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Links } from 'src/current-versions/current-versions-api.entity';
 import { CurrentVersionsController } from 'src/current-versions/current-versions.controller';
-import { CurrentVersionsModule } from 'src/current-versions/current-versions.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { prismaMock } from 'tests/prisma-mock';
 
@@ -23,8 +22,7 @@ describe('CurrentVersionsService', () => {
   ];
 
   beforeEach(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [CurrentVersionsModule],
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         CurrentVersionsController,
         {
@@ -34,12 +32,12 @@ describe('CurrentVersionsService', () => {
       ],
     }).compile();
 
-    currentVersionsController = moduleRef.get<CurrentVersionsController>(
+    currentVersionsController = module.get<CurrentVersionsController>(
       CurrentVersionsController,
     );
   });
 
-  it('/GET /current-versions/links', async () => {
+  it('getLinks', async () => {
     const expectedResult: Links = {
       TC: currentVersionsMock.find(
         (cv) => cv.type === DocumentType.TERMS_AND_CONDITIONS,

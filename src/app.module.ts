@@ -21,6 +21,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ChatModule } from './chat/chat.module';
 import { MiddlewareModule } from './middleware/middleware.module';
 import { InteractionModule } from './interaction/interaction.module';
+import { InteractionyyyService } from './interactionyyy/interactionyyy.service';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { InteractionModule } from './interaction/interaction.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    InteractionyyyService,
   ],
   controllers: [AppController],
 })
