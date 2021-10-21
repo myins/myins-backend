@@ -49,7 +49,7 @@ describe('CurrentVersionsService', () => {
       )?.link,
     };
 
-    prismaMock.currentVersions.findMany.mockReturnValue(new Promise(currentVersionsMock));
+    prismaMock.currentVersions.findMany.mockResolvedValue(currentVersionsMock);
 
     await expect(currentVersionsController.getLinks()).resolves.toEqual(
       expectedResult,
