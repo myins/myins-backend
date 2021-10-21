@@ -119,7 +119,19 @@ export class MiddlewareService {
               userResult.id
             } => ${params.action} user stream ${userResult.id}`,
           );
-          await this.chatService.createOrUpdateStreamUsers([userResult]);
+          const arr: (keyof User)[] = [
+            'id',
+            'firstName',
+            'lastName',
+            'phoneNumber',
+            'profilePicture',
+          ];
+          const importantKeys = Object.keys(params.args.data).filter((each) =>
+            arr.includes(<keyof User>each),
+          );
+          if (importantKeys.length > 0) {
+            await this.chatService.createOrUpdateStreamUsers([userResult]);
+          }
         }
       }
       return result;
