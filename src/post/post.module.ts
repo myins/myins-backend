@@ -27,7 +27,7 @@ import { PostService } from './post.service';
     NotificationModule,
     FfmpegModule,
     forwardRef(() => InsModule),
-    ChatModule,
+    forwardRef(() => ChatModule),
     InteractionModule,
   ],
   controllers: [

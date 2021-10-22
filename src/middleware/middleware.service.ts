@@ -2,6 +2,7 @@ import { INS, User, UserInsConnection } from '.prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Channel } from 'stream-chat';
 
 @Injectable()
 export class MiddlewareService {
@@ -40,18 +41,32 @@ export class MiddlewareService {
         }
         if (params.action == 'update') {
           const insResult = <INS>result;
-          const channels = await chatService.getChannelsINS({
-            id: insResult.id,
-          });
-          if (channels.length) {
-            this.logger.log(
-              `Update ins ${insResult.id} => update channel ${insResult.id}`,
-            );
-            await channels[0].update({
-              name: insResult.name,
-              image: insResult.cover,
-              insChannel: true,
+
+          let channels: Channel[] = [];
+          try {
+            channels = await chatService.getChannelsINS({
+              id: insResult.id,
             });
+          } catch (e) {
+            const stringErr: string = <string>e;
+            this.logger.error('Error getting stream channel!', stringErr);
+          }
+
+          if (channels.length) {
+            const arr: (keyof INS)[] = ['name', 'cover'];
+            const importantKeys = Object.keys(params.args.data).filter((each) =>
+              arr.includes(<keyof INS>each),
+            );
+            if (importantKeys.length > 0) {
+              this.logger.log(
+                `Update ins ${insResult.id} => update channel ${insResult.id}`,
+              );
+              await channels[0].update({
+                name: insResult.name,
+                image: insResult.cover,
+                insChannel: true,
+              });
+            }
           }
         }
       }
@@ -111,16 +126,10 @@ export class MiddlewareService {
             `Delete user ${result.id} => delete user stream ${result.id}`,
           );
           await this.chatService.deleteStreamUser(result.id);
-        } else if (params.action == 'create' || params.action == 'update') {
+        } else if (params.action == 'update') {
           // A user was created, create the stream user.
           const userResult = <User>result;
-          this.logger.log(
-            `${params.action == 'create' ? 'Create' : 'Update'} user ${
-              userResult.id
-            } => ${params.action} user stream ${userResult.id}`,
-          );
           const arr: (keyof User)[] = [
-            'id',
             'firstName',
             'lastName',
             'phoneNumber',
@@ -130,7 +139,10 @@ export class MiddlewareService {
             arr.includes(<keyof User>each),
           );
           if (importantKeys.length > 0) {
-            // await this.chatService.createOrUpdateStreamUsers([userResult]);
+            this.logger.log(
+              `'Update' user ${userResult.id} => update user stream ${userResult.id}`,
+            );
+            await this.chatService.createOrUpdateStreamUsers([userResult]);
           }
         }
       }
