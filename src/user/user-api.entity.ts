@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsNotEmpty,
+  IsOptional,
   IsPhoneNumber,
   IsString,
 } from 'class-validator';
@@ -26,14 +27,17 @@ export class CreateUserAPI {
 export class UpdateUserAPI {
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   firstName: string;
 
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   lastName: string;
 
   @IsPhoneNumber()
   @IsNotEmpty()
+  @IsOptional()
   phoneNumber: string;
 }
 
