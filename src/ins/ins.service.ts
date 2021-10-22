@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, User } from '@prisma/client';
+import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -325,5 +325,17 @@ export class InsService {
     const lastSegment = parts.pop() || parts.pop(); // handle potential trailing slash
 
     return lastSegment;
+  }
+
+  async insesWithAdmin() {
+    return this.prismaService.iNS.findMany({
+      include: {
+        members: {
+          where: {
+            role: UserRole.ADMIN,
+          },
+        },
+      },
+    });
   }
 }
