@@ -211,8 +211,15 @@ export class AuthService {
     this.smsService.sendVerificationCode(user);
 
     this.logger.log(`Creating stream user for user ${user.id}`);
-    await this.chatService.createOrUpdateStreamUsers([user]);
-
+    try {
+      await this.chatService.createOrUpdateStreamUsers([user]);
+    } catch (err) {
+      const stringErr: string = <string>err;
+      this.logger.error(
+        'Error updating stream chat user! Chat will not work',
+        stringErr,
+      );
+    }
     this.logger.log(`User logged ${addedTogether.id}`);
     return addedTogether;
   }
