@@ -182,6 +182,15 @@ export class InsController {
       this.logger.error(`Could not find INS ${id}!`);
       throw new BadRequestException('Could not find that INS!');
     }
+
+    this.logger.log(
+      `Create channel for ins ${id} by user stream ${userID} if not exists`,
+    );
+    await this.chatService.createChannelINSWithMembersIfNotExists(
+      inses[0],
+      userID,
+    );
+
     return inses[0];
   }
 

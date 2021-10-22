@@ -1,7 +1,8 @@
 import { INS, User } from '.prisma/client';
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
+import { Channel, ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
+import { InsService } from 'src/ins/ins.service';
 
 @Injectable()
 export class ChatService {
@@ -12,6 +13,7 @@ export class ChatService {
   constructor(
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+    private readonly insService: InsService,
   ) {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
@@ -30,7 +32,16 @@ export class ChatService {
       phoneNumber: user.phoneNumber,
       image: user.profilePicture,
     }));
-    return this.streamChat.upsertUsers(data);
+
+    try {
+      await this.streamChat.upsertUsers(data);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(
+        'Error creating/updating stream chat user! Chat will not work',
+        stringErr,
+      );
+    }
   }
 
   async getStreamUser(id: string) {
@@ -39,20 +50,52 @@ export class ChatService {
   }
 
   async deleteStreamUser(userID: string) {
-    return this.streamChat.deleteUser(userID, {
-      mark_messages_deleted: false,
-    });
+    try {
+      await this.streamChat.deleteUser(userID, {
+        mark_messages_deleted: false,
+      });
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error deleting stream chat user!', stringErr);
+    }
   }
 
   async createChannelINS(ins: INS, userID: string) {
-    const channel = this.streamChat.channel('messaging', ins.id, {
-      name: ins.name,
-      members: [userID],
-      created_by_id: userID,
-      image: ins.cover,
-      insChannel: true,
-    });
-    return channel.create();
+    try {
+      const channel = this.streamChat.channel('messaging', ins.id, {
+        name: ins.name,
+        members: [userID],
+        created_by_id: userID,
+        image: ins.cover,
+        insChannel: true,
+      });
+      await channel.create();
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error creating stream channel!', stringErr);
+    }
+  }
+
+  async createChannelINSWithMembersIfNotExists(ins: INS, userID: string) {
+    try {
+      const channels = await this.getChannelsINS({ id: ins.id });
+      if (!channels.length) {
+        await this.createChannelINS(ins, userID);
+
+        const members = await this.insService.membersForIns(ins.id);
+        if (members.length) {
+          this.addMembersToChannel(
+            members.map((member) => member.id),
+            ins.id,
+          );
+        }
+      } else {
+        await this.addMembersIfNotInChannel(channels[0]);
+      }
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error creating stream channel!', stringErr);
+    }
   }
 
   async getChannelsINS(where: ChannelFilters) {
@@ -60,26 +103,62 @@ export class ChatService {
   }
 
   async deleteChannelINS(insID: string) {
-    const channels = await this.getChannelsINS({ id: insID });
-    return channels[0].delete();
+    try {
+      const channels = await this.getChannelsINS({ id: insID });
+      await channels[0].delete();
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error deleting stream channel!', stringErr);
+    }
   }
 
   async addMembersToChannel(userIDs: string[], insId: string) {
-    const channels = await this.getChannelsINS({ id: insId });
-    const users = await this.userService.users({
-      where: {
-        id: {
-          in: userIDs,
+    try {
+      const channels = await this.getChannelsINS({ id: insId });
+      const users = await this.userService.users({
+        where: {
+          id: {
+            in: userIDs,
+          },
         },
-      },
-    });
-    await this.createOrUpdateStreamUsers(users);
-    return channels[0].addMembers(userIDs);
+      });
+      await this.createOrUpdateStreamUsers(users);
+      await channels[0].addMembers(userIDs);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error adding members to stream channel!', stringErr);
+    }
+  }
+
+  async addMembersIfNotInChannel(channel: Channel) {
+    if (channel.id) {
+      const members = await this.insService.membersForIns(channel.id);
+      const membersChannelIDs = (await channel.queryMembers({})).members.map(
+        (member) => member.user_id,
+      );
+      const membersNotInChannel = members.filter(
+        (member) => !membersChannelIDs.includes(member.id),
+      );
+      if (membersNotInChannel.length) {
+        await this.addMembersToChannel(
+          membersNotInChannel.map((member) => member.id),
+          channel.id,
+        );
+      }
+    }
   }
 
   async removeMemberFromChannel(userID: string, insId: string) {
-    const channels = await this.getChannelsINS({ id: insId });
-    return channels[0].removeMembers([userID]);
+    try {
+      const channels = await this.getChannelsINS({ id: insId });
+      await channels[0].removeMembers([userID]);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(
+        'Error removing member from stream channel!',
+        stringErr,
+      );
+    }
   }
 
   async sendMessageWhenPost(insIds: string[], userID: string, postID: string) {
@@ -95,19 +174,24 @@ export class ChatService {
     message: string,
     data: Record<string, unknown>,
   ) {
-    const channels = await this.getChannelsINS({
-      id: { $in: insIds },
-    });
-    const user = await this.getStreamUser(userID);
-    return Promise.all(
-      channels.map(async (channel) => {
-        await channel.sendMessage({
-          user_id: user.id,
-          text: message,
-          data,
-        });
-      }),
-    );
+    try {
+      const channels = await this.getChannelsINS({
+        id: { $in: insIds },
+      });
+      const user = await this.getStreamUser(userID);
+      await Promise.all(
+        channels.map(async (channel) => {
+          await channel.sendMessage({
+            user_id: user.id,
+            text: message,
+            data,
+          });
+        }),
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error sending message to stream channel!', stringErr);
+    }
   }
 
   // For test purpose in specially

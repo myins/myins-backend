@@ -210,16 +210,6 @@ export class AuthService {
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(user);
 
-    this.logger.log(`Creating stream user for user ${user.id}`);
-    try {
-      await this.chatService.createOrUpdateStreamUsers([user]);
-    } catch (err) {
-      const stringErr: string = <string>err;
-      this.logger.error(
-        'Error updating stream chat user! Chat will not work',
-        stringErr,
-      );
-    }
     this.logger.log(`User logged ${addedTogether.id}`);
     return addedTogether;
   }
@@ -237,6 +227,9 @@ export class AuthService {
       this.logger.error('Invalid refresh token!');
       throw new UnauthorizedException('Invalid refresh token!');
     }
+
+    this.logger.log(`Creating stream user if not exists for user ${user.id}`);
+    await this.chatService.createOrUpdateStreamUsers([user]);
 
     this.logger.log(`Generating token for user ${user.id}`);
     return this.jwtService.generateNewAuthTokens(user.phoneNumber, user.id);

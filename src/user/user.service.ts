@@ -53,6 +53,12 @@ export class UserService {
       this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }
+
+    this.logger.log(
+      `Creating stream user if not exists for user ${userModel.id}`,
+    );
+    await this.chatService.createOrUpdateStreamUsers([userModel]);
+
     let toRet = { ...omit(userModel, 'password', 'refreshToken', 'pushToken') };
     if (userID === asUserID) {
       toRet = {

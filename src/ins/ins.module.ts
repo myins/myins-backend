@@ -15,7 +15,7 @@ import { InsService } from './ins.service';
   imports: [
     PrismaModule,
     StorageModule,
-    ChatModule,
+    forwardRef(() => ChatModule),
     CommentModule,
     forwardRef(() => UserModule),
     PostModule,
