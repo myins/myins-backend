@@ -133,7 +133,7 @@ export class UserController {
       }
 
       this.logger.log(`Updating user ${user.id}`);
-      const didChangePhone = data.phone != existingPhoneNumber;
+      const didChangePhone = data.phoneNumber != existingPhoneNumber;
       const toRet = await this.userService.updateUser({
         where: {
           id: user.id,

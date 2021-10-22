@@ -34,14 +34,7 @@ export class UpdateUserAPI {
 
   @IsPhoneNumber()
   @IsNotEmpty()
-  phone: string;
-
-  @IsString()
-  @IsNotEmpty()
-  username: string;
-
-  @IsString()
-  description: string;
+  phoneNumber: string;
 }
 
 export class UpdatePushTokenAPI {
