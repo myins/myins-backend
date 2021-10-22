@@ -130,7 +130,7 @@ export class MiddlewareService {
             arr.includes(<keyof User>each),
           );
           if (importantKeys.length > 0) {
-            await this.chatService.createOrUpdateStreamUsers([userResult]);
+            // await this.chatService.createOrUpdateStreamUsers([userResult]);
           }
         }
       }
