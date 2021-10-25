@@ -13,6 +13,7 @@ import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { isTestNumber } from 'src/util/test-numbers';
+import { CodePhoneAPI } from './auth-api.entity';
 
 @Injectable()
 export class AuthService {
@@ -134,7 +135,8 @@ export class AuthService {
     });
   }
 
-  async verifyUser(phone: string, code: string) {
+  async verifyUser(data: CodePhoneAPI) {
+    const { phone, code, newPhone } = data;
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
@@ -162,6 +164,7 @@ export class AuthService {
         id: user.id,
       },
       data: {
+        phoneNumber: newPhone ?? phone,
         phoneNumberVerified: true,
       },
     });

@@ -66,7 +66,7 @@ export class AuthController {
     this.logger.log(
       `Verifying user by phone number ${phone} with code ${code}`,
     );
-    await this.authService.verifyUser(phone, code);
+    await this.authService.verifyUser(accountData);
     return {
       message: 'User verified!',
     };

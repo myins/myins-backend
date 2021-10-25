@@ -1,4 +1,9 @@
-import { IsNotEmpty, IsPhoneNumber, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+} from 'class-validator';
 
 export class RefreshTokenBodyAPI {
   @IsString()
@@ -38,4 +43,9 @@ export class CodePhoneAPI {
   @IsPhoneNumber()
   @IsNotEmpty()
   phone: string;
+
+  @IsPhoneNumber()
+  @IsNotEmpty()
+  @IsOptional()
+  newPhone: string;
 }
