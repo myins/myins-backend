@@ -144,7 +144,7 @@ export class AuthService {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (user.phoneNumberVerified) {
+    if (user.phoneNumberVerified && !newPhone) {
       this.logger.error(`Phone ${phone} already verified!`);
       throw new BadRequestException('Phone already verified!');
     }
