@@ -140,10 +140,7 @@ export class UserController {
         where: {
           id: user.id,
         },
-        data: {
-          phoneNumberVerified: didChangePhone ? false : undefined,
-          ...data,
-        },
+        data,
       });
       if (didChangePhone) {
         this.logger.log('Phone number changed. Sending verification code');
