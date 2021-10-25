@@ -109,7 +109,7 @@ export class AuthController {
   @ApiTags('auth')
   async resendConfirmation(@Body() data: PhoneBodyAPI) {
     this.logger.log(`Resending confirmation for phone number ${data.phone}`);
-    await this.authService.resendConfirmation(data.phone);
+    await this.authService.resendConfirmation(data.phone, data.newPhone);
 
     this.logger.log('Successfully sent confirmation sms');
     return {
