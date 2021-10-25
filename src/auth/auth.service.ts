@@ -150,7 +150,7 @@ export class AuthService {
     }
 
     this.logger.log('Checking code');
-    const res = await this.checkIfCodeCorrect(phone, code);
+    const res = await this.checkIfCodeCorrect(newPhone ?? phone, code);
     if (!res) {
       this.logger.error(`Invalid code ${code} for phone ${phone}!`);
       throw new BadRequestException('Invalid code!');
