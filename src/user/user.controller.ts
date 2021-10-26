@@ -133,6 +133,7 @@ export class UserController {
       }
 
       this.logger.log(`Updating user ${user.id}`);
+      const newPhoneNumber = data.phoneNumber;
       const didChangePhone =
         data.phoneNumber && data.phoneNumber != existingPhoneNumber;
       data.phoneNumber = existingPhoneNumber;
@@ -144,7 +145,7 @@ export class UserController {
       });
       if (didChangePhone) {
         this.logger.log('Phone number changed. Sending verification code');
-        this.smsService.sendVerificationCode(toRet);
+        this.smsService.sendVerificationCode(toRet, newPhoneNumber);
       }
 
       this.logger.log(`Updated successfully. Return user ${user.id}`);

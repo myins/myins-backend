@@ -9,16 +9,19 @@ export class SmsService {
 
   constructor(@InjectTwilio() private readonly client: TwilioClient) {}
 
-  async sendVerificationCode(user: {
-    phoneNumberVerified: boolean;
-    id: string;
-    phoneNumber: string;
-  }) {
-    if (user.phoneNumberVerified) {
+  async sendVerificationCode(
+    user: {
+      phoneNumberVerified: boolean;
+      id: string;
+      phoneNumber: string;
+    },
+    newPhoneNumber?: string,
+  ) {
+    if (user.phoneNumberVerified && !newPhoneNumber) {
       return;
     }
 
-    return this.sendVerificationSMS(user.phoneNumber);
+    return this.sendVerificationSMS(newPhoneNumber ?? user.phoneNumber);
   }
 
   async sendSMS(target: string, message: string) {

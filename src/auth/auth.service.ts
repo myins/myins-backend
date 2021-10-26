@@ -26,7 +26,7 @@ export class AuthService {
     private readonly chatService: ChatService,
   ) {}
 
-  async resendConfirmation(phone: string) {
+  async resendConfirmation(phone: string, newPhone?: string) {
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
@@ -34,13 +34,13 @@ export class AuthService {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (user.phoneNumberVerified) {
+    if (user.phoneNumberVerified && !newPhone) {
       this.logger.error(`Phone ${phone} already verified!`);
       throw new BadRequestException('Phone already verified!');
     }
 
     this.logger.log('Sending verification code');
-    return this.smsService.sendVerificationCode(user);
+    return this.smsService.sendVerificationCode(user, newPhone);
   }
 
   async resetPassword(phone: string) {
@@ -144,7 +144,7 @@ export class AuthService {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
-    if (user.phoneNumberVerified) {
+    if (user.phoneNumberVerified && !newPhone) {
       this.logger.error(`Phone ${phone} already verified!`);
       throw new BadRequestException('Phone already verified!');
     }

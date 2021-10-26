@@ -11,14 +11,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OnboardingService {
+  private readonly logger = new Logger(OnboardingService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly postService: PostService,
   ) {}
-
-  private readonly logger = new Logger(OnboardingService.name);
 
   @Cron('0 1 * * *')
   async removeOldINS() {

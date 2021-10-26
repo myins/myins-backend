@@ -19,6 +19,11 @@ export class PhoneBodyAPI {
   @IsPhoneNumber()
   @IsNotEmpty()
   phone: string;
+
+  @IsPhoneNumber()
+  @IsNotEmpty()
+  @IsOptional()
+  newPhone: string;
 }
 
 export class ResetPasswordAPI {
