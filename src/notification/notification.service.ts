@@ -147,7 +147,7 @@ export class NotificationService {
     if (
       authorUser &&
       targetUser?.pushToken &&
-      !targetUser?.disabledNotifications.includes(notif.source)
+      !targetUser.disabledNotifications.includes(notif.source)
     ) {
       this.logger.log(`Adding push notification`);
       return this.pushService.pushData(
@@ -188,7 +188,7 @@ export class NotificationService {
         if (
           authorUser &&
           targetUser?.pushToken &&
-          !targetUser?.disabledNotifications.includes(each.source)
+          !targetUser.disabledNotifications.includes(each.source)
         ) {
           this.logger.log(`Adding push notification`);
           this.pushService.pushData(
@@ -221,18 +221,9 @@ export class NotificationService {
       case 'COMMENT':
         body = `${authorName} commented on your post!`;
         break;
-      // case 'REQUESTED_COMMENT':
-      //   body = `${authorName} wants to comment on your post!`;
-      //   break;
-      // case 'REQUESTED_COMMENT_EDIT':
-      //   body = `${authorName} wants to edit his comment on your post!`;
-      //   break;
       case 'LIKE_COMMENT':
         body = `${authorName} liked your comment!`;
         break;
-      // case 'REQUESTED_FOLLOW':
-      //   body = `${authorName} has asked to follow you!`;
-      //   break;
       default:
         unreachable(source.source);
         break;
@@ -274,9 +265,6 @@ export class NotificationService {
 
 interface NotificationEitherInterface {
   source: NotificationSource;
-  // | 'REQUESTED_FOLLOW'
-  // | 'REQUESTED_COMMENT'
-  // | 'REQUESTED_COMMENT_EDIT';
   postId?: string | null | undefined;
   commentId?: string | null | undefined;
   authorId?: string;
