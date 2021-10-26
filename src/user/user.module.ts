@@ -8,6 +8,7 @@ import { SmsModule } from 'src/sms/sms.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { UserConnectionService } from './user.connection.service';
 import { UserController } from './user.controller';
+import { UserNotificationsController } from './user.notifications.controller';
 import { UserPendingController } from './user.pending.controller';
 import { UserService } from './user.service';
 import { UserVersionsController } from './user.versions.controller';
@@ -22,7 +23,12 @@ import { UserVersionsController } from './user.versions.controller';
     InsModule,
     forwardRef(() => ChatModule),
   ],
-  controllers: [UserPendingController, UserController, UserVersionsController],
+  controllers: [
+    UserPendingController,
+    UserController,
+    UserVersionsController,
+    UserNotificationsController,
+  ],
   providers: [UserService, UserConnectionService],
   exports: [UserService, UserConnectionService],
 })

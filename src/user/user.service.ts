@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma, UserRole } from '@prisma/client';
+import { User, Prisma, UserRole, NotificationSource } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
@@ -14,6 +14,7 @@ import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserConnectionService } from './user.connection.service';
+import { EnableDisableNotificationAPI } from './user-api.entity';
 
 @Injectable()
 export class UserService {
@@ -90,12 +91,16 @@ export class UserService {
     return toRet;
   }
 
-  async users(params: Prisma.UserFindManyArgs): Promise<User[]> {
-    return this.prisma.user.findMany(params);
+  async users(params: Prisma.UserFindManyArgs) {
+    const users = await this.prisma.user.findMany(params);
+    const usersWithoutImportantFields = users.map((user) => {
+      return { ...omit(user, 'password', 'refreshToken', 'pushToken') };
+    });
+    return usersWithoutImportantFields;
   }
 
   //FIXME: also figure out type returns to allow select
-  async shallowUsers(params: Prisma.UserFindManyArgs): Promise<User[]> {
+  async shallowUsers(params: Prisma.UserFindManyArgs) {
     params.select = ShallowUserSelect;
     return this.users(params);
   }
@@ -213,6 +218,53 @@ export class UserService {
       },
       data: {
         lastReadNotificationID: notifID,
+      },
+    });
+  }
+
+  async changeDisabledNotifications(
+    user: User,
+    data: EnableDisableNotificationAPI,
+    disable: boolean,
+  ): Promise<User> {
+    const { sources, all } = data;
+    this.logger.log(
+      `Updating user ${user.id}. Change disabled notifications for ${
+        all ? 'all sources' : 'sources ' + sources
+      }. Set to ${disable}`,
+    );
+
+    const disableNotificationsValue = disable
+      ? all
+        ? {
+            push: <NotificationSource[]>(
+              Object.keys(NotificationSource).filter(
+                (source) =>
+                  !user.disabledNotifications.includes(
+                    <NotificationSource>source,
+                  ),
+              )
+            ),
+          }
+        : {
+            push: sources.filter(
+              (source) =>
+                !user.disabledNotifications.includes(
+                  <NotificationSource>source,
+                ),
+            ),
+          }
+      : all
+      ? []
+      : user.disabledNotifications.filter(
+          (notifSource) => !sources.includes(notifSource),
+        );
+    return this.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        disabledNotifications: disableNotificationsValue,
       },
     });
   }

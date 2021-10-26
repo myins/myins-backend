@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
+import { INS, Post, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -128,7 +128,7 @@ export class InsService {
     skip?: number,
     take?: number,
     filter?: string,
-  ): Promise<User[]> {
+  ) {
     //console.log(`Filter: ${filter}`)
     return this.userService.users({
       where: {

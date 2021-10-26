@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma, User, UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { ChatService } from 'src/chat/chat.service';
@@ -193,7 +193,7 @@ export class InviteService {
     search: string,
     userID: string,
     insID: string,
-  ): Promise<User[]> {
+  ) {
     const theINS = await this.insService.ins(
       {
         id: insID,
