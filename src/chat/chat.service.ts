@@ -3,6 +3,7 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Channel, ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ChatService {
@@ -19,6 +20,84 @@ export class ChatService {
       process.env.GET_STREAM_API_KEY || '',
       process.env.GET_STREAM_API_SECRET,
     );
+  }
+
+  @Cron('0 1 * * *')
+  async cleanUpStreamChat() {
+    try {
+      this.logger.log('Clean up stream chat users');
+
+      this.logger.log('Getting users from db');
+      const users = await this.userService.users({});
+      const usersIDs = users.map((user) => user.id);
+
+      this.logger.log('Getting stream chat users');
+      const limit = 100;
+      let offset = 0;
+      let streamUsers;
+      const allUsersIDs: string[] = [];
+      do {
+        streamUsers = await this.streamChat.queryUsers(
+          {},
+          { created_at: 1 },
+          { limit, offset },
+        );
+        const userIDs: string[] = streamUsers.users
+          .filter((streamUser) => streamUser.role === 'user')
+          .map((streamUser) => streamUser.id);
+        allUsersIDs.push(...userIDs);
+        offset = offset + limit;
+      } while (streamUsers.users.length);
+
+      const nonexistentUsersIDs = allUsersIDs.filter(
+        (userID) => !usersIDs.includes(userID),
+      );
+      await Promise.all(
+        nonexistentUsersIDs.map(async (userID) => {
+          await this.deleteStreamUser(userID);
+        }),
+      );
+
+      this.logger.log(
+        `Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
+      );
+
+      this.logger.log('Clean up channels');
+
+      this.logger.log('Getting inses from db');
+      const inses = await this.insService.inses({});
+      const insesIDs = inses.map((ins) => ins.id);
+
+      this.logger.log('Getting channels');
+      offset = 0;
+      let channels;
+      const allChannels: Channel[] = [];
+      do {
+        channels = await this.streamChat.queryChannels(
+          {},
+          { created_at: 1 },
+          { limit, offset },
+        );
+        allChannels.push(...channels);
+        offset = offset + limit;
+      } while (channels.length);
+
+      const nonexistentChannels = allChannels.filter(
+        (channel) => channel.id && !insesIDs.includes(channel.id),
+      );
+      await Promise.all(
+        nonexistentChannels.map(async (channel) => {
+          await channel.delete();
+        }),
+      );
+
+      this.logger.log(
+        `Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error cleaned up stream chat!', stringErr);
+    }
   }
 
   createStreamChatToken(id: string) {
@@ -207,7 +286,7 @@ export class ChatService {
     );
 
     const allUsers = await this.streamChat.queryUsers({});
-    const users = allUsers.users.filter((user) => user.id !== 'cristipele7');
+    const users = allUsers.users.filter((user) => user.role === 'user');
     this.logger.log(`Removing users ${users.map((user) => user.id)}`);
     await Promise.all(
       users.map(async (user) => {
