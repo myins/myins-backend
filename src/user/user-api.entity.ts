@@ -1,4 +1,6 @@
+import { NotificationSource } from '.prisma/client';
 import {
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsOptional,
@@ -64,4 +66,16 @@ export class SetLastNotificationAPI {
   @IsString()
   @IsNotEmpty()
   notifID: string;
+}
+
+export class EnableDisableNotificationAPI {
+  @IsArray()
+  @IsNotEmpty()
+  @IsOptional()
+  sources: NotificationSource[];
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @IsOptional()
+  all: boolean;
 }

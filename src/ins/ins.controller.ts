@@ -124,7 +124,7 @@ export class InsController {
     }
 
     this.logger.log(`Getting posts with all media for ins ${id}`);
-    return this.insService.mediaForIns(id, skip, take);
+    return this.insService.mediaForIns(userID, id, skip, take);
   }
 
   @Get(':id/members')

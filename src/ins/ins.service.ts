@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
+import { INS, Post, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -95,11 +95,18 @@ export class InsService {
   }
 
   async mediaForIns(
+    userID: string,
     insID: string,
     skip: number,
     take: number,
   ): Promise<Post[]> {
     return this.postService.posts({
+      skip: skip,
+      take: take,
+      include: this.postService.richPostInclude(userID),
+      orderBy: {
+        createdAt: 'desc',
+      },
       where: {
         inses: {
           some: {
@@ -107,18 +114,6 @@ export class InsService {
           },
         },
         pending: false,
-      },
-      include: {
-        mediaContent: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-      },
-      skip: skip,
-      take: take,
-      orderBy: {
-        createdAt: 'desc',
       },
     });
   }
@@ -128,7 +123,7 @@ export class InsService {
     skip?: number,
     take?: number,
     filter?: string,
-  ): Promise<User[]> {
+  ) {
     //console.log(`Filter: ${filter}`)
     return this.userService.users({
       where: {

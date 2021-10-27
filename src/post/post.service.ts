@@ -47,7 +47,11 @@ export class PostService {
           userId: true,
         },
       },
-      mediaContent: true,
+      mediaContent: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
       inses: true,
       author: {
         select: ShallowUserSelect,

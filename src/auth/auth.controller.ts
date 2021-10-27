@@ -56,7 +56,12 @@ export class AuthController {
   @ApiBearerAuth()
   async logout(@PrismaUser() user: User) {
     this.logger.log(`Logout user ${user.id}`);
-    return this.authService.logout(user);
+    await this.authService.logout(user);
+
+    this.logger.log('User logged out');
+    return {
+      message: 'User logged out!',
+    };
   }
 
   @Post('verifyCode')
@@ -67,6 +72,8 @@ export class AuthController {
       `Verifying user by phone number ${phone} with code ${code}`,
     );
     await this.authService.verifyUser(accountData);
+
+    this.logger.log('User verified');
     return {
       message: 'User verified!',
     };
