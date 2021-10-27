@@ -25,7 +25,7 @@ export class UserNotificationsController {
   constructor(private readonly userService: UserService) {}
 
   @Patch('setLastNotification')
-  @ApiTags('users')
+  @ApiTags('users-notifications')
   @UseGuards(JwtAuthGuard)
   async setLastNotification(
     @Body() data: SetLastNotificationAPI,
@@ -40,7 +40,7 @@ export class UserNotificationsController {
   }
 
   @Patch('enable-notification-source')
-  @ApiTags('users')
+  @ApiTags('users-notifications')
   @UseGuards(JwtAuthGuard)
   async enableNotificationSource(
     @Body() data: EnableDisableNotificationAPI,
@@ -55,7 +55,7 @@ export class UserNotificationsController {
   }
 
   @Patch('disable-notification-source')
-  @ApiTags('users')
+  @ApiTags('users-notifications')
   @UseGuards(JwtAuthGuard)
   async disableNotificationSource(
     @Body() data: EnableDisableNotificationAPI,
