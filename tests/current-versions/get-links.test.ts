@@ -5,7 +5,7 @@ import { CurrentVersionsController } from 'src/current-versions/current-versions
 import { CurrentVersionsService } from 'src/current-versions/current-versions.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { prismaMock } from 'tests/prisma-mock';
-import { currentVersionsMock } from './__mocks__';
+import { currentVersionsMock } from 'tests/__mocks__/current-versions';
 
 describe('[CurrentVersionsController] GET /current-versions/links', () => {
   let currentVersionsController: CurrentVersionsController;
@@ -27,7 +27,7 @@ describe('[CurrentVersionsController] GET /current-versions/links', () => {
     );
   });
 
-  it('[getLinks] return links for TC and PP', async () => {
+  test('[getLinks] return links for TC and PP', async () => {
     const expectedResult: Links = {
       TC: currentVersionsMock.find(
         (cv) => cv.type === DocumentType.TERMS_AND_CONDITIONS,
