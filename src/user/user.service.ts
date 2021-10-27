@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   forwardRef,
   Inject,
   Injectable,
@@ -228,6 +229,16 @@ export class UserService {
     disable: boolean,
   ): Promise<User> {
     const { sources, all } = data;
+
+    if (!all && !sources?.length) {
+      this.logger.error(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+      throw new BadRequestException(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+    }
+
     this.logger.log(
       `Updating user ${user.id}. Change disabled notifications for ${
         all ? 'all sources' : 'sources ' + sources

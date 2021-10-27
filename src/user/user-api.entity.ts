@@ -71,9 +71,11 @@ export class SetLastNotificationAPI {
 export class EnableDisableNotificationAPI {
   @IsArray()
   @IsNotEmpty()
+  @IsOptional()
   sources: NotificationSource[];
 
   @IsBoolean()
   @IsNotEmpty()
+  @IsOptional()
   all: boolean;
 }
