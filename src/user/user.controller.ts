@@ -27,7 +27,6 @@ import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import {
   CreateUserAPI,
-  SetLastNotificationAPI,
   UpdatePushTokenAPI,
   UpdateUserAPI,
 } from './user-api.entity';
@@ -212,16 +211,6 @@ export class UserController {
     };
   }
 
-  @Patch('setLastNotification')
-  @ApiTags('users')
-  @UseGuards(JwtAuthGuard)
-  async setLastNotification(
-    @Body() data: SetLastNotificationAPI,
-    @PrismaUser('id') userID: string,
-  ) {
-    return this.userService.setLastReadNotificationID(userID, data.notifID);
-  }
-
   @Delete(':id')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
@@ -235,6 +224,11 @@ export class UserController {
     }
 
     this.logger.log(`Deleting user ${userId}`);
-    return this.userService.deleteUser({ id: userId });
+    await this.userService.deleteUser({ id: userId });
+
+    this.logger.log('User successfully deleted');
+    return {
+      message: 'User successfully deleted!',
+    };
   }
 }

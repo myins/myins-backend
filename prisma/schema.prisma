@@ -38,6 +38,7 @@ model User {
   lastAcceptedPrivacyPolicyVersion      DateTime?
 
   lastReadNotificationID String?
+  disabledNotifications  NotificationSource[]
 }
 
 model PostContent {
@@ -176,7 +177,6 @@ enum NotificationSource {
   LIKE_POST
   COMMENT
   LIKE_COMMENT
-  SHARED_POST
 }
 
 enum UserRole {

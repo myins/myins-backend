@@ -201,7 +201,7 @@ export class ChatService {
           },
         },
       });
-      await this.createOrUpdateStreamUsers(users);
+      await this.createOrUpdateStreamUsers(<User[]>users);
       await channels[0].addMembers(userIDs);
     } catch (e) {
       const stringErr: string = <string>e;

@@ -101,33 +101,33 @@ export class NotificationService {
     });
   }
 
-  async pushCustomNotification(
-    targetID: string,
-    sourceID: string,
-    source: 'REQUESTED_FOLLOW' | 'REQUESTED_COMMENT' | 'REQUESTED_COMMENT_EDIT',
-  ) {
-    if (!targetID || !sourceID) {
-      this.logger.error(
-        "You're supposed to always connect users for notifications!",
-      );
-      throw new BadRequestException(
-        "You're supposed to always connect users for notifications!",
-      );
-    }
+  // async pushCustomNotification(
+  //   targetID: string,
+  //   sourceID: string,
+  //   source: 'REQUESTED_FOLLOW' | 'REQUESTED_COMMENT' | 'REQUESTED_COMMENT_EDIT',
+  // ) {
+  //   if (!targetID || !sourceID) {
+  //     this.logger.error(
+  //       "You're supposed to always connect users for notifications!",
+  //     );
+  //     throw new BadRequestException(
+  //       "You're supposed to always connect users for notifications!",
+  //     );
+  //   }
 
-    const targetUser = await this.users.user({ id: targetID });
-    const authorUser = await this.users.user({ id: sourceID });
-    if (authorUser && targetUser?.pushToken) {
-      return this.pushService.pushData(
-        targetUser.pushToken,
-        targetUser?.sandboxToken ?? false,
-        this.constructNotificationBody(authorUser, targetUser, {
-          source: source,
-          authorId: authorUser.id,
-        }),
-      );
-    }
-  }
+  //   const targetUser = await this.users.user({ id: targetID });
+  //   const authorUser = await this.users.user({ id: sourceID });
+  //   if (authorUser && targetUser?.pushToken) {
+  //     return this.pushService.pushData(
+  //       targetUser.pushToken,
+  //       targetUser?.sandboxToken ?? false,
+  //       this.constructNotificationBody(authorUser, targetUser, {
+  //         source: source,
+  //         authorId: authorUser.id,
+  //       }),
+  //     );
+  //   }
+  // }
 
   async pushSingleNotification(notif: Prisma.NotificationCreateInput) {
     const targetID = notif.target.connect?.id;
@@ -144,7 +144,12 @@ export class NotificationService {
 
     const targetUser = await this.users.user({ id: targetID });
     const authorUser = await this.users.user({ id: sourceID });
-    if (authorUser && targetUser?.pushToken) {
+    if (
+      authorUser &&
+      targetUser?.pushToken &&
+      !targetUser.disabledNotifications.includes(notif.source)
+    ) {
+      this.logger.log(`Adding push notification`);
       return this.pushService.pushData(
         targetUser.pushToken,
         targetUser?.sandboxToken ?? false,
@@ -180,7 +185,12 @@ export class NotificationService {
         const targetUser = users.find(
           (each2) => each2.id == each.targetId,
         )?.data;
-        if (authorUser && targetUser && targetUser.pushToken) {
+        if (
+          authorUser &&
+          targetUser?.pushToken &&
+          !targetUser.disabledNotifications.includes(each.source)
+        ) {
+          this.logger.log(`Adding push notification`);
           this.pushService.pushData(
             targetUser.pushToken,
             targetUser.sandboxToken ?? false,
@@ -211,20 +221,8 @@ export class NotificationService {
       case 'COMMENT':
         body = `${authorName} commented on your post!`;
         break;
-      case 'REQUESTED_COMMENT':
-        body = `${authorName} wants to comment on your post!`;
-        break;
-      case 'REQUESTED_COMMENT_EDIT':
-        body = `${authorName} wants to edit his comment on your post!`;
-        break;
       case 'LIKE_COMMENT':
         body = `${authorName} liked your comment!`;
-        break;
-      case 'REQUESTED_FOLLOW':
-        body = `${authorName} has asked to follow you!`;
-        break;
-      case 'SHARED_POST':
-        body = `${authorName} has shared a post with you!`;
         break;
       default:
         unreachable(source.source);
@@ -266,11 +264,7 @@ export class NotificationService {
 }
 
 interface NotificationEitherInterface {
-  source:
-    | NotificationSource
-    | 'REQUESTED_FOLLOW'
-    | 'REQUESTED_COMMENT'
-    | 'REQUESTED_COMMENT_EDIT';
+  source: NotificationSource;
   postId?: string | null | undefined;
   commentId?: string | null | undefined;
   authorId?: string;
