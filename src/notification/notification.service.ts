@@ -215,14 +215,32 @@ export class NotificationService {
     };
 
     switch (source.source) {
-      case 'LIKE_POST':
+      case NotificationSource.LIKE_POST:
         body = `${authorName} liked your post!`;
         break;
-      case 'COMMENT':
+      case NotificationSource.LIKE_COMMENT:
         body = `${authorName} commented on your post!`;
         break;
-      case 'LIKE_COMMENT':
+      case NotificationSource.COMMENT:
         body = `${authorName} liked your comment!`;
+        break;
+      case NotificationSource.POST:
+        body = ``;
+        break;
+      case NotificationSource.ADDED_PHOTOS:
+        body = ``;
+        break;
+      case NotificationSource.MESSAGE:
+        body = ``;
+        break;
+      case NotificationSource.JOINED_INS:
+        body = ``;
+        break;
+      case NotificationSource.SOMEONE_JOINED_INS:
+        body = ``;
+        break;
+      case NotificationSource.JOIN_INS_REJECTED:
+        body = ``;
         break;
       default:
         unreachable(source.source);

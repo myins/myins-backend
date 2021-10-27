@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
-import { Comment } from 'prisma/prisma-client';
+import { Comment, NotificationSource } from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class CommentLikeService {
         `Creating notification for liking comment ${comment.id} by user ${userID}`,
       );
       await this.notifsService.createNotification({
-        source: 'LIKE_COMMENT',
+        source: NotificationSource.LIKE_COMMENT,
         target: {
           connect: {
             id: comment.authorId,
