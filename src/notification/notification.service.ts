@@ -101,34 +101,6 @@ export class NotificationService {
     });
   }
 
-  // async pushCustomNotification(
-  //   targetID: string,
-  //   sourceID: string,
-  //   source: 'REQUESTED_FOLLOW' | 'REQUESTED_COMMENT' | 'REQUESTED_COMMENT_EDIT',
-  // ) {
-  //   if (!targetID || !sourceID) {
-  //     this.logger.error(
-  //       "You're supposed to always connect users for notifications!",
-  //     );
-  //     throw new BadRequestException(
-  //       "You're supposed to always connect users for notifications!",
-  //     );
-  //   }
-
-  //   const targetUser = await this.users.user({ id: targetID });
-  //   const authorUser = await this.users.user({ id: sourceID });
-  //   if (authorUser && targetUser?.pushToken) {
-  //     return this.pushService.pushData(
-  //       targetUser.pushToken,
-  //       targetUser?.sandboxToken ?? false,
-  //       this.constructNotificationBody(authorUser, targetUser, {
-  //         source: source,
-  //         authorId: authorUser.id,
-  //       }),
-  //     );
-  //   }
-  // }
-
   async pushSingleNotification(notif: Prisma.NotificationCreateInput) {
     const targetID = notif.target.connect?.id;
     const sourceID = notif.author.connect?.id;
@@ -231,8 +203,9 @@ export class NotificationService {
         body = ``;
         break;
       case NotificationSource.MESSAGE:
-        body = ``;
-        break;
+        throw new BadRequestException(
+          `Cannot send push notification of type ${NotificationSource.MESSAGE}`,
+        );
       case NotificationSource.JOINED_INS:
         body = ``;
         break;

@@ -151,7 +151,7 @@ export class CommentController {
     await this.interactionService.interactComment(user.id, toRet.id);
 
     if (post.authorId !== user.id) {
-      this.logger.log(`Creating notification for comment ${toRet.id}`);
+      this.logger.log(`Creating notification for adding comment ${toRet.id}`);
       await this.notificationService.createNotification(
         {
           source: NotificationSource.COMMENT,

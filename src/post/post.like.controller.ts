@@ -126,29 +126,28 @@ export class PostLikeController {
     );
     await this.interactionService.interactPost(user.id, toRet.id);
 
-    if (post.authorId !== user.id) {
-      this.logger.log(
-        `Creating notification for liking post ${postID} by user ${user.id}`,
-      );
-      await this.notificationsService.createNotification({
-        source: NotificationSource.LIKE_POST,
-        target: {
-          connect: {
-            id: post.authorId,
-          },
+    this.logger.log(
+      `Creating notification for liking post ${postID} by user ${user.id}`,
+    );
+    await this.notificationsService.createNotification({
+      source: NotificationSource.LIKE_POST,
+      target: {
+        connect: {
+          id: post.authorId,
         },
-        author: {
-          connect: {
-            id: user.id,
-          },
+      },
+      author: {
+        connect: {
+          id: user.id,
         },
-        post: {
-          connect: {
-            id: toRet.id,
-          },
+      },
+      post: {
+        connect: {
+          id: toRet.id,
         },
-      });
-    }
+      },
+    });
+
     return toRet;
   }
 
