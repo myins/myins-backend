@@ -95,11 +95,18 @@ export class InsService {
   }
 
   async mediaForIns(
+    userID: string,
     insID: string,
     skip: number,
     take: number,
   ): Promise<Post[]> {
     return this.postService.posts({
+      skip: skip,
+      take: take,
+      include: this.postService.richPostInclude(userID),
+      orderBy: {
+        createdAt: 'desc',
+      },
       where: {
         inses: {
           some: {
@@ -107,18 +114,6 @@ export class InsService {
           },
         },
         pending: false,
-      },
-      include: {
-        mediaContent: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-      },
-      skip: skip,
-      take: take,
-      orderBy: {
-        createdAt: 'desc',
       },
     });
   }
