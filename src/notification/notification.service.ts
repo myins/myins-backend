@@ -204,14 +204,7 @@ export class NotificationService {
       case NotificationSource.ADDED_PHOTOS:
         body = ``;
         break;
-      case NotificationSource.MESSAGE:
-        throw new BadRequestException(
-          `Cannot send push notification of type ${NotificationSource.MESSAGE}`,
-        );
       case NotificationSource.JOINED_INS:
-        body = ``;
-        break;
-      case NotificationSource.SOMEONE_JOINED_INS:
         body = ``;
         break;
       case NotificationSource.JOIN_INS_REJECTED:
