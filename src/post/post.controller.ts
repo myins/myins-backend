@@ -238,11 +238,6 @@ export class PostController {
     await this.notificationService.createNotification(
       {
         source: NotificationSource.POST,
-        target: {
-          connect: {
-            id: post.authorId,
-          },
-        },
         author: {
           connect: {
             id: userID,

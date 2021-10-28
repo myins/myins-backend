@@ -190,11 +190,6 @@ export class PostMediaService {
             source: userID
               ? NotificationSource.ADDED_PHOTOS
               : NotificationSource.POST,
-            target: {
-              connect: {
-                id: updatedPost.authorId,
-              },
-            },
             author: {
               connect: {
                 id: updatedPost.authorId,
@@ -205,6 +200,7 @@ export class PostMediaService {
                 id: post.id,
               },
             },
+            photoCount: realMediaCount,
           },
           false,
         );

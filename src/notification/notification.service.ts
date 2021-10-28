@@ -102,7 +102,7 @@ export class NotificationService {
   }
 
   async pushSingleNotification(notif: Prisma.NotificationCreateInput) {
-    const targetID = notif.target.connect?.id;
+    const targetID = notif.target?.connect?.id;
     const sourceID = notif.author.connect?.id;
 
     if (!targetID || !sourceID) {
@@ -136,14 +136,16 @@ export class NotificationService {
     ];
 
     const flatMapped = userIDs.flatMap(async (each) => {
-      const user = await this.users.user({ id: each });
-      if (!user) {
-        return;
+      if (each) {
+        const user = await this.users.user({ id: each });
+        if (!user) {
+          return;
+        }
+        return {
+          id: user?.id,
+          data: user,
+        };
       }
-      return {
-        id: user?.id,
-        data: user,
-      };
     });
     const users = (
       await Promise.all(flatMapped.flatMap((each) => each))
