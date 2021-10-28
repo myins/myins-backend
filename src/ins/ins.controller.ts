@@ -231,26 +231,24 @@ export class InsController {
       };
     }
 
-    this.logger.log(`Adding user ${userID} as member in ins ${theINS.id}`);
+    this.logger.log(
+      `Adding user ${userID} as pending member in ins ${theINS.id}`,
+    );
     await this.insService.update({
       where: { id: theINS.id },
       data: {
         members: {
           create: {
             userId: userID,
+            role: UserRole.PENDING,
           },
         },
       },
     });
 
-    this.logger.log(
-      `Adding stream user ${userID} as member in channel ${theINS.id}`,
-    );
-    await this.chatService.addMembersToChannel([userID], theINS.id);
-
-    this.logger.log('Joined the INS');
+    this.logger.log('Joined the INS as pending member');
     return {
-      message: 'Joined the INS!',
+      message: 'Joined the INS as pending member!',
     };
   }
 

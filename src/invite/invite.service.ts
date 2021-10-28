@@ -159,13 +159,11 @@ export class InviteService {
     );
     const data = usersNotInINS.map((otherUser) => ({
       userId: otherUser,
-      // after implement pendingMembers, here the role will be changed to UserRole.PENDING and
-      // the addMembersToChannel from line 139 will be moved to approve user function from user service
-      role: UserRole.MEMBER,
+      role: UserRole.PENDING,
     }));
 
     this.logger.log(
-      `Update ins ${theINS[0].id}. Adding members ${usersNotInINS}`,
+      `Update ins ${theINS[0].id}. Adding pending members ${usersNotInINS}`,
     );
     await this.insService.update({
       where: {
@@ -179,11 +177,6 @@ export class InviteService {
         },
       },
     });
-
-    this.logger.log(
-      `Adding stream users ${otherUsers} as members in channel ${theINS[0].id}`,
-    );
-    await this.chatService.addMembersToChannel(otherUsers, theINS[0].id);
   }
 
   async invitesList(
