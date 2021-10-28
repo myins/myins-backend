@@ -118,12 +118,15 @@ model Notification {
   id        String             @id @default(uuid())
   createdAt DateTime           @default(now())
   source    NotificationSource
-  target    User               @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  targetId  String
+  target    User?              @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  targetId  String?
 
   // Some notifications come from the ether, others from the user
   author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId String
+
+  ins   INS?    @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  insId String?
 
   //Some notifications have a related post / comment, sometimes both
   post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -131,6 +134,8 @@ model Notification {
 
   comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   commentId String?
+
+  photoCount Int?
 }
 
 model INS {
@@ -142,6 +147,7 @@ model INS {
   members             UserInsConnection[]
   posts               Post[]
   invitedPhoneNumbers String[]
+  notifications       Notification[]
 
   createdAt DateTime @default(now())
 }
@@ -175,8 +181,12 @@ enum DocumentType {
 
 enum NotificationSource {
   LIKE_POST
-  COMMENT
   LIKE_COMMENT
+  COMMENT
+  POST
+  ADDED_PHOTOS
+  JOINED_INS
+  JOIN_INS_REJECTED
 }
 
 enum UserRole {

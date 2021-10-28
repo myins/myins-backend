@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { User } from '@prisma/client';
+import { NotificationSource, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
@@ -29,7 +29,7 @@ export class PostLikeController {
 
   constructor(
     private readonly postService: PostService,
-    private readonly notificationsService: NotificationService,
+    private readonly notificationService: NotificationService,
     private readonly interactionService: InteractionService,
     private readonly postLikeService: PostLikeService,
   ) {}
@@ -126,29 +126,28 @@ export class PostLikeController {
     );
     await this.interactionService.interactPost(user.id, toRet.id);
 
-    if (post.authorId !== user.id) {
-      this.logger.log(
-        `Creating notification for liking post ${postID} by user ${user.id}`,
-      );
-      await this.notificationsService.createNotification({
-        source: 'LIKE_POST',
-        target: {
-          connect: {
-            id: post.authorId,
-          },
+    this.logger.log(
+      `Creating notification for liking post ${postID} by user ${user.id}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.LIKE_POST,
+      target: {
+        connect: {
+          id: post.authorId,
         },
-        author: {
-          connect: {
-            id: user.id,
-          },
+      },
+      author: {
+        connect: {
+          id: user.id,
         },
-        post: {
-          connect: {
-            id: toRet.id,
-          },
+      },
+      post: {
+        connect: {
+          id: toRet.id,
         },
-      });
-    }
+      },
+    });
+
     return toRet;
   }
 

@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Prisma, User } from '@prisma/client';
+import { NotificationSource, Prisma, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
@@ -150,33 +150,35 @@ export class CommentController {
     );
     await this.interactionService.interactComment(user.id, toRet.id);
 
-    this.logger.log(`Creating notification for comment ${toRet.id}`);
-    await this.notificationService.createNotification(
-      {
-        source: 'COMMENT',
-        target: {
-          connect: {
-            id: post.authorId,
+    if (post.authorId !== user.id) {
+      this.logger.log(`Creating notification for adding comment ${toRet.id}`);
+      await this.notificationService.createNotification(
+        {
+          source: NotificationSource.COMMENT,
+          target: {
+            connect: {
+              id: post.authorId,
+            },
+          },
+          author: {
+            connect: {
+              id: user.id,
+            },
+          },
+          comment: {
+            connect: {
+              id: toRet.id,
+            },
+          },
+          post: {
+            connect: {
+              id: post.id,
+            },
           },
         },
-        author: {
-          connect: {
-            id: user.id,
-          },
-        },
-        comment: {
-          connect: {
-            id: toRet.id,
-          },
-        },
-        post: {
-          connect: {
-            id: post.id,
-          },
-        },
-      },
-      false,
-    );
+        false,
+      );
+    }
 
     this.logger.log('Successfully created comment');
     return toRet;
