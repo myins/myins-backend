@@ -29,7 +29,7 @@ export class PostLikeController {
 
   constructor(
     private readonly postService: PostService,
-    private readonly notificationsService: NotificationService,
+    private readonly notificationService: NotificationService,
     private readonly interactionService: InteractionService,
     private readonly postLikeService: PostLikeService,
   ) {}
@@ -129,7 +129,7 @@ export class PostLikeController {
     this.logger.log(
       `Creating notification for liking post ${postID} by user ${user.id}`,
     );
-    await this.notificationsService.createNotification({
+    await this.notificationService.createNotification({
       source: NotificationSource.LIKE_POST,
       target: {
         connect: {
