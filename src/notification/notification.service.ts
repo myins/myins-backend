@@ -82,12 +82,8 @@ export class NotificationService {
 
   async createNotification(
     data: Prisma.NotificationCreateInput,
-    silent?: boolean,
   ): Promise<Notification> {
-    // const sSilent = silent ?? false;
-    // if (!sSilent) {
-    //   this.pushService.pushNotification(data);
-    // }
+    await this.pushService.pushNotification(data);
     return this.prisma.notification.create({
       data,
     });

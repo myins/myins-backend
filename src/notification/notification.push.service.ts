@@ -62,11 +62,12 @@ export class NotificationPushService {
           target?.pushToken &&
           !target.disabledNotifications.includes(notif.source)
         ) {
-          this.logger.log(`Adding push notification`);
-          return this.pushData(
+          this.logger.log('Adding push notification');
+          const notifBody = await this.constructNotificationBody(target, notif);
+          await this.pushData(
             target.pushToken,
             target?.sandboxToken ?? false,
-            await this.constructNotificationBody(target, notif),
+            notifBody,
           );
         }
       }),
@@ -144,7 +145,7 @@ export class NotificationPushService {
             copy[each] = JSON.stringify(x[each]);
           });
 
-          this.messagingService.sendToDevice(token, {
+          await this.messagingService.sendToDevice(token, {
             notification: {
               title: data.title,
               body: data.body,
@@ -158,7 +159,7 @@ export class NotificationPushService {
       if (!couldUnwrapAndSend) {
         // No data, send it without
 
-        this.messagingService.sendToDevice(token, {
+        await this.messagingService.sendToDevice(token, {
           notification: {
             title: data.title,
             body: data.body,
@@ -259,19 +260,30 @@ export class NotificationPushService {
         }
         break;
       case NotificationSource.JOINED_INS:
+        const authorInsJoined = await this.userService.user({
+          id: source.author.connect?.id,
+        });
+        const insJoined = await this.insService.ins({
+          id: source.ins?.connect?.id,
+        });
         if (source.author.connect?.id === target.id) {
-          body = `You joined ${source.ins?.connect?.id} ins!`;
+          body = `You joined ${insJoined?.name} ins!`;
         } else {
-          body = `${source.author.connect?.id} joined ${source.ins?.connect?.id} ins!`;
+          body = `${authorInsJoined?.firstName} ${authorInsJoined?.lastName} joined ${insJoined?.name} ins!`;
         }
         break;
       case NotificationSource.JOIN_INS_REJECTED:
-        body = `Access to ${source.ins?.connect?.id} has been declined!`;
+        const insJoinRejected = await this.insService.ins({
+          id: source.ins?.connect?.id,
+        });
+        body = `Access to ${insJoinRejected?.name} has been declined!`;
         break;
       default:
         unreachable(source.source);
         break;
     }
+
+    this.logger.log(`Body: ${body}`);
 
     return {
       title: 'MyINS',

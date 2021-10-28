@@ -235,22 +235,19 @@ export class PostController {
     });
 
     this.logger.log(`Creating notification for adding post ${postID}`);
-    await this.notificationService.createNotification(
-      {
-        source: NotificationSource.POST,
-        author: {
-          connect: {
-            id: userID,
-          },
-        },
-        post: {
-          connect: {
-            id: post.id,
-          },
+    await this.notificationService.createNotification({
+      source: NotificationSource.POST,
+      author: {
+        connect: {
+          id: userID,
         },
       },
-      false,
-    );
+      post: {
+        connect: {
+          id: post.id,
+        },
+      },
+    });
 
     this.logger.log(
       `Send message by user ${userID} in inses ${ins} with new post ${postID}`,
