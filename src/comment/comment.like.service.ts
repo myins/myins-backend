@@ -27,32 +27,34 @@ export class CommentLikeService {
       },
     });
 
-    this.logger.log(
-      `Creating notification for liking comment ${commentID} by user ${userID}`,
-    );
-    await this.notifsService.createNotification({
-      source: NotificationSource.LIKE_COMMENT,
-      target: {
-        connect: {
-          id: toRet.authorId,
+    if (toRet.authorId !== userID) {
+      this.logger.log(
+        `Creating notification for liking comment ${commentID} by user ${userID}`,
+      );
+      await this.notifsService.createNotification({
+        source: NotificationSource.LIKE_COMMENT,
+        target: {
+          connect: {
+            id: toRet.authorId,
+          },
         },
-      },
-      author: {
-        connect: {
-          id: userID,
+        author: {
+          connect: {
+            id: userID,
+          },
         },
-      },
-      post: {
-        connect: {
-          id: toRet.postId,
+        post: {
+          connect: {
+            id: toRet.postId,
+          },
         },
-      },
-      comment: {
-        connect: {
-          id: commentID,
+        comment: {
+          connect: {
+            id: commentID,
+          },
         },
-      },
-    });
+      });
+    }
 
     return toRet;
   }
