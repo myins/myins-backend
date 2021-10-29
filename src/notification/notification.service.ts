@@ -9,6 +9,7 @@ import {
   notificationFeedQuery,
   notificationFeedWithourPost,
 } from 'src/prisma-queries-helper/notification-feed';
+import { omit } from 'src/util/omit';
 
 @Injectable()
 export class NotificationService {
@@ -56,6 +57,7 @@ export class NotificationService {
           };
         }
       }
+      notif = omit(<NotificationFeed>notif, 'ins');
       return {
         ...notif,
         isSeen: !!notification && notification.createdAt > notif.createdAt,
