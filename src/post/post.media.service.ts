@@ -186,9 +186,7 @@ export class PostMediaService {
           } post ${toRet.id}`,
         );
         await this.notificationService.createNotification({
-          source: userID
-            ? NotificationSource.ADDED_PHOTOS
-            : NotificationSource.POST,
+          source: NotificationSource.POST,
           author: {
             connect: {
               id: updatedPost.authorId,
