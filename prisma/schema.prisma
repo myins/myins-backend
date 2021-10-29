@@ -184,9 +184,6 @@ enum NotificationSource {
   LIKE_COMMENT
   COMMENT
   POST
-  ADDED_PHOTOS
-  JOINED_INS
-  JOIN_INS_REJECTED
 }
 
 enum UserRole {
