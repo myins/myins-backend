@@ -185,25 +185,25 @@ export class PostMediaService {
             userID ? 'adding photos to' : 'adding'
           } post ${toRet.id}`,
         );
-        await this.notificationService.createNotification(
-          {
-            source: userID
-              ? NotificationSource.ADDED_PHOTOS
-              : NotificationSource.POST,
-            author: {
-              connect: {
-                id: updatedPost.authorId,
-              },
-            },
-            post: {
-              connect: {
-                id: post.id,
-              },
-            },
-            photoCount: realMediaCount,
-          },
-          false,
-        );
+        // await this.notificationService.createNotification(
+        //   {
+        //     source: userID
+        //       ? NotificationSource.ADDED_PHOTOS
+        //       : NotificationSource.POST,
+        //     author: {
+        //       connect: {
+        //         id: updatedPost.authorId,
+        //       },
+        //     },
+        //     post: {
+        //       connect: {
+        //         id: post.id,
+        //       },
+        //     },
+        //     photoCount: realMediaCount,
+        //   },
+        //   false,
+        // );
 
         this.logger.log(
           `Send message by user ${userID} in inses 

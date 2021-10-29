@@ -129,19 +129,19 @@ export class UserPendingController {
       this.logger.log(
         `Creating notification for joining ins ${data.insID} by user ${data.userID}`,
       );
-      await this.notificationService.createNotification({
-        source: NotificationSource.JOINED_INS,
-        author: {
-          connect: {
-            id: data.userID,
-          },
-        },
-        ins: {
-          connect: {
-            id: data.insID,
-          },
-        },
-      });
+      // await this.notificationService.createNotification({
+      //   source: NotificationSource.JOINED_INS,
+      //   author: {
+      //     connect: {
+      //       id: data.userID,
+      //     },
+      //   },
+      //   ins: {
+      //     connect: {
+      //       id: data.insID,
+      //     },
+      //   },
+      // });
 
       this.logger.log(
         `Adding stream user ${data.userID} as members in channel ${data.insID}`,
@@ -201,24 +201,24 @@ export class UserPendingController {
         this.logger.log(
           `Creating notification for decining user ${data.userID} from ins ${data.insID}`,
         );
-        await this.notificationService.createNotification({
-          source: NotificationSource.JOIN_INS_REJECTED,
-          target: {
-            connect: {
-              id: data.userID,
-            },
-          },
-          author: {
-            connect: {
-              id: data.userID,
-            },
-          },
-          ins: {
-            connect: {
-              id: data.insID,
-            },
-          },
-        });
+        // await this.notificationService.createNotification({
+        //   source: NotificationSource.JOIN_INS_REJECTED,
+        //   target: {
+        //     connect: {
+        //       id: data.userID,
+        //     },
+        //   },
+        //   author: {
+        //     connect: {
+        //       id: data.userID,
+        //     },
+        //   },
+        //   ins: {
+        //     connect: {
+        //       id: data.insID,
+        //     },
+        //   },
+        // });
       }
     }
 
