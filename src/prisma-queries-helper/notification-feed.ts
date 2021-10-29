@@ -17,17 +17,28 @@ const whereQuery = (targetId: string): Prisma.NotificationWhereInput => {
             ],
           },
           {
-            post: {
-              inses: {
-                some: {
-                  members: {
+            AND: [
+              {
+                post: {
+                  inses: {
                     some: {
-                      userId: targetId,
+                      members: {
+                        some: {
+                          userId: targetId,
+                        },
+                      },
                     },
                   },
                 },
               },
-            },
+              {
+                post: {
+                  NOT: {
+                    authorId: targetId,
+                  },
+                },
+              },
+            ],
           },
         ],
       },
