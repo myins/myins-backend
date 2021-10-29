@@ -152,32 +152,29 @@ export class CommentController {
 
     if (post.authorId !== user.id) {
       this.logger.log(`Creating notification for adding comment ${toRet.id}`);
-      await this.notificationService.createNotification(
-        {
-          source: NotificationSource.COMMENT,
-          target: {
-            connect: {
-              id: post.authorId,
-            },
-          },
-          author: {
-            connect: {
-              id: user.id,
-            },
-          },
-          comment: {
-            connect: {
-              id: toRet.id,
-            },
-          },
-          post: {
-            connect: {
-              id: post.id,
-            },
+      await this.notificationService.createNotification({
+        source: NotificationSource.COMMENT,
+        target: {
+          connect: {
+            id: post.authorId,
           },
         },
-        false,
-      );
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+        comment: {
+          connect: {
+            id: toRet.id,
+          },
+        },
+        post: {
+          connect: {
+            id: post.id,
+          },
+        },
+      });
     }
 
     this.logger.log('Successfully created comment');

@@ -185,25 +185,22 @@ export class PostMediaService {
             userID ? 'adding photos to' : 'adding'
           } post ${toRet.id}`,
         );
-        await this.notificationService.createNotification(
-          {
-            source: userID
-              ? NotificationSource.ADDED_PHOTOS
-              : NotificationSource.POST,
-            author: {
-              connect: {
-                id: updatedPost.authorId,
-              },
+        await this.notificationService.createNotification({
+          source: userID
+            ? NotificationSource.ADDED_PHOTOS
+            : NotificationSource.POST,
+          author: {
+            connect: {
+              id: updatedPost.authorId,
             },
-            post: {
-              connect: {
-                id: post.id,
-              },
-            },
-            photoCount: realMediaCount,
           },
-          false,
-        );
+          post: {
+            connect: {
+              id: post.id,
+            },
+          },
+          photoCount: realMediaCount,
+        });
 
         this.logger.log(
           `Send message by user ${userID} in inses 
