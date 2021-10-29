@@ -76,51 +76,51 @@ export class NotificationPushService {
   async getUsersIDsBySource(notif: Prisma.NotificationCreateInput) {
     let usersIDs: string[] = [];
 
-    const unreachable = (x: never) => {
-      this.logger.error(`This shouldn't be possible! ${x}`);
-      throw new Error(`This shouldn't be possible! ${x}`);
-    };
+    // const unreachable = (x: never) => {
+    //   this.logger.error(`This shouldn't be possible! ${x}`);
+    //   throw new Error(`This shouldn't be possible! ${x}`);
+    // };
 
     switch (notif.source) {
       case NotificationSource.LIKE_POST:
       case NotificationSource.LIKE_COMMENT:
       case NotificationSource.COMMENT:
-      case NotificationSource.JOIN_INS_REJECTED:
+        // case NotificationSource.JOIN_INS_REJECTED:
         usersIDs = notif.target?.connect?.id ? [notif.target?.connect?.id] : [];
         break;
       case NotificationSource.POST:
-      case NotificationSource.ADDED_PHOTOS:
-        const inses = await this.insService.inses({
-          where: {
-            posts: {
-              some: {
-                id: notif.post?.connect?.id,
-              },
-            },
-          },
-        });
-        const members = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: inses.map((ins) => ins.id),
-            },
-          },
-        });
-        usersIDs = members.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
-        break;
-      case NotificationSource.JOINED_INS:
-        const membersIns = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: notif.ins?.connect?.id,
-            },
-          },
-        });
-        usersIDs = membersIns.map((member) => member.userId);
-        break;
+      // case NotificationSource.ADDED_PHOTOS:
+      //   const inses = await this.insService.inses({
+      //     where: {
+      //       posts: {
+      //         some: {
+      //           id: notif.post?.connect?.id,
+      //         },
+      //       },
+      //     },
+      //   });
+      //   const members = await this.userConnectionService.getConnections({
+      //     where: {
+      //       insId: {
+      //         in: inses.map((ins) => ins.id),
+      //       },
+      //     },
+      //   });
+      //   usersIDs = members.map((member) => member.userId);
+      //   usersIDs = [...new Set(usersIDs)];
+      //   break;
+      // case NotificationSource.JOINED_INS:
+      //   const membersIns = await this.userConnectionService.getConnections({
+      //     where: {
+      //       insId: {
+      //         in: notif.ins?.connect?.id,
+      //       },
+      //     },
+      //   });
+      //   usersIDs = membersIns.map((member) => member.userId);
+      //   break;
       default:
-        unreachable(notif.source);
+        // unreachable(notif.source);
         break;
     }
 
@@ -182,10 +182,10 @@ export class NotificationPushService {
   ): Promise<PushNotifications.Data> {
     let body = '';
 
-    const unreachable = (x: never) => {
-      this.logger.error(`This shouldn't be possible! ${x}`);
-      throw new Error(`This shouldn't be possible! ${x}`);
-    };
+    // const unreachable = (x: never) => {
+    //   this.logger.error(`This shouldn't be possible! ${x}`);
+    //   throw new Error(`This shouldn't be possible! ${x}`);
+    // };
 
     switch (source.source) {
       case NotificationSource.LIKE_POST:
@@ -232,44 +232,44 @@ export class NotificationPushService {
           }!`;
         }
         break;
-      case NotificationSource.ADDED_PHOTOS:
-        const authorAddedPhotos = await this.userService.user({
-          id: source.author.connect?.id,
-        });
-        if (source.post?.connect?.id) {
-          const inses = await this.insService.inses({
-            where: {
-              members: {
-                some: {
-                  insId: target.id,
-                },
-              },
-              posts: {
-                some: {
-                  id: source.post.connect.id,
-                },
-              },
-            },
-          });
-          body = `${authorAddedPhotos?.firstName} ${
-            authorAddedPhotos?.lastName
-          } added ${source.photoCount} photos in ${inses.map(
-            (ins) => ins.name,
-          )} ${inses.length > 1 ? 'inses' : 'ins'}!`;
-        }
-        break;
-      case NotificationSource.JOINED_INS:
-        if (source.author.connect?.id === target.id) {
-          body = `You joined ${source.ins?.connect?.id} ins!`;
-        } else {
-          body = `${source.author.connect?.id} joined ${source.ins?.connect?.id} ins!`;
-        }
-        break;
-      case NotificationSource.JOIN_INS_REJECTED:
-        body = `Access to ${source.ins?.connect?.id} has been declined!`;
-        break;
+      // case NotificationSource.ADDED_PHOTOS:
+      //   const authorAddedPhotos = await this.userService.user({
+      //     id: source.author.connect?.id,
+      //   });
+      //   if (source.post?.connect?.id) {
+      //     const inses = await this.insService.inses({
+      //       where: {
+      //         members: {
+      //           some: {
+      //             insId: target.id,
+      //           },
+      //         },
+      //         posts: {
+      //           some: {
+      //             id: source.post.connect.id,
+      //           },
+      //         },
+      //       },
+      //     });
+      //     body = `${authorAddedPhotos?.firstName} ${
+      //       authorAddedPhotos?.lastName
+      //     } added ${source.photoCount} photos in ${inses.map(
+      //       (ins) => ins.name,
+      //     )} ${inses.length > 1 ? 'inses' : 'ins'}!`;
+      //   }
+      //   break;
+      // case NotificationSource.JOINED_INS:
+      //   if (source.author.connect?.id === target.id) {
+      //     body = `You joined ${source.ins?.connect?.id} ins!`;
+      //   } else {
+      //     body = `${source.author.connect?.id} joined ${source.ins?.connect?.id} ins!`;
+      //   }
+      //   break;
+      // case NotificationSource.JOIN_INS_REJECTED:
+      //   body = `Access to ${source.ins?.connect?.id} has been declined!`;
+      //   break;
       default:
-        unreachable(source.source);
+        // unreachable(source.source);
         break;
     }
 
