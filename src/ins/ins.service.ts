@@ -82,6 +82,7 @@ export class InsService {
         return {
           ...theRightINS,
           userRole: each.role,
+          pinned: each.pinned,
         };
       })
       .filter((each) => {
