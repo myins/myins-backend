@@ -10,11 +10,3 @@ ALTER TYPE "NotificationSource" ADD VALUE 'POST';
 ALTER TYPE "NotificationSource" ADD VALUE 'ADDED_PHOTOS';
 ALTER TYPE "NotificationSource" ADD VALUE 'JOINED_INS';
 ALTER TYPE "NotificationSource" ADD VALUE 'JOIN_INS_REJECTED';
-
--- AlterTable
-ALTER TABLE "Notification" ADD COLUMN     "insId" TEXT,
-ADD COLUMN     "photoCount" INTEGER,
-ALTER COLUMN "targetId" DROP NOT NULL;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_insId_fkey" FOREIGN KEY ("insId") REFERENCES "INS"("id") ON DELETE CASCADE ON UPDATE CASCADE;
