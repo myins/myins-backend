@@ -1,9 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, Notification } from '@prisma/client';
+import { Prisma, Notification, NotificationSource } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { NotificationPushService } from './notification.push.service';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import {
+  NotificationFeed,
+  notificationFeedCount,
+  notificationFeedQuery,
+  notificationFeedWithourPost,
+} from 'src/prisma-queries-helper/notification-feed';
 
 @Injectable()
 export class NotificationService {
@@ -24,43 +29,33 @@ export class NotificationService {
   }
 
   async getFeed(userID: string, skip: number, take: number) {
+    console.log('userID - ', userID);
     this.logger.log(`Getting count and notifications for user ${userID}`);
-    const count = await this.prisma.notification.count({
-      where: { targetId: userID },
-    });
-    const data = await this.prisma.notification.findMany({
-      where: {
-        targetId: userID,
-      },
-      include: {
-        author: {
-          select: ShallowUserSelect,
-        },
-        comment: {
-          select: {
-            content: true,
-          },
-        },
-        post: {
-          select: {
-            content: true,
-            mediaContent: true,
-          },
-        },
-      },
-      skip: skip,
-      take: take,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const feedNotificationsCount = await this.prisma.notification.count(
+      notificationFeedCount(userID),
+    );
+    const feedNotifications = await this.prisma.notification.findMany(
+      notificationFeedQuery(userID, skip, take),
+    );
 
     this.logger.log('Adding isSeen prop for every notification');
     const user = await this.users.user({ id: userID });
     const notification = user?.lastReadNotificationID
       ? await this.getById({ id: user?.lastReadNotificationID })
       : null;
-    const dataReturn = data.map((notif) => {
+    const dataReturn = feedNotifications.map((notif) => {
+      const notificationsWithINs: NotificationSource[] = [
+        NotificationSource.JOINED_INS,
+        NotificationSource.JOIN_INS_REJECTED,
+      ];
+      if (notificationsWithINs.includes(notif.source)) {
+        const ins = (<NotificationFeed>notif).ins;
+        if (ins) {
+          (<notificationFeedWithourPost>notif).post = {
+            inses: [ins],
+          };
+        }
+      }
       return {
         ...notif,
         isSeen: !!notification && notification.createdAt > notif.createdAt,
@@ -69,7 +64,7 @@ export class NotificationService {
 
     this.logger.log('Successfully getting notifications feed');
     return {
-      count: count,
+      count: feedNotificationsCount,
       data: dataReturn,
     };
   }
