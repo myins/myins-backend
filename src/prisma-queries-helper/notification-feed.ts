@@ -78,6 +78,7 @@ const includeQuery = (targetId: string) => {
             },
           },
         },
+        mediaContent: true,
       },
     },
   };
@@ -142,6 +143,7 @@ const includeQueryType = (targetId: string): Prisma.NotificationInclude => {
             },
           },
         },
+        mediaContent: true,
       },
     },
   };
