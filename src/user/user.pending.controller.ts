@@ -18,7 +18,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
-import { ApproveDenyUserAPI } from './user-api.entity';
+import { ApproveAllUserAPI, ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 
 @Controller('user/pending')
@@ -152,6 +152,31 @@ export class UserPendingController {
     this.logger.log('User successfully approved');
     return {
       message: 'User successfully approved',
+    };
+  }
+
+  @Patch('approve-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('users-pending')
+  async approveAll(
+    @PrismaUser('id') id: string,
+    @Body() data: ApproveAllUserAPI,
+  ) {
+    this.logger.log(
+      `Approving users ${data.userIDs} in ins ${data.insID} by user ${id}`,
+    );
+    await Promise.all(
+      data.userIDs.map(async (userID) => {
+        await this.approve(id, {
+          insID: data.insID,
+          userID,
+        });
+      }),
+    );
+
+    this.logger.log('Users successfully approved');
+    return {
+      message: 'Users successfully approved',
     };
   }
 

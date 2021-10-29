@@ -62,6 +62,16 @@ export class ApproveDenyUserAPI {
   insID: string;
 }
 
+export class ApproveAllUserAPI {
+  @IsString()
+  @IsNotEmpty()
+  userIDs: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  insID: string;
+}
+
 export class SetLastNotificationAPI {
   @IsString()
   @IsNotEmpty()
