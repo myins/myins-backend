@@ -197,7 +197,6 @@ export class PostMediaService {
               id: post.id,
             },
           },
-          photoCount: realMediaCount,
         });
 
         this.logger.log(
