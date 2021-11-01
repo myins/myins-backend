@@ -11,9 +11,6 @@ const whereQuery = (targetId: string): Prisma.NotificationWhereInput => {
               {
                 source: NotificationSource.POST,
               },
-              {
-                source: NotificationSource.ADDED_PHOTOS,
-              },
             ],
           },
           {
@@ -128,36 +125,7 @@ const includeQueryWithoutPost = (targetId: string) => {
 };
 
 const includeQueryType = (targetId: string): Prisma.NotificationInclude => {
-  return {
-    author: {
-      select: {
-        firstName: true,
-        lastName: true,
-        profilePicture: true,
-        id: true,
-      },
-    },
-    comment: {
-      select: {
-        content: true,
-      },
-    },
-    ins: true,
-    post: {
-      include: {
-        inses: {
-          where: {
-            members: {
-              some: {
-                userId: targetId,
-              },
-            },
-          },
-        },
-        mediaContent: true,
-      },
-    },
-  };
+  return includeQuery(targetId);
 };
 
 export const notificationFeedCount = (

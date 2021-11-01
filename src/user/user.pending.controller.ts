@@ -17,6 +17,10 @@ import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
+import {
+  PendingUsersInclude,
+  pendingUsersIncludeQueryType,
+} from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
 import { ApproveAllUserAPI, ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
@@ -44,46 +48,46 @@ export class UserPendingController {
     this.logger.log(
       `Getting pending users for inses where user ${id} is a member`,
     );
-    return this.userService.users({
+    const userConnections = await this.userConnectionService.getConnections({
       where: {
-        inses: {
-          some: {
-            ins: {
-              members: {
-                some: {
-                  userId: id,
-                  OR: [
-                    {
-                      role: 'MEMBER',
-                    },
-                    {
-                      role: 'ADMIN',
-                    },
-                  ],
-                },
-              },
-            },
-            role: 'PENDING',
-            OR: [
-              {
-                deniedByUsers: {
-                  equals: null,
-                },
-              },
-              {
-                NOT: {
-                  deniedByUsers: {
-                    has: id,
-                  },
-                },
-              },
-            ],
-          },
+        userId: id,
+      },
+    });
+    const countPendingUsers = await this.userConnectionService.count({
+      role: UserRole.PENDING,
+      insId: {
+        in: userConnections.map((connection) => connection.insId),
+      },
+    });
+    const pendingConenctions = await this.userConnectionService.getConnections({
+      where: {
+        role: UserRole.PENDING,
+        insId: {
+          in: userConnections.map((connection) => connection.insId),
         },
       },
+      include: pendingUsersIncludeQueryType,
       skip: skip,
       take: take,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
+
+    const dataPendingUsers = pendingConenctions.map((connection) => {
+      const conn = <PendingUsersInclude>connection;
+      return {
+        authorId: conn.user.id,
+        author: conn.user,
+        ins: conn.ins,
+        createdAt: conn.createdAt,
+      };
+    });
+
+    return {
+      count: countPendingUsers,
+      data: dataPendingUsers,
+    };
   }
 
   @Patch('approve')
