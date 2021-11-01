@@ -100,7 +100,7 @@ export class InviteService {
           await this.smsService.sendSMS(
             otherUserPhoneNumer,
             // `You've been invited to MyINS! Click this link to get the app: https://myinsdevelop.page.link/${theINS[0].shareCode}`,
-            'test',
+            `https://myinsdevelop.page.link/${theINS[0].shareCode}`,
           );
         }),
       );
