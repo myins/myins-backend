@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as PushNotifications from 'node-pushnotifications';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 if (process.env.NODE_ENV !== 'production') require('dotenv').config(); // This fixes env variables on dev
@@ -91,25 +91,12 @@ export class NotificationPushService {
         break;
       case NotificationSource.POST:
       case NotificationSource.ADDED_PHOTOS:
-        const inses = await this.insService.inses({
-          where: {
-            posts: {
-              some: {
-                id: notif.post?.connect?.id,
-              },
-            },
-          },
-        });
-        const members = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: inses.map((ins) => ins.id),
-            },
-          },
-        });
-        usersIDs = members.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
-        break;
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
       case NotificationSource.JOINED_INS:
         const membersIns = await this.userConnectionService.getConnections({
           where: {
@@ -234,31 +221,12 @@ export class NotificationPushService {
         }
         break;
       case NotificationSource.ADDED_PHOTOS:
-        const authorAddedPhotos = await this.userService.user({
-          id: source.author.connect?.id,
-        });
-        if (source.post?.connect?.id) {
-          const inses = await this.insService.inses({
-            where: {
-              members: {
-                some: {
-                  insId: target.id,
-                },
-              },
-              posts: {
-                some: {
-                  id: source.post.connect.id,
-                },
-              },
-            },
-          });
-          body = `${authorAddedPhotos?.firstName} ${
-            authorAddedPhotos?.lastName
-          } added ${source.photoCount} photos in ${inses.map(
-            (ins) => ins.name,
-          )} ${inses.length > 1 ? 'inses' : 'ins'}!`;
-        }
-        break;
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
       case NotificationSource.JOINED_INS:
         const authorInsJoined = await this.userService.user({
           id: source.author.connect?.id,

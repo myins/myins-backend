@@ -70,6 +70,10 @@ export class UserConnectionService {
     });
   }
 
+  async count(where: Prisma.UserInsConnectionWhereInput) {
+    return this.prisma.userInsConnection.count({ where });
+  }
+
   async changeAdmin(insId: string, newAdminId: string) {
     return this.prisma.$transaction(async () => {
       await this.updateMany({
