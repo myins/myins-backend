@@ -90,6 +90,25 @@ export class NotificationPushService {
         usersIDs = notif.target?.connect?.id ? [notif.target?.connect?.id] : [];
         break;
       case NotificationSource.POST:
+        const inses = await this.insService.inses({
+          where: {
+            posts: {
+              some: {
+                id: notif.post?.connect?.id,
+              },
+            },
+          },
+        });
+        const members = await this.userConnectionService.getConnections({
+          where: {
+            insId: {
+              in: inses.map((ins) => ins.id),
+            },
+          },
+        });
+        usersIDs = members.map((member) => member.userId);
+        usersIDs = [...new Set(usersIDs)];
+        break;
       case NotificationSource.ADDED_PHOTOS:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
