@@ -65,8 +65,26 @@ export class AuthService {
       throw new BadRequestException('Could not find user with that phone!');
     }
 
-    this.logger.log('Sending forgot password code');
-    return this.smsService.sendForgotPasswordCode(user);
+    const isMatch = await bcrypt.compare(data.oldPassword, user.password);
+    if (!isMatch) {
+      this.logger.error(
+        `Invalid password for user with phone ${user.phoneNumber}!`,
+      );
+      throw new BadRequestException(
+        'Invalid password for user with that phone!',
+      );
+    }
+
+    const saltOrRounds = 10;
+    const hashedPassword = await bcrypt.hash(data.newPassword, saltOrRounds);
+    return this.usersService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
