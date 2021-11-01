@@ -3,7 +3,7 @@ import * as PushNotifications from 'node-pushnotifications';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 if (process.env.NODE_ENV !== 'production') require('dotenv').config(); // This fixes env variables on dev
 import { FirebaseMessagingService } from '@aginix/nestjs-firebase-admin';
-import { NotificationSource, Prisma, User } from '.prisma/client';
+import { NotificationSource, Prisma, User, UserRole } from '.prisma/client';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -104,6 +104,9 @@ export class NotificationPushService {
             insId: {
               in: inses.map((ins) => ins.id),
             },
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         });
         usersIDs = members.map((member) => member.userId);
@@ -121,6 +124,9 @@ export class NotificationPushService {
           where: {
             insId: {
               in: notif.ins?.connect?.id,
+            },
+            role: {
+              not: UserRole.PENDING,
             },
           },
         });

@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, User } from '@prisma/client';
+import { NotificationSource, User, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
@@ -54,6 +54,9 @@ export class PostLikeController {
             members: {
               some: {
                 userId: userID,
+                role: {
+                  not: UserRole.PENDING,
+                },
               },
             },
           },

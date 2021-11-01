@@ -1,4 +1,4 @@
-import { NotificationSource, Prisma } from '.prisma/client';
+import { NotificationSource, Prisma, UserRole } from '.prisma/client';
 
 const whereQuery = (targetId: string): Prisma.NotificationWhereInput => {
   return {
@@ -22,6 +22,9 @@ const whereQuery = (targetId: string): Prisma.NotificationWhereInput => {
                       members: {
                         some: {
                           userId: targetId,
+                          role: {
+                            not: UserRole.PENDING,
+                          },
                         },
                       },
                     },

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Post } from '@prisma/client';
+import { Post, UserRole } from '@prisma/client';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { PostService } from './post.service';
 
@@ -26,6 +26,9 @@ export class PostFeedService {
             members: {
               some: {
                 userId: userID,
+                role: {
+                  not: UserRole.PENDING,
+                },
               },
             },
           },
@@ -40,6 +43,9 @@ export class PostFeedService {
     const allINS = await this.userConnectionService.getConnections({
       where: {
         userId: userID,
+        role: {
+          not: UserRole.PENDING,
+        },
       },
       orderBy: {
         interactions: 'desc',
