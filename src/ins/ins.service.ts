@@ -54,6 +54,9 @@ export class InsService {
                 },
               }
             : undefined,
+        role: {
+          not: UserRole.PENDING,
+        },
       },
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
