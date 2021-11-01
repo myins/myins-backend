@@ -31,7 +31,7 @@ export class PostService {
     });
   }
 
-  richPostInclude(userID: string): Prisma.PostInclude {
+  richPostInclude(userID: string, desc?: boolean): Prisma.PostInclude {
     return {
       _count: {
         select: {
@@ -49,7 +49,7 @@ export class PostService {
       },
       mediaContent: {
         orderBy: {
-          createdAt: 'desc',
+          createdAt: desc ? 'desc' : 'asc',
         },
       },
       inses: true,
