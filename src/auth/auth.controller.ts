@@ -13,6 +13,7 @@ import { User } from '@prisma/client';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import {
+  ChangePasswordAPI,
   CodePhoneAPI,
   PhoneBodyAPI,
   RefreshTokenBodyAPI,
@@ -133,6 +134,22 @@ export class AuthController {
     this.logger.log('Code sent successfully');
     return {
       message: 'Code sent successfully!',
+    };
+  }
+
+  @Post('change-password')
+  @ApiTags('auth')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @PrismaUser() user: User,
+    @Body() data: ChangePasswordAPI,
+  ) {
+    this.logger.log(`Changing password for phone number ${user.phoneNumber}`);
+    await this.authService.changePassword(user, data);
+
+    this.logger.log('Password changed successfully');
+    return {
+      message: 'Password changed successfully!',
     };
   }
 

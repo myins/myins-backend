@@ -13,7 +13,7 @@ import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { isTestNumber } from 'src/util/test-numbers';
-import { CodePhoneAPI } from './auth-api.entity';
+import { ChangePasswordAPI, CodePhoneAPI } from './auth-api.entity';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +30,7 @@ export class AuthService {
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
-    if (user == null) {
+    if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
@@ -47,13 +47,44 @@ export class AuthService {
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
-    if (user == null) {
+    if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
 
     this.logger.log('Sending forgot password code');
     return this.smsService.sendForgotPasswordCode(user);
+  }
+
+  async changePassword(user: User, data: ChangePasswordAPI) {
+    const userDB = await this.usersService.user({
+      phoneNumber: user.phoneNumber,
+    });
+    if (!userDB) {
+      this.logger.error(`Could not find user with phone ${user.phoneNumber}!`);
+      throw new BadRequestException('Could not find user with that phone!');
+    }
+
+    const isMatch = await bcrypt.compare(data.oldPassword, user.password);
+    if (!isMatch) {
+      this.logger.error(
+        `Invalid password for user with phone ${user.phoneNumber}!`,
+      );
+      throw new BadRequestException(
+        'Invalid password for user with that phone!',
+      );
+    }
+
+    const saltOrRounds = 10;
+    const hashedPassword = await bcrypt.hash(data.newPassword, saltOrRounds);
+    return this.usersService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
   }
 
   async checkIfCodeCorrect(phone: string, code: string) {
@@ -104,7 +135,7 @@ export class AuthService {
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
-    if (user == null) {
+    if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
@@ -140,7 +171,7 @@ export class AuthService {
     const user = await this.usersService.user({
       phoneNumber: phone,
     });
-    if (user == null) {
+    if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new BadRequestException('Could not find user with that phone!');
     }
@@ -184,7 +215,7 @@ export class AuthService {
       phoneNumber: phone,
     });
 
-    if (user == null) {
+    if (!user) {
       // Invalid user, just throw unauthorized
       this.logger.error(`Could not find user with phone ${phone}!`);
       throw new UnauthorizedException('Invalid phone / password!');
@@ -221,7 +252,7 @@ export class AuthService {
     const user = await this.usersService.user({
       id: userID,
     });
-    if (user == null) {
+    if (!user) {
       this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }
