@@ -29,3 +29,13 @@ export class InviteExternalUserToINSAPI {
   @IsPhoneNumber(undefined, { each: true })
   phoneNumbers: string[];
 }
+
+export class InviteTestMessageAPI {
+  @IsString()
+  @IsNotEmpty()
+  phoneNumber: string;
+
+  @IsString()
+  @IsNotEmpty()
+  message: string;
+}
