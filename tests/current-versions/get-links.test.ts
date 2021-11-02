@@ -13,13 +13,13 @@ describe('[CurrentVersionsController] GET /current-versions/links', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CurrentVersionsController,
         CurrentVersionsService,
         {
           provide: PrismaService,
           useValue: prismaMock,
         },
       ],
+      controllers: [CurrentVersionsController],
     }).compile();
 
     currentVersionsController = module.get<CurrentVersionsController>(
