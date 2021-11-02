@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
-import { Comment } from 'prisma/prisma-client';
+import { NotificationSource } from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
 
 @Injectable()
@@ -12,12 +12,12 @@ export class CommentLikeService {
     private readonly notifsService: NotificationService,
   ) {}
 
-  async likeComment(userID: string, comment: Comment) {
+  async likeComment(userID: string, commentID: string) {
     this.logger.log(
-      `Updating comment ${comment.id}. Adding like connection with user ${userID}`,
+      `Updating comment ${commentID}. Adding like connection with user ${userID}`,
     );
     const toRet = await this.commentService.updateComment({
-      where: { id: comment.id },
+      where: { id: commentID },
       data: {
         likes: {
           create: {
@@ -27,15 +27,15 @@ export class CommentLikeService {
       },
     });
 
-    if (comment.authorId != userID) {
+    if (toRet.authorId !== userID) {
       this.logger.log(
-        `Creating notification for liking comment ${comment.id} by user ${userID}`,
+        `Creating notification for liking comment ${commentID} by user ${userID}`,
       );
       await this.notifsService.createNotification({
-        source: 'LIKE_COMMENT',
+        source: NotificationSource.LIKE_COMMENT,
         target: {
           connect: {
-            id: comment.authorId,
+            id: toRet.authorId,
           },
         },
         author: {
@@ -45,31 +45,32 @@ export class CommentLikeService {
         },
         post: {
           connect: {
-            id: comment.postId,
+            id: toRet.postId,
           },
         },
         comment: {
           connect: {
-            id: comment.id,
+            id: commentID,
           },
         },
       });
     }
+
     return toRet;
   }
 
-  async unlikeComment(userID: string, comment: Comment) {
+  async unlikeComment(userID: string, commentID: string) {
     this.logger.log(
-      `Updating comment ${comment.id}. Deleting like connection with user ${userID}`,
+      `Updating comment ${commentID}. Deleting like connection with user ${userID}`,
     );
     return this.commentService.updateComment({
-      where: { id: comment.id },
+      where: { id: commentID },
       data: {
         likes: {
           delete: {
             userId_commentId: {
               userId: userID,
-              commentId: comment.id,
+              commentId: commentID,
             },
           },
         },

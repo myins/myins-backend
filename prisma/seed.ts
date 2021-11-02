@@ -1,5 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { Prisma, PrismaClient, UserRole, DocumentType } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  UserRole,
+  DocumentType,
+  NotificationSource,
+  Notification,
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { StreamChat } from 'stream-chat';
@@ -187,10 +194,42 @@ async function main() {
       },
     },
   });
+  const addFirstINSSecondUserNotification = await prisma.notification.create({
+    data: {
+      source: NotificationSource.JOINED_INS,
+      author: {
+        connect: {
+          id: secondUser.id,
+        },
+      },
+      ins: {
+        connect: {
+          id: firstINS.id,
+        },
+      },
+    },
+  });
+  const addFirstINSThirdUserNotification = await prisma.notification.create({
+    data: {
+      source: NotificationSource.JOINED_INS,
+      author: {
+        connect: {
+          id: thirdUser.id,
+        },
+      },
+      ins: {
+        connect: {
+          id: firstINS.id,
+        },
+      },
+    },
+  });
   logger.log(
     `Users ${dataAddFirstINS.map(
       (connection) => connection.userId,
-    )} successfully added to ins ${firstINS.id}`,
+    )} successfully added to ins ${firstINS.id}. Created notifications ${
+      addFirstINSSecondUserNotification.id
+    } and ${addFirstINSThirdUserNotification.id}`,
   );
 
   logger.log('Adding stream users to first channel');
@@ -222,10 +261,27 @@ async function main() {
       },
     },
   });
+  const addSecondINSThirdUserNotification = await prisma.notification.create({
+    data: {
+      source: NotificationSource.JOINED_INS,
+      author: {
+        connect: {
+          id: thirdUser.id,
+        },
+      },
+      ins: {
+        connect: {
+          id: secondINS.id,
+        },
+      },
+    },
+  });
   logger.log(
     `Users ${dataAddSecondINS.map(
       (connection) => connection.userId,
-    )} successfully added to ins ${secondINS.id}`,
+    )} successfully added to ins ${secondINS.id}. Created notification ${
+      addSecondINSThirdUserNotification.id
+    }`,
   );
 
   logger.log('Adding stream users to second channel');
@@ -261,10 +317,27 @@ async function main() {
       inses: true,
     },
   });
+  const firstPostNotification = await prisma.notification.create({
+    data: {
+      source: NotificationSource.POST,
+      author: {
+        connect: {
+          id: firstUser.id,
+        },
+      },
+      post: {
+        connect: {
+          id: firstPost.id,
+        },
+      },
+    },
+  });
   logger.log(
     `Post ${firstPost.id} succesfully created in inses ${[
       firstINS.id,
-    ]} by user ${firstUser.id}`,
+    ]} by user ${firstUser.id}. Created notification ${
+      firstPostNotification.id
+    }`,
   );
 
   logger.log('Sending a message in channels with first post');
@@ -315,11 +388,28 @@ async function main() {
       inses: true,
     },
   });
+  const secondPostNotification = await prisma.notification.create({
+    data: {
+      source: NotificationSource.POST,
+      author: {
+        connect: {
+          id: secondUser.id,
+        },
+      },
+      post: {
+        connect: {
+          id: secondPost.id,
+        },
+      },
+    },
+  });
   logger.log(
     `Post ${secondPost.id} succesfully created in inses ${[
       firstINS.id,
       secondINS.id,
-    ]} by user ${secondUser.id}`,
+    ]} by user ${secondUser.id}. Created notification ${
+      secondPostNotification.id
+    }`,
   );
 
   logger.log('Sending a message in channels with second post');
@@ -360,34 +450,37 @@ async function main() {
       },
     },
   });
-  const firstCommentNotification = await prisma.notification.create({
-    data: {
-      source: 'COMMENT',
-      target: {
-        connect: {
-          id: firstComment.authorId,
+  let firstCommentNotification: Notification;
+  if (firstPost.authorId) {
+    firstCommentNotification = await prisma.notification.create({
+      data: {
+        source: NotificationSource.COMMENT,
+        target: {
+          connect: {
+            id: firstPost.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: firstUser.id,
+          },
+        },
+        comment: {
+          connect: {
+            id: firstComment.id,
+          },
+        },
+        post: {
+          connect: {
+            id: firstPost.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: firstUser.id,
-        },
-      },
-      comment: {
-        connect: {
-          id: firstComment.id,
-        },
-      },
-      post: {
-        connect: {
-          id: firstPost.id,
-        },
-      },
-    },
-  });
-  logger.log(
-    `Comment ${firstComment.id} successfully created for post ${firstPost.id} by user ${firstUser.id}. Created notification ${firstCommentNotification.id}`,
-  );
+    });
+    logger.log(
+      `Comment ${firstComment.id} successfully created for post ${firstPost.id} by user ${firstUser.id}. Created notification ${firstCommentNotification.id}`,
+    );
+  }
 
   logger.log('Creating second comment');
   const secondComment = await prisma.comment.create({
@@ -412,34 +505,37 @@ async function main() {
       },
     },
   });
-  const secondCommentNotification = await prisma.notification.create({
-    data: {
-      source: 'COMMENT',
-      target: {
-        connect: {
-          id: secondComment.authorId,
+  let secondCommentNotification: Notification;
+  if (secondPost.authorId) {
+    secondCommentNotification = await prisma.notification.create({
+      data: {
+        source: NotificationSource.COMMENT,
+        target: {
+          connect: {
+            id: secondPost.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: secondUser.id,
+          },
+        },
+        comment: {
+          connect: {
+            id: secondComment.id,
+          },
+        },
+        post: {
+          connect: {
+            id: secondPost.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: secondUser.id,
-        },
-      },
-      comment: {
-        connect: {
-          id: secondComment.id,
-        },
-      },
-      post: {
-        connect: {
-          id: secondPost.id,
-        },
-      },
-    },
-  });
-  logger.log(
-    `Comment ${secondComment.id} successfully created for post ${secondPost.id} by user ${secondUser.id}. Created notification ${secondCommentNotification.id}`,
-  );
+    });
+    logger.log(
+      `Comment ${secondComment.id} successfully created for post ${secondPost.id} by user ${secondUser.id}. Created notification ${secondCommentNotification.id}`,
+    );
+  }
 
   logger.log('Creating third comment');
   const thirdComment = await prisma.comment.create({
@@ -464,34 +560,37 @@ async function main() {
       },
     },
   });
-  const thirdCommentNotification = await prisma.notification.create({
-    data: {
-      source: 'COMMENT',
-      target: {
-        connect: {
-          id: thirdComment.authorId,
+  let thirdCommentNotification: Notification;
+  if (secondPost.authorId) {
+    thirdCommentNotification = await prisma.notification.create({
+      data: {
+        source: NotificationSource.COMMENT,
+        target: {
+          connect: {
+            id: secondPost.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: thirdUser.id,
+          },
+        },
+        comment: {
+          connect: {
+            id: thirdComment.id,
+          },
+        },
+        post: {
+          connect: {
+            id: secondPost.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: thirdUser.id,
-        },
-      },
-      comment: {
-        connect: {
-          id: thirdComment.id,
-        },
-      },
-      post: {
-        connect: {
-          id: secondPost.id,
-        },
-      },
-    },
-  });
-  logger.log(
-    `Comment ${thirdComment.id} successfully created for post ${secondPost.id} by user ${thirdUser.id}. Created notification ${thirdCommentNotification.id}`,
-  );
+    });
+    logger.log(
+      `Comment ${thirdComment.id} successfully created for post ${secondPost.id} by user ${thirdUser.id}. Created notification ${thirdCommentNotification.id}`,
+    );
+  }
 
   logger.log('Creating first like post');
   await prisma.post.update({
@@ -517,29 +616,32 @@ async function main() {
       },
     },
   });
-  const firstLikePostNotification = await prisma.notification.create({
-    data: {
-      source: 'LIKE_POST',
-      target: {
-        connect: {
-          id: secondPost.authorId ?? undefined,
+  let firstLikePostNotification: Notification;
+  if (secondPost.authorId) {
+    firstLikePostNotification = await prisma.notification.create({
+      data: {
+        source: NotificationSource.LIKE_POST,
+        target: {
+          connect: {
+            id: secondPost.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: firstUser.id,
+          },
+        },
+        post: {
+          connect: {
+            id: secondPost.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: firstUser.id,
-        },
-      },
-      post: {
-        connect: {
-          id: secondPost.id,
-        },
-      },
-    },
-  });
-  logger.log(
-    `User ${firstUser.id} liked post ${secondPost.id}. Created notification ${firstLikePostNotification.id}`,
-  );
+    });
+    logger.log(
+      `User ${firstUser.id} liked post ${secondPost.id}. Created notification ${firstLikePostNotification.id}`,
+    );
+  }
 
   logger.log('Creating second like post');
   await prisma.post.update({
@@ -565,29 +667,32 @@ async function main() {
       },
     },
   });
-  const secondLikePostNotification = await prisma.notification.create({
-    data: {
-      source: 'LIKE_POST',
-      target: {
-        connect: {
-          id: firstPost.authorId ?? undefined,
+  let secondLikePostNotification: Notification;
+  if (firstPost.authorId) {
+    secondLikePostNotification = await prisma.notification.create({
+      data: {
+        source: NotificationSource.LIKE_POST,
+        target: {
+          connect: {
+            id: firstPost.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: thirdUser.id,
+          },
+        },
+        post: {
+          connect: {
+            id: firstPost.id,
+          },
         },
       },
-      author: {
-        connect: {
-          id: thirdUser.id,
-        },
-      },
-      post: {
-        connect: {
-          id: firstPost.id,
-        },
-      },
-    },
-  });
-  logger.log(
-    `User ${thirdUser.id} liked post ${firstPost.id}. Created notification ${secondLikePostNotification.id}`,
-  );
+    });
+    logger.log(
+      `User ${thirdUser.id} liked post ${firstPost.id}. Created notification ${secondLikePostNotification.id}`,
+    );
+  }
 
   logger.log('First like comment');
   await prisma.comment.update({
@@ -615,7 +720,7 @@ async function main() {
   });
   const firstLikeCommentNotification = await prisma.notification.create({
     data: {
-      source: 'LIKE_COMMENT',
+      source: NotificationSource.LIKE_COMMENT,
       target: {
         connect: {
           id: secondComment.authorId,
@@ -668,7 +773,7 @@ async function main() {
   });
   const secondLikeCommentNotification = await prisma.notification.create({
     data: {
-      source: 'LIKE_COMMENT',
+      source: NotificationSource.LIKE_COMMENT,
       target: {
         connect: {
           id: thirdComment.authorId,
@@ -721,7 +826,7 @@ async function main() {
   });
   const thirdLikeCommentNotification = await prisma.notification.create({
     data: {
-      source: 'LIKE_COMMENT',
+      source: NotificationSource.LIKE_COMMENT,
       target: {
         connect: {
           id: thirdComment.authorId,

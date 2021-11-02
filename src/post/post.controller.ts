@@ -13,7 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Post as PostModel } from '@prisma/client';
+import { NotificationSource, Post as PostModel } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
@@ -23,6 +23,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { SharePostAPI } from './post-api.entity';
 import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -34,6 +35,7 @@ export class PostController {
     private readonly insService: InsService,
     private readonly chatService: ChatService,
     private readonly postMediaService: PostMediaService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Get('pending')
@@ -228,6 +230,21 @@ export class PostController {
       data: {
         inses: {
           connect: ins.map((insId) => ({ id: insId })),
+        },
+      },
+    });
+
+    this.logger.log(`Creating notification for adding post ${postID}`);
+    await this.notificationService.createNotification({
+      source: NotificationSource.POST,
+      author: {
+        connect: {
+          id: userID,
+        },
+      },
+      post: {
+        connect: {
+          id: post.id,
         },
       },
     });

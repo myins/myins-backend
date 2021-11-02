@@ -1,4 +1,4 @@
-import { PostContent, Prisma } from '.prisma/client';
+import { NotificationSource, PostContent, Prisma } from '.prisma/client';
 import {
   BadRequestException,
   forwardRef,
@@ -9,6 +9,7 @@ import {
 import * as path from 'path';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
+import { NotificationService } from 'src/notification/notification.service';
 import {
   PostWithInsesAndCountMedia,
   PostWithInsesAndCountMediaInclude,
@@ -28,6 +29,7 @@ export class PostMediaService {
     private readonly postService: PostService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
@@ -178,6 +180,25 @@ export class PostMediaService {
         updatedPost.authorId &&
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
+        this.logger.log(
+          `Creating notification for ${
+            userID ? 'adding photos to' : 'adding'
+          } post ${toRet.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.POST,
+          author: {
+            connect: {
+              id: updatedPost.authorId,
+            },
+          },
+          post: {
+            connect: {
+              id: post.id,
+            },
+          },
+        });
+
         this.logger.log(
           `Send message by user ${userID} in inses 
           ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(

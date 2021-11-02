@@ -40,6 +40,16 @@ export class ResetPasswordAPI {
   phone: string;
 }
 
+export class ChangePasswordAPI {
+  @IsString()
+  @IsNotEmpty()
+  oldPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  newPassword: string;
+}
+
 export class CodePhoneAPI {
   @IsString()
   @IsNotEmpty()

@@ -1,5 +1,6 @@
-import { UserRole } from '.prisma/client';
+import { NotificationSource, UserRole } from '.prisma/client';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,10 +13,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { NotificationService } from 'src/notification/notification.service';
+import {
+  PendingUsersInclude,
+  pendingUsersIncludeQueryType,
+} from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
-import { ApproveDenyUserAPI } from './user-api.entity';
+import { ApproveAllUserAPI, ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 
 @Controller('user/pending')
@@ -26,6 +33,8 @@ export class UserPendingController {
   constructor(
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly chatService: ChatService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Get()
@@ -39,46 +48,46 @@ export class UserPendingController {
     this.logger.log(
       `Getting pending users for inses where user ${id} is a member`,
     );
-    return this.userService.users({
+    const userConnections = await this.userConnectionService.getConnections({
       where: {
-        inses: {
-          some: {
-            ins: {
-              members: {
-                some: {
-                  userId: id,
-                  OR: [
-                    {
-                      role: 'MEMBER',
-                    },
-                    {
-                      role: 'ADMIN',
-                    },
-                  ],
-                },
-              },
-            },
-            role: 'PENDING',
-            OR: [
-              {
-                deniedByUsers: {
-                  equals: null,
-                },
-              },
-              {
-                NOT: {
-                  deniedByUsers: {
-                    has: id,
-                  },
-                },
-              },
-            ],
-          },
+        userId: id,
+      },
+    });
+    const countPendingUsers = await this.userConnectionService.count({
+      role: UserRole.PENDING,
+      insId: {
+        in: userConnections.map((connection) => connection.insId),
+      },
+    });
+    const pendingConenctions = await this.userConnectionService.getConnections({
+      where: {
+        role: UserRole.PENDING,
+        insId: {
+          in: userConnections.map((connection) => connection.insId),
         },
       },
+      include: pendingUsersIncludeQueryType,
       skip: skip,
       take: take,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
+
+    const dataPendingUsers = pendingConenctions.map((connection) => {
+      const conn = <PendingUsersInclude>connection;
+      return {
+        authorId: conn.user.id,
+        author: conn.user,
+        ins: conn.ins,
+        createdAt: conn.createdAt,
+      };
+    });
+
+    return {
+      count: countPendingUsers,
+      data: dataPendingUsers,
+    };
   }
 
   @Patch('approve')
@@ -101,10 +110,78 @@ export class UserPendingController {
       );
     }
 
+    const memberConnection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: data.userID,
+        insId: data.insID,
+      },
+    });
+    if (!memberConnection) {
+      this.logger.error(
+        `User ${data.userID} that you want to approve is not a pending member for ins ${data.insID}`,
+      );
+      throw new BadRequestException(
+        'User that you want to approve is not a pending member for that ins!',
+      );
+    }
+    if (memberConnection.role === UserRole.PENDING) {
+      this.logger.log(
+        `Approving user ${data.userID} in ins ${data.insID} by user ${id}`,
+      );
+      await this.userService.approveUser(data.userID, data.insID);
+
+      this.logger.log(
+        `Creating notification for joining ins ${data.insID} by user ${data.userID}`,
+      );
+      await this.notificationService.createNotification({
+        source: NotificationSource.JOINED_INS,
+        author: {
+          connect: {
+            id: data.userID,
+          },
+        },
+        ins: {
+          connect: {
+            id: data.insID,
+          },
+        },
+      });
+
+      this.logger.log(
+        `Adding stream user ${data.userID} as members in channel ${data.insID}`,
+      );
+      await this.chatService.addMembersToChannel([data.userID], data.insID);
+    }
+
+    this.logger.log('User successfully approved');
+    return {
+      message: 'User successfully approved',
+    };
+  }
+
+  @Patch('approve-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('users-pending')
+  async approveAll(
+    @PrismaUser('id') id: string,
+    @Body() data: ApproveAllUserAPI,
+  ) {
     this.logger.log(
-      `Approving user ${data.userID} in ins ${data.insID} by user ${id}`,
+      `Approving users ${data.userIDs} in ins ${data.insID} by user ${id}`,
     );
-    return this.userService.approveUser(data.userID, data.insID);
+    await Promise.all(
+      data.userIDs.map(async (userID) => {
+        await this.approve(id, {
+          insID: data.insID,
+          userID,
+        });
+      }),
+    );
+
+    this.logger.log('Users successfully approved');
+    return {
+      message: 'Users successfully approved',
+    };
   }
 
   @Patch('deny')
@@ -124,9 +201,59 @@ export class UserPendingController {
       );
     }
 
-    this.logger.log(
-      `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
-    );
-    return this.userService.denyUser(id, data.userID, data.insID);
+    const memberConnection = await this.userConnectionService.getConnection({
+      userId_insId: {
+        userId: data.userID,
+        insId: data.insID,
+      },
+    });
+    if (memberConnection?.role === UserRole.PENDING) {
+      this.logger.log(
+        `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
+      );
+      await this.userService.denyUser(id, data.userID, data.insID);
+
+      const connections = await this.userConnectionService.getConnections({
+        where: {
+          insId: data.insID,
+          role: {
+            not: UserRole.PENDING,
+          },
+        },
+      });
+      const noDenyMembers = connections.find(
+        (connection) =>
+          !memberConnection.deniedByUsers.includes(connection.userId),
+      );
+
+      if (!noDenyMembers) {
+        this.logger.log(
+          `Creating notification for decining user ${data.userID} from ins ${data.insID}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.JOIN_INS_REJECTED,
+          target: {
+            connect: {
+              id: data.userID,
+            },
+          },
+          author: {
+            connect: {
+              id: data.userID,
+            },
+          },
+          ins: {
+            connect: {
+              id: data.insID,
+            },
+          },
+        });
+      }
+    }
+
+    this.logger.log('User successfully denied');
+    return {
+      message: 'User successfully denied',
+    };
   }
 }

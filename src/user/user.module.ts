@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { ChatModule } from 'src/chat/chat.module';
 import { CurrentVersionsModule } from 'src/current-versions/current-versions.module';
 import { InsModule } from 'src/ins/ins.module';
+import { NotificationModule } from 'src/notification/notification.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { SjwtModule } from 'src/sjwt/sjwt.module';
 import { SmsModule } from 'src/sms/sms.module';
@@ -22,6 +23,7 @@ import { UserVersionsController } from './user.versions.controller';
     CurrentVersionsModule,
     InsModule,
     forwardRef(() => ChatModule),
+    NotificationModule,
   ],
   controllers: [
     UserPendingController,

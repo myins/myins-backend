@@ -44,7 +44,7 @@ export class CommentLikeController {
     }
 
     this.logger.log(`Like comment ${commentID} by user ${user.id}`);
-    return this.commentLikeService.likeComment(user.id, comment);
+    return this.commentLikeService.likeComment(user.id, comment.id);
   }
 
   @Post(':id/unlike')
@@ -71,6 +71,6 @@ export class CommentLikeController {
     }
 
     this.logger.log(`Unlike comment ${commentID} by user ${user.id}`);
-    return this.commentLikeService.unlikeComment(user.id, comment);
+    return this.commentLikeService.unlikeComment(user.id, comment.id);
   }
 }
