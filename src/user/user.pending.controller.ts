@@ -20,6 +20,7 @@ import { NotificationService } from 'src/notification/notification.service';
 import {
   PendingUsersInclude,
   pendingUsersIncludeQueryType,
+  pendingUsersWhereQuery,
 } from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
 import { ApproveAllUserAPI, ApproveDenyUserAPI } from './user-api.entity';
@@ -54,32 +55,10 @@ export class UserPendingController {
       },
     });
     const countPendingUsers = await this.userConnectionService.count({
-      role: UserRole.PENDING,
-      insId: {
-        in: userConnections.map((connection) => connection.insId),
-      },
+      where: pendingUsersWhereQuery(id, userConnections),
     });
     const pendingConenctions = await this.userConnectionService.getConnections({
-      where: {
-        role: UserRole.PENDING,
-        insId: {
-          in: userConnections.map((connection) => connection.insId),
-        },
-        OR: [
-          {
-            deniedByUsers: {
-              equals: null,
-            },
-          },
-          {
-            NOT: {
-              deniedByUsers: {
-                has: id,
-              },
-            },
-          },
-        ],
-      },
+      where: pendingUsersWhereQuery(id, userConnections),
       include: pendingUsersIncludeQueryType,
       skip: skip,
       take: take,

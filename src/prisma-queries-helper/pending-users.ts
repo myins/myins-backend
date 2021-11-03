@@ -1,5 +1,31 @@
-import { Prisma } from '.prisma/client';
+import { Prisma, UserInsConnection, UserRole } from '.prisma/client';
 import { ShallowUserSelect } from './shallow-user-select';
+
+export const pendingUsersWhereQuery = (
+  userId: string,
+  userConnections: UserInsConnection[],
+): Prisma.UserInsConnectionWhereInput => {
+  return {
+    role: UserRole.PENDING,
+    insId: {
+      in: userConnections.map((connection) => connection.insId),
+    },
+    OR: [
+      {
+        deniedByUsers: {
+          equals: null,
+        },
+      },
+      {
+        NOT: {
+          deniedByUsers: {
+            has: userId,
+          },
+        },
+      },
+    ],
+  };
+};
 
 const pendingUsersIncludeQuery = {
   ins: true,
