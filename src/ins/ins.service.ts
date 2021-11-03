@@ -128,7 +128,6 @@ export class InsService {
     take?: number,
     filter?: string,
   ) {
-    //console.log(`Filter: ${filter}`)
     return this.userService.users({
       where: {
         inses: {

@@ -5,12 +5,15 @@ import {
   UseGuards,
   Logger,
   Post,
+  Body,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { SearchMessgesAPI } from './chat-api.entity';
+import { ChatSearchService } from './chat.search.service';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -20,6 +23,7 @@ export class ChatController {
 
   constructor(
     private readonly chatService: ChatService,
+    private readonly chatSearchService: ChatSearchService,
     private readonly insService: InsService,
   ) {}
 
@@ -60,5 +64,20 @@ export class ChatController {
     return {
       message: 'All channels created',
     };
+  }
+
+  @Post('/search')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('chat')
+  async searchMessages(
+    @PrismaUser('id') userID: string,
+    @Body() data: SearchMessgesAPI,
+  ) {
+    this.logger.log(
+      `Searching for messages with data ${JSON.stringify(
+        data,
+      )} by user ${userID}`,
+    );
+    return this.chatSearchService.searchMessages(userID, data);
   }
 }
