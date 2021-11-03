@@ -65,6 +65,20 @@ export class UserPendingController {
         insId: {
           in: userConnections.map((connection) => connection.insId),
         },
+        OR: [
+          {
+            deniedByUsers: {
+              equals: null,
+            },
+          },
+          {
+            NOT: {
+              deniedByUsers: {
+                has: id,
+              },
+            },
+          },
+        ],
       },
       include: pendingUsersIncludeQueryType,
       skip: skip,
