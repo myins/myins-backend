@@ -26,11 +26,9 @@ export class ChatSearchService {
     );
 
     return {
-      me: 'esti un idiot ????',
-      results_warning: search.results_warning ?? 'no warnings',
-      next: search.next ?? 'next',
-      previous: search.previous,
-      page1Result: search.results,
+      previous: search.previous ?? null,
+      next: search.next ?? null,
+      result: search.results,
     };
   }
 }
