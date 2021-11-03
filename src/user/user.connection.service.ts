@@ -70,8 +70,8 @@ export class UserConnectionService {
     });
   }
 
-  async count(where: Prisma.UserInsConnectionWhereInput) {
-    return this.prisma.userInsConnection.count({ where });
+  async count(data: Prisma.UserInsConnectionCountArgs) {
+    return this.prisma.userInsConnection.count(data);
   }
 
   async changeAdmin(insId: string, newAdminId: string) {
