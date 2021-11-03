@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   forwardRef,
   Inject,
   Injectable,
@@ -15,7 +14,10 @@ import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserConnectionService } from './user.connection.service';
-import { EnableDisableNotificationAPI } from './user-api.entity';
+import {
+  EnableDisableByometryAPI,
+  EnableDisableNotificationAPI,
+} from './user-api.entity';
 
 @Injectable()
 export class UserService {
@@ -229,16 +231,6 @@ export class UserService {
     disable: boolean,
   ): Promise<User> {
     const { sources, all } = data;
-
-    if (!all && !sources?.length) {
-      this.logger.error(
-        "At least one param from 'all' and 'sources' should be valid!",
-      );
-      throw new BadRequestException(
-        "At least one param from 'all' and 'sources' should be valid!",
-      );
-    }
-
     this.logger.log(
       `Updating user ${user.id}. Change disabled notifications for ${
         all ? 'all sources' : 'sources ' + sources
@@ -276,6 +268,72 @@ export class UserService {
       },
       data: {
         disabledNotifications: disableNotificationsValue,
+      },
+    });
+  }
+
+  async changeDisabledByometrics(
+    user: User,
+    data: EnableDisableByometryAPI,
+    disable: boolean,
+  ): Promise<User> {
+    const { insID, all } = data;
+    this.logger.log(
+      `Updating user ${user.id}. Change disabled byometrics. ${
+        disable ? 'Disable' : 'Enable'
+      } ${all ? 'all' : 'for ins ' + insID}`,
+    );
+
+    if (all) {
+      return this.updateUser({
+        where: {
+          id: user.id,
+        },
+        data: {
+          disabledAllBiometry: disable,
+          disabledBiometryINSIds: disable ? user.disabledBiometryINSIds : [],
+        },
+      });
+    }
+
+    const enableINSIdValue = user.disabledAllBiometry
+      ? (
+          await this.insService.inses({
+            where: {
+              members: {
+                some: {
+                  userId: user.id,
+                  role: {
+                    not: UserRole.PENDING,
+                  },
+                },
+              },
+              id: {
+                not: insID,
+              },
+            },
+          })
+        ).map((ins) => ins.id)
+      : user.disabledBiometryINSIds.filter(
+          (byometryInsID) => byometryInsID !== insID,
+        );
+
+    const disableByometricsValue = disable
+      ? {
+          push: !user.disabledBiometryINSIds.includes(insID) ? insID : [],
+        }
+      : enableINSIdValue;
+
+    return this.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        disabledAllBiometry:
+          !disable && user.disabledAllBiometry
+            ? false
+            : user.disabledAllBiometry,
+        disabledBiometryINSIds: disableByometricsValue,
       },
     });
   }
