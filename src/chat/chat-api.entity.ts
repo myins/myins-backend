@@ -8,10 +8,6 @@ import {
 
 export class SearchMessgesAPI {
   @IsString()
-  @IsNotEmpty()
-  streamChatToken: string;
-
-  @IsString()
   @IsOptional()
   channelId: string;
 

@@ -46,12 +46,13 @@ export class UserBiometricsController {
     }
 
     if (insID) {
-      const connection = await this.userConnectionService.getConnection({
-        userId_insId: {
-          insId: insID,
-          userId: user.id,
-        },
-      });
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            insId: insID,
+            userId: user.id,
+          },
+        });
       if (!connection) {
         this.logger.error("You're not allowed to enable this INS!");
         throw new UnauthorizedException(
@@ -87,12 +88,13 @@ export class UserBiometricsController {
     }
 
     if (insID) {
-      const connection = await this.userConnectionService.getConnection({
-        userId_insId: {
-          insId: insID,
-          userId: user.id,
-        },
-      });
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            insId: insID,
+            userId: user.id,
+          },
+        });
       if (!connection) {
         this.logger.error("You're not allowed to disable this INS!");
         throw new UnauthorizedException(
