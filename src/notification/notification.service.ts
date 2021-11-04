@@ -17,7 +17,7 @@ export class NotificationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly users: UserService,
+    private readonly userService: UserService,
     private readonly pushService: NotificationPushService,
   ) {}
 
@@ -39,7 +39,7 @@ export class NotificationService {
     );
 
     this.logger.log('Adding isSeen prop for every notification');
-    const user = await this.users.user({ id: userID });
+    const user = await this.userService.user({ id: userID });
     const notification = user?.lastReadNotificationID
       ? await this.getById({ id: user?.lastReadNotificationID })
       : null;
@@ -63,6 +63,8 @@ export class NotificationService {
       };
     });
 
+    await this.userService.setLastReadNotificationID(userID, dataReturn[0].id);
+
     this.logger.log('Successfully getting notifications feed');
     return {
       count: feedNotificationsCount,
@@ -79,7 +81,12 @@ export class NotificationService {
   async createNotification(
     data: Prisma.NotificationCreateInput,
   ): Promise<Notification> {
-    await this.pushService.pushNotification(data);
+    try {
+      await this.pushService.pushNotification(data);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error('Error pushing device notifications!', stringErr);
+    }
     return this.prisma.notification.create({
       data,
     });
