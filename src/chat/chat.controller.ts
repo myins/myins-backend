@@ -5,12 +5,17 @@ import {
   UseGuards,
   Logger,
   Post,
+  Body,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { SearchMessgesAPI } from './chat-api.entity';
+import { ChatSearchService } from './chat.search.service';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -20,7 +25,9 @@ export class ChatController {
 
   constructor(
     private readonly chatService: ChatService,
+    private readonly chatSearchService: ChatSearchService,
     private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Get('/token')
@@ -60,5 +67,36 @@ export class ChatController {
     return {
       message: 'All channels created',
     };
+  }
+
+  @Post('/search')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('chat')
+  async searchMessages(
+    @PrismaUser('id') userID: string,
+    @Body() data: SearchMessgesAPI,
+  ) {
+    if (data.channelId) {
+      const connection = this.userConnectionService.getNotPendingConnection({
+        userId_insId: {
+          insId: data.channelId,
+          userId: userID,
+        },
+      });
+      if (!connection) {
+        this.logger.error(
+          "You're not allowed to search message in this channel!",
+        );
+        throw new UnauthorizedException(
+          "You're not allowed to search message in this channel!",
+        );
+      }
+    }
+    this.logger.log(
+      `Searching for messages with data ${JSON.stringify(
+        data,
+      )} by user ${userID}`,
+    );
+    return this.chatSearchService.searchMessages(userID, data);
   }
 }
