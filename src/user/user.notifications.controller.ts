@@ -1,5 +1,6 @@
 import { User } from '.prisma/client';
 import {
+  BadRequestException,
   Body,
   Controller,
   Logger,
@@ -46,6 +47,17 @@ export class UserNotificationsController {
     @Body() data: EnableDisableNotificationAPI,
     @PrismaUser() user: User,
   ) {
+    const { sources, all } = data;
+
+    if (!all && !sources?.length) {
+      this.logger.error(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+      throw new BadRequestException(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+    }
+
     await this.userService.changeDisabledNotifications(user, data, false);
 
     this.logger.log('Successfully enabled notification source');
@@ -61,6 +73,17 @@ export class UserNotificationsController {
     @Body() data: EnableDisableNotificationAPI,
     @PrismaUser() user: User,
   ) {
+    const { sources, all } = data;
+
+    if (!all && !sources?.length) {
+      this.logger.error(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+      throw new BadRequestException(
+        "At least one param from 'all' and 'sources' should be valid!",
+      );
+    }
+
     await this.userService.changeDisabledNotifications(user, data, true);
 
     this.logger.log('Successfully disabled notification source');

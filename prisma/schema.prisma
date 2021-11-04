@@ -39,6 +39,9 @@ model User {
 
   lastReadNotificationID String?
   disabledNotifications  NotificationSource[]
+
+  disabledBiometryINSIds String[]
+  disabledAllBiometry Boolean @default(false)
 }
 
 model PostContent {

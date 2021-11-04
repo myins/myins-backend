@@ -79,3 +79,15 @@ export class EnableDisableNotificationAPI {
   @IsOptional()
   all: boolean;
 }
+
+export class EnableDisableByometryAPI {
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  insID: string;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @IsOptional()
+  all: boolean;
+}
