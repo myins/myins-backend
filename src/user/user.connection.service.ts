@@ -16,6 +16,16 @@ export class UserConnectionService {
     });
   }
 
+  async getNotPendingConnection(
+    where: Prisma.UserInsConnectionWhereUniqueInput,
+  ) {
+    const connection = await this.getConnection(where);
+    if (connection?.role !== UserRole.PENDING) {
+      return connection;
+    }
+    return null;
+  }
+
   async getConnections(
     params: Prisma.UserInsConnectionFindManyArgs,
   ): Promise<UserInsConnection[]> {
@@ -41,13 +51,13 @@ export class UserConnectionService {
     insID: string,
     pinned: boolean,
   ): Promise<UserInsConnection> {
-    const connection = await this.getConnection({
+    const connection = await this.getNotPendingConnection({
       userId_insId: {
         userId: userID,
         insId: insID,
       },
     });
-    if (!connection || connection.role === UserRole.PENDING) {
+    if (!connection) {
       this.logger.error("You're not allowed to do this operation!");
       throw new UnauthorizedException(
         "You're not allowed to do this operation!",
@@ -70,8 +80,8 @@ export class UserConnectionService {
     });
   }
 
-  async count(where: Prisma.UserInsConnectionWhereInput) {
-    return this.prisma.userInsConnection.count({ where });
+  async count(data: Prisma.UserInsConnectionCountArgs) {
+    return this.prisma.userInsConnection.count(data);
   }
 
   async changeAdmin(insId: string, newAdminId: string) {

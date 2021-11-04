@@ -30,7 +30,6 @@ export class NotificationService {
   }
 
   async getFeed(userID: string, skip: number, take: number) {
-    console.log('userID - ', userID);
     this.logger.log(`Getting count and notifications for user ${userID}`);
     const feedNotificationsCount = await this.prisma.notification.count(
       notificationFeedCount(userID),

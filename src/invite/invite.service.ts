@@ -38,13 +38,15 @@ export class InviteService {
     phoneNumbers: string[],
     ins: string,
   ) {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: userID,
-        insId: ins,
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: userID,
+          insId: ins,
+        },
       },
-    });
-    if (!connection || connection.role === UserRole.PENDING) {
+    );
+    if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
@@ -116,13 +118,15 @@ export class InviteService {
   }
 
   async inviteINSUser(userID: string, otherUsers: string[], ins: string) {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: userID,
-        insId: ins,
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: userID,
+          insId: ins,
+        },
       },
-    });
-    if (!connection || connection.role === UserRole.PENDING) {
+    );
+    if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",

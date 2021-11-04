@@ -20,9 +20,10 @@ import { NotificationService } from 'src/notification/notification.service';
 import {
   PendingUsersInclude,
   pendingUsersIncludeQueryType,
+  pendingUsersWhereQuery,
 } from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
-import { ApproveAllUserAPI, ApproveDenyUserAPI } from './user-api.entity';
+import { ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 
 @Controller('user/pending')
@@ -44,6 +45,7 @@ export class UserPendingController {
     @PrismaUser('id') id: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    all?: boolean,
   ) {
     this.logger.log(
       `Getting pending users for inses where user ${id} is a member`,
@@ -54,21 +56,13 @@ export class UserPendingController {
       },
     });
     const countPendingUsers = await this.userConnectionService.count({
-      role: UserRole.PENDING,
-      insId: {
-        in: userConnections.map((connection) => connection.insId),
-      },
+      where: pendingUsersWhereQuery(id, userConnections),
     });
     const pendingConenctions = await this.userConnectionService.getConnections({
-      where: {
-        role: UserRole.PENDING,
-        insId: {
-          in: userConnections.map((connection) => connection.insId),
-        },
-      },
+      where: pendingUsersWhereQuery(id, userConnections),
       include: pendingUsersIncludeQueryType,
       skip: skip,
-      take: take,
+      take: all ? countPendingUsers : take,
       orderBy: {
         createdAt: 'desc',
       },
@@ -97,13 +91,15 @@ export class UserPendingController {
     @PrismaUser('id') id: string,
     @Body() data: ApproveDenyUserAPI,
   ) {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: id,
-        insId: data.insID,
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: id,
+          insId: data.insID,
+        },
       },
-    });
-    if (!connection || connection.role === UserRole.PENDING) {
+    );
+    if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
       throw new UnauthorizedException(
         "You're not allowed to approve members for this INS!",
@@ -162,18 +158,15 @@ export class UserPendingController {
   @Patch('approve-all')
   @UseGuards(JwtAuthGuard)
   @ApiTags('users-pending')
-  async approveAll(
-    @PrismaUser('id') id: string,
-    @Body() data: ApproveAllUserAPI,
-  ) {
-    this.logger.log(
-      `Approving users ${data.userIDs} in ins ${data.insID} by user ${id}`,
-    );
+  async approveAll(@PrismaUser('id') id: string) {
+    this.logger.log(`Approving all pending users by user ${id}`);
+    const pendingUsers = await this.getPendingUsers(id, 0, 0, true);
+
     await Promise.all(
-      data.userIDs.map(async (userID) => {
+      pendingUsers.data.map(async (aData) => {
         await this.approve(id, {
-          insID: data.insID,
-          userID,
+          insID: aData.ins.id,
+          userID: aData.authorId,
         });
       }),
     );

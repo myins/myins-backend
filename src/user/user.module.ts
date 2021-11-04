@@ -7,6 +7,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { SjwtModule } from 'src/sjwt/sjwt.module';
 import { SmsModule } from 'src/sms/sms.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { UserBiometricsController } from './user.biometrics.controller';
 import { UserConnectionService } from './user.connection.service';
 import { UserController } from './user.controller';
 import { UserNotificationsController } from './user.notifications.controller';
@@ -30,6 +31,7 @@ import { UserVersionsController } from './user.versions.controller';
     UserController,
     UserVersionsController,
     UserNotificationsController,
+    UserBiometricsController,
   ],
   providers: [UserService, UserConnectionService],
   exports: [UserService, UserConnectionService],

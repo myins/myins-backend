@@ -62,16 +62,6 @@ export class ApproveDenyUserAPI {
   insID: string;
 }
 
-export class ApproveAllUserAPI {
-  @IsString()
-  @IsNotEmpty()
-  userIDs: string[];
-
-  @IsString()
-  @IsNotEmpty()
-  insID: string;
-}
-
 export class SetLastNotificationAPI {
   @IsString()
   @IsNotEmpty()
@@ -83,6 +73,18 @@ export class EnableDisableNotificationAPI {
   @IsNotEmpty()
   @IsOptional()
   sources: NotificationSource[];
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @IsOptional()
+  all: boolean;
+}
+
+export class EnableDisableByometryAPI {
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  insID: string;
 
   @IsBoolean()
   @IsNotEmpty()
