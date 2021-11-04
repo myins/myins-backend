@@ -291,7 +291,7 @@ export class UserService {
         },
         data: {
           disabledAllBiometry: disable,
-          disabledBiometryINSIds: disable ? user.disabledBiometryINSIds : [],
+          disabledBiometryINSIds: [],
         },
       });
     }
