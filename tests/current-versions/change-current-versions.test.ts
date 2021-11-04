@@ -1,29 +1,18 @@
 import { CurrentVersions, DocumentType } from '.prisma/client';
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { CurrentVersionsController } from 'src/current-versions/current-versions.controller';
-import { CurrentVersionsService } from 'src/current-versions/current-versions.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { prismaMock } from 'tests/prisma-mock';
 import {
   currentVersionPPMock,
   currentVersionTCMock,
 } from 'tests/__mocks__/current-versions';
+import { getCurrentVersionsTestingModule } from './test-module';
 
 describe('[CurrentVersionsController] POST /current-versions', () => {
   let currentVersionsController: CurrentVersionsController;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CurrentVersionsService,
-        {
-          provide: PrismaService,
-          useValue: prismaMock,
-        },
-      ],
-      controllers: [CurrentVersionsController],
-    }).compile();
-
+    const module: TestingModule = await getCurrentVersionsTestingModule();
     currentVersionsController = module.get<CurrentVersionsController>(
       CurrentVersionsController,
     );

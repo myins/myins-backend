@@ -2,10 +2,10 @@ import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { CommentController } from 'src/comment/comment.controller';
 import { prismaMock } from 'tests/prisma-mock';
-import { commentMock, updatedCommentMock } from 'tests/__mocks__/comment';
+import { commentMock } from 'tests/__mocks__/comment';
 import { getCommentTestingModule } from './test-module';
 
-describe('[CommentController] PATCH /:id', () => {
+describe('[CommentController] DELETE /:id', () => {
   let commentController: CommentController;
 
   beforeEach(async () => {
@@ -13,59 +13,43 @@ describe('[CommentController] PATCH /:id', () => {
     commentController = module.get<CommentController>(CommentController);
   });
 
-  test('[patchComment] return NotFoundException(Could not find this comment!)', async () => {
+  test('[deleteComment] return NotFoundException(Could not find this comment!)', async () => {
     prismaMock.comment.findUnique.mockResolvedValue(null);
 
     expect.assertions(2);
     try {
-      await commentController.patchComment(
-        'commentID',
-        {
-          content: 'content',
-        },
-        'userID',
-      );
+      await commentController.deleteComment('commentID', 'userID');
     } catch (e) {
       expect(e).toBeInstanceOf(NotFoundException);
       expect(e).toHaveProperty('message', 'Could not find this comment!');
     }
   });
 
-  test("[patchComment] return UnauthorizedException(You're not allowed to edit this comment!)", async () => {
+  test("[deleteComment] return UnauthorizedException(You're not allowed to delete this comment!)", async () => {
     prismaMock.comment.findUnique.mockResolvedValue(commentMock);
 
     expect.assertions(2);
     try {
-      await commentController.patchComment(
-        commentMock.id,
-        {
-          content: 'content',
-        },
-        'userID',
-      );
+      await commentController.deleteComment(commentMock.id, 'userID');
     } catch (e) {
       expect(e).toBeInstanceOf(UnauthorizedException);
       expect(e).toHaveProperty(
         'message',
-        "You're not allowed to edit this comment!",
+        "You're not allowed to delete this comment!",
       );
     }
   });
 
-  test('[patchComment] return updated comment', async () => {
+  test('[deleteComment] return deleted comment', async () => {
     prismaMock.comment.findUnique.mockResolvedValue(commentMock);
-    prismaMock.comment.update.mockResolvedValue(updatedCommentMock);
+    prismaMock.comment.delete.mockResolvedValue(commentMock);
 
-    const result = await commentController.patchComment(
+    const result = await commentController.deleteComment(
       commentMock.id,
-      {
-        content: updatedCommentMock.content,
-      },
       commentMock.authorId,
     );
 
-    expect(result.id).toBe(updatedCommentMock.id);
-    expect(result.authorId).toBe(updatedCommentMock.authorId);
-    expect(result.content).toBe(updatedCommentMock.content);
+    expect(result.id).toBe(commentMock.id);
+    expect(result.authorId).toBe(commentMock.authorId);
   });
 });
