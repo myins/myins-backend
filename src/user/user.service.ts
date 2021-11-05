@@ -32,7 +32,7 @@ export class UserService {
     private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
-    @Inject(forwardRef(() => ChatService))
+    @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
   ) {}
 
