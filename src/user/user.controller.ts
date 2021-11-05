@@ -20,6 +20,7 @@ import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { SmsService } from 'src/sms/sms.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
@@ -40,6 +41,7 @@ export class UserController {
     private readonly userService: UserService,
     private readonly storageService: StorageService,
     private readonly smsService: SmsService,
+    private readonly insService: InsService,
   ) {}
 
   @Get('cloudfront-token')
@@ -177,7 +179,34 @@ export class UserController {
       this.logger.log(
         `Creating user with phone number ${toCreate.phoneNumber}`,
       );
-      return this.userService.createUser(toCreate); // This calls sendVerificationCode
+      const createdUser = await this.userService.createUser(toCreate); // This calls sendVerificationCode
+
+      const inses = await this.insService.inses({
+        where: {
+          invitedPhoneNumbers: {
+            has: toCreate.phoneNumber,
+          },
+        },
+      });
+
+      await Promise.all(
+        inses.map(async (ins) => {
+          await this.userService.approveUser(createdUser.id, ins.id);
+          await this.insService.update({
+            where: {
+              id: ins.id,
+            },
+            data: {
+              invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
+                (invitedPhoneNumber) =>
+                  invitedPhoneNumber !== toCreate.phoneNumber,
+              ),
+            },
+          });
+        }),
+      );
+
+      return createdUser;
     } catch (error) {
       this.logger.error('Error creating user!');
       this.logger.error(error);
