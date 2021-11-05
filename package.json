@@ -58,7 +58,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.6",
-    "stream-chat": "^4.2.0",
+    "stream-chat": "^4.3.0",
     "swagger-ui-express": "^4.1.6",
     "tempy": "^1.0.1",
     "ts-jest": "^27.0.7",
