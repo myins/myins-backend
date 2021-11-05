@@ -55,7 +55,12 @@ export class InsService {
           : undefined,
     };
 
-    if (userID !== 'a714825b-bc0b-4f83-aa36-d23aaf6015cd') {
+    const userIDs = [
+      'a714825b-bc0b-4f83-aa36-d23aaf6015cd',
+      '13370fc6-51c1-4847-b3b5-f4be2598d344',
+    ];
+
+    if (!userIDs.includes(userID)) {
       whereQuery.role = {
         not: UserRole.PENDING,
       };
