@@ -14,7 +14,7 @@ const sandboxSettings = {
   },
   apn: {
     token: {
-      key: Buffer.from(process.env['APNS_AUTH_KEY'] ?? '', 'base64').toString(), // optionally: fs.readFileSync('./certs/key.p8')
+      key: process.env['APNS_AUTH_KEY'], // optionally: fs.readFileSync('./certs/key.p8')
       keyId: process.env['APNS_AUTH_KEY_ID'],
       teamId: process.env['APNS_AUTH_KEY_TEAM_ID'],
     },
@@ -29,7 +29,7 @@ const prodSettings = {
   },
   apn: {
     token: {
-      key: Buffer.from(process.env['APNS_AUTH_KEY'] ?? '', 'base64').toString(), // optionally: fs.readFileSync('./certs/key.p8')
+      key: process.env['APNS_AUTH_KEY'], // optionally: fs.readFileSync('./certs/key.p8')
       keyId: process.env['APNS_AUTH_KEY_ID'],
       teamId: process.env['APNS_AUTH_KEY_TEAM_ID'],
     },
