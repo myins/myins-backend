@@ -7,21 +7,28 @@ export const pendingUsersWhereQuery = (
 ): Prisma.UserInsConnectionWhereInput => {
   return {
     role: UserRole.PENDING,
-    insId: {
-      in: userConnections.map((connection) => connection.insId),
-    },
     OR: [
       {
-        deniedByUsers: {
-          equals: null,
+        insId: {
+          in: userConnections.map((connection) => connection.insId),
         },
+        OR: [
+          {
+            deniedByUsers: {
+              equals: null,
+            },
+          },
+          {
+            NOT: {
+              deniedByUsers: {
+                has: userId,
+              },
+            },
+          },
+        ],
       },
       {
-        NOT: {
-          deniedByUsers: {
-            has: userId,
-          },
-        },
+        userId: userId,
       },
     ],
   };

@@ -18,6 +18,7 @@ import {
   EnableDisableByometryAPI,
   EnableDisableNotificationAPI,
 } from './user-api.entity';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class UserService {
@@ -27,9 +28,12 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly jwtService: SjwtService,
     private readonly smsService: SmsService,
-    @Inject(forwardRef(() => ChatService)) private chatService: ChatService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly notificationService: NotificationService,
   ) {}
 
   async user(
@@ -178,7 +182,7 @@ export class UserService {
   }
 
   async approveUser(userId: string, insId: string) {
-    return this.userConnectionService.update({
+    await this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -189,9 +193,39 @@ export class UserService {
         role: UserRole.MEMBER,
       },
     });
+
+    this.logger.log(
+      `Creating notification for joining ins ${insId} by user ${userId}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.JOINED_INS,
+      author: {
+        connect: {
+          id: userId,
+        },
+      },
+      ins: {
+        connect: {
+          id: insId,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Adding stream user ${userId} as members in channel ${insId}`,
+    );
+    await this.chatService.addMembersToChannel([userId], insId);
   }
 
   async denyUser(id: string, userId: string, insId: string) {
+    if (id === userId) {
+      return this.userConnectionService.removeMember({
+        userId_insId: {
+          insId: insId,
+          userId: id,
+        },
+      });
+    }
     return this.userConnectionService.update({
       where: {
         userId_insId: {

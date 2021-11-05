@@ -231,20 +231,28 @@ export class InsController {
       };
     }
 
-    this.logger.log(
-      `Adding user ${userID} as pending member in ins ${theINS.id}`,
-    );
-    await this.insService.update({
-      where: { id: theINS.id },
-      data: {
-        members: {
-          create: {
-            userId: userID,
-            role: UserRole.PENDING,
+    const user = await this.userService.user({ id: userID });
+    if (
+      user?.phoneNumber &&
+      theINS.invitedPhoneNumbers.includes(user.phoneNumber)
+    ) {
+      await this.userService.approveUser(userID, theINS.id);
+    } else {
+      this.logger.log(
+        `Adding user ${userID} as pending member in ins ${theINS.id}`,
+      );
+      await this.insService.update({
+        where: { id: theINS.id },
+        data: {
+          members: {
+            create: {
+              userId: userID,
+              role: UserRole.PENDING,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     this.logger.log('Joined the INS as pending member');
     return {
