@@ -96,7 +96,7 @@ export class ChatService {
       );
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error cleaned up stream chat!', stringErr);
+      this.logger.error(`Error cleaned up stream chat! + ${stringErr}`);
     }
   }
 
@@ -117,8 +117,7 @@ export class ChatService {
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(
-        'Error creating/updating stream chat user! Chat will not work',
-        stringErr,
+        `Error creating/updating stream chat user! Chat will not work! + ${stringErr}`,
       );
     }
   }
@@ -135,7 +134,7 @@ export class ChatService {
       });
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error deleting stream chat user!', stringErr);
+      this.logger.error(`Error deleting stream chat user! + ${stringErr}`);
     }
   }
 
@@ -151,7 +150,7 @@ export class ChatService {
       await channel.create();
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error creating stream channel!', stringErr);
+      this.logger.error(`Error creating stream channel! + ${stringErr}`);
     }
   }
 
@@ -173,7 +172,7 @@ export class ChatService {
       }
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error creating stream channel!', stringErr);
+      this.logger.error(`Error creating stream channel! + ${stringErr}`);
     }
   }
 
@@ -187,7 +186,7 @@ export class ChatService {
       await channels[0].delete();
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error deleting stream channel!', stringErr);
+      this.logger.error(`Error deleting stream channel! + ${stringErr}`);
     }
   }
 
@@ -205,7 +204,9 @@ export class ChatService {
       await channels[0].addMembers(userIDs);
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error adding members to stream channel!', stringErr);
+      this.logger.error(
+        `Error adding members to stream channel! + ${stringErr}`,
+      );
     }
   }
 
@@ -234,8 +235,7 @@ export class ChatService {
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(
-        'Error removing member from stream channel!',
-        stringErr,
+        `Error removing member from stream channel! + ${stringErr}`,
       );
     }
   }
@@ -269,7 +269,9 @@ export class ChatService {
       );
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error sending message to stream channel!', stringErr);
+      this.logger.error(
+        `Error sending message to stream channel! + ${stringErr}`,
+      );
     }
   }
 

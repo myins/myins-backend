@@ -85,7 +85,7 @@ export class NotificationService {
       await this.pushService.pushNotification(data);
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error('Error pushing device notifications!', stringErr);
+      this.logger.error(`Error pushing device notifications! + ${stringErr}`);
     }
     return this.prisma.notification.create({
       data,

@@ -205,7 +205,7 @@ export class UserController {
       },
     });
 
-    this.logger.log(`'Updated token successfully`);
+    this.logger.log('Updated token successfully');
     return {
       message: 'Updated token successfully!',
     };

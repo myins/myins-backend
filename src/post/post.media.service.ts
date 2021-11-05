@@ -180,11 +180,7 @@ export class PostMediaService {
         updatedPost.authorId &&
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
-        this.logger.log(
-          `Creating notification for ${
-            userID ? 'adding photos to' : 'adding'
-          } post ${toRet.id}`,
-        );
+        this.logger.log(`Creating notification for adding post ${toRet.id}`);
         await this.notificationService.createNotification({
           source: NotificationSource.POST,
           author: {
@@ -200,7 +196,7 @@ export class PostMediaService {
         });
 
         this.logger.log(
-          `Send message by user ${userID} in inses 
+          `Send message by user ${updatedPost.authorId} in inses 
           ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(
             (ins: { id: string }) => ins.id,
           )} with new posts ${updatedPost.id}`,

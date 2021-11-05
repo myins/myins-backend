@@ -49,7 +49,7 @@ export class MiddlewareService {
             });
           } catch (e) {
             const stringErr: string = <string>e;
-            this.logger.error('Error getting stream channel!', stringErr);
+            this.logger.error(`Error getting stream channel! + ${stringErr}`);
           }
 
           if (channels.length) {
