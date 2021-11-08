@@ -98,19 +98,22 @@ export class UserPendingController {
     @PrismaUser('id') id: string,
     @Body() data: ApproveDenyUserAPI,
   ) {
-    const connection = await this.userConnectionService.getNotPendingConnection(
-      {
-        userId_insId: {
-          userId: id,
-          insId: data.insID,
-        },
-      },
-    );
-    if (!connection) {
-      this.logger.error("You're not allowed to approve members for this INS!");
-      throw new BadRequestException(
-        "You're not allowed to approve members for this INS!",
-      );
+    if (id !== data.userID) {
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            userId: id,
+            insId: data.insID,
+          },
+        });
+      if (!connection) {
+        this.logger.error(
+          "You're not allowed to approve members for this INS!",
+        );
+        throw new BadRequestException(
+          "You're not allowed to approve members for this INS!",
+        );
+      }
     }
 
     const memberConnection = await this.userConnectionService.getConnection({
