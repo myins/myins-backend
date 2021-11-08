@@ -181,6 +181,7 @@ export class NotificationPushService {
         });
       }
     } else {
+      this.logger.log(`Send push notification with sandbox ${sandbox}`);
       if (sandbox) {
         return sandboxPush.send(token, data);
       } else {
