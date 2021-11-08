@@ -5,6 +5,7 @@ import {
   Controller,
   Get,
   Logger,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -81,9 +82,14 @@ export class InsController {
     }
 
     this.logger.log(`Getting ins by code ${insCode}`);
-    return this.insService.ins({
+    const ins = await this.insService.ins({
       shareCode: insCode,
     });
+    if (ins) {
+      return ins;
+    }
+    this.logger.error(`Could not find ins with code ${insCode}!`);
+    throw new NotFoundException('Could not find ins with that code!');
   }
 
   @Get('list')
