@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma, UserInsConnection, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -59,9 +59,7 @@ export class UserConnectionService {
     });
     if (!connection) {
       this.logger.error("You're not allowed to do this operation!");
-      throw new UnauthorizedException(
-        "You're not allowed to do this operation!",
-      );
+      throw new BadRequestException("You're not allowed to do this operation!");
     }
 
     this.logger.log(

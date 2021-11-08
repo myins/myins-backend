@@ -32,7 +32,7 @@ export class AuthService {
     });
     if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
-      throw new BadRequestException('Could not find user with that phone!');
+      throw new NotFoundException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified && !newPhone) {
       this.logger.error(`Phone ${phone} already verified!`);
@@ -49,7 +49,7 @@ export class AuthService {
     });
     if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
-      throw new BadRequestException('Could not find user with that phone!');
+      throw new NotFoundException('Could not find user with that phone!');
     }
 
     this.logger.log('Sending forgot password code');
@@ -62,7 +62,7 @@ export class AuthService {
     });
     if (!userDB) {
       this.logger.error(`Could not find user with phone ${user.phoneNumber}!`);
-      throw new BadRequestException('Could not find user with that phone!');
+      throw new NotFoundException('Could not find user with that phone!');
     }
 
     const isMatch = await bcrypt.compare(data.oldPassword, user.password);
@@ -137,7 +137,7 @@ export class AuthService {
     });
     if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
-      throw new BadRequestException('Could not find user with that phone!');
+      throw new NotFoundException('Could not find user with that phone!');
     }
 
     this.logger.log('Decrypting reset token');
@@ -173,7 +173,7 @@ export class AuthService {
     });
     if (!user) {
       this.logger.error(`Could not find user with phone ${phone}!`);
-      throw new BadRequestException('Could not find user with that phone!');
+      throw new NotFoundException('Could not find user with that phone!');
     }
     if (user.phoneNumberVerified && !newPhone) {
       this.logger.error(`Phone ${phone} already verified!`);

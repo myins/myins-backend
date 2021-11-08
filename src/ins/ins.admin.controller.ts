@@ -6,7 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
-  UnauthorizedException,
+  BadRequestException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -38,9 +38,7 @@ export class InsAdminController {
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
       this.logger.error("You're not allowed to change INS admin!");
-      throw new UnauthorizedException(
-        "You're not allowed to change INS admin!",
-      );
+      throw new BadRequestException("You're not allowed to change INS admin!");
     }
 
     this.logger.log(
@@ -63,7 +61,7 @@ export class InsAdminController {
         `Allowing random user to remove member cuz he's such a nice guy! But also for testing.`,
       );
       // this.logger.error("You're not allowed to remove members from INS!");
-      // throw new UnauthorizedException(
+      // throw new BadRequestException(
       //   "You're not allowed to remove members from INS!",
       // );
     }
@@ -96,7 +94,7 @@ export class InsAdminController {
     const isAdmin = await this.insAdminService.isAdmin(userID, insID);
     if (!isAdmin) {
       this.logger.error(`You're not allowed to delete INS ${insID}!`);
-      throw new UnauthorizedException("You're not allowed to delete this INS!");
+      throw new BadRequestException("You're not allowed to delete this INS!");
     }
 
     this.logger.log(`Deleting ins ${insID}`);

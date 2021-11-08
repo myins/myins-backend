@@ -81,7 +81,7 @@ export class UserController {
   ) {
     if (!file) {
       this.logger.error('Could not find picture file!');
-      throw new BadRequestException('Could not find picture file!');
+      throw new NotFoundException('Could not find picture file!');
     }
 
     this.logger.log(`Updating profile picture for user ${user.id}`);
@@ -130,7 +130,7 @@ export class UserController {
         this.logger.error(
           `Could not find user with phone ${user.phoneNumber}!`,
         );
-        throw new BadRequestException('Could not find your user!');
+        throw new NotFoundException('Could not find your user!');
       }
 
       this.logger.log(`Updating user ${user.id}`);

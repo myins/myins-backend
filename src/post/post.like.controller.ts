@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Logger,
@@ -7,7 +6,7 @@ import {
   Param,
   Post,
   Query,
-  UnauthorizedException,
+  BadRequestException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -66,7 +65,7 @@ export class PostLikeController {
 
     if (!postIfValid || postIfValid.length == 0) {
       this.logger.error(`Could not find post ${postID}!`);
-      throw new BadRequestException('Could not find post!');
+      throw new NotFoundException('Could not find post!');
     }
 
     this.logger.log(`Getting all likes for post ${postID}`);
@@ -105,7 +104,7 @@ export class PostLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before liking posts!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before liking posts!',
       );
     }
@@ -172,7 +171,7 @@ export class PostLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before liking posts!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before unliking posts!',
       );
     }
