@@ -46,7 +46,7 @@ export class InsController {
     const user = userID ? await this.userService.user({ id: userID }) : null;
     if (!user && userID) {
       this.logger.error(`Could not find user ${userID}!`);
-      throw new UnauthorizedException('Could not find this user!');
+      throw new NotFoundException('Could not find this user!');
     }
     if (!user?.phoneNumberVerified && userID) {
       this.logger.error(
@@ -126,7 +126,7 @@ export class InsController {
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     this.logger.log(`Getting posts with all media for ins ${id}`);
@@ -155,7 +155,7 @@ export class InsController {
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     this.logger.log(`Getting members for ins ${id}`);
@@ -186,7 +186,7 @@ export class InsController {
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     this.logger.log(
@@ -279,7 +279,7 @@ export class InsController {
     this.logger.log(`Update cover for ins ${insID} by user ${userID}`);
     if (!file) {
       this.logger.error('Could not find picture file!');
-      throw new BadRequestException('Could not find picture file!');
+      throw new NotFoundException('Could not find picture file!');
     }
     const validINS = await this.insService.inses({
       where: {

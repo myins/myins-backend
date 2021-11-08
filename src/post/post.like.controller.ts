@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Logger,
@@ -66,7 +65,7 @@ export class PostLikeController {
 
     if (!postIfValid || postIfValid.length == 0) {
       this.logger.error(`Could not find post ${postID}!`);
-      throw new BadRequestException('Could not find post!');
+      throw new NotFoundException('Could not find post!');
     }
 
     this.logger.log(`Getting all likes for post ${postID}`);
