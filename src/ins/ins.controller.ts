@@ -82,9 +82,18 @@ export class InsController {
     }
 
     this.logger.log(`Getting ins by code ${insCode}`);
-    const ins = await this.insService.ins({
-      shareCode: insCode,
-    });
+    const ins = await this.insService.ins(
+      {
+        shareCode: insCode,
+      },
+      {
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
+    );
     if (ins) {
       return ins;
     }
