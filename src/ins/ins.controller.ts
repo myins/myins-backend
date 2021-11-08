@@ -9,7 +9,6 @@ import {
   Param,
   Post,
   Query,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -52,7 +51,7 @@ export class InsController {
       this.logger.error(
         `You must verify phone ${user?.phoneNumber} before creating an INS!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before creating an INS!',
       );
     }

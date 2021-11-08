@@ -6,7 +6,7 @@ import {
   Param,
   Post,
   Query,
-  UnauthorizedException,
+  BadRequestException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -104,7 +104,7 @@ export class PostLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before liking posts!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before liking posts!',
       );
     }
@@ -171,7 +171,7 @@ export class PostLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before liking posts!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before unliking posts!',
       );
     }

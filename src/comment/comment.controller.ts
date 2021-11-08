@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -52,9 +51,7 @@ export class CommentController {
     }
     if (comment.authorId != userID) {
       this.logger.error(`You're not allowed to edit comment ${commentID}!`);
-      throw new UnauthorizedException(
-        "You're not allowed to edit this comment!",
-      );
+      throw new BadRequestException("You're not allowed to edit this comment!");
     }
 
     this.logger.log(
@@ -87,7 +84,7 @@ export class CommentController {
     }
     if (comment.authorId !== userID) {
       this.logger.error(`You're not allowed to delete comment ${commentID}!`);
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         "You're not allowed to delete this comment!",
       );
     }

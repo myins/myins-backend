@@ -6,7 +6,7 @@ import {
   Logger,
   Post,
   Body,
-  UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -87,7 +87,7 @@ export class ChatController {
         this.logger.error(
           "You're not allowed to search message in this channel!",
         );
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           "You're not allowed to search message in this channel!",
         );
       }

@@ -218,7 +218,7 @@ export class AuthService {
     if (!user) {
       // Invalid user, just throw unauthorized
       this.logger.error(`Could not find user with phone ${phone}!`);
-      throw new UnauthorizedException('Invalid phone / password!'); // Change back
+      throw new UnauthorizedException('Invalid phone / password!');
     }
 
     const isMatch = await bcrypt.compare(pass, user.password);
@@ -227,7 +227,7 @@ export class AuthService {
       return user;
     }
     this.logger.error(`Invalid password for user with phone ${phone}!`);
-    throw new UnauthorizedException('Invalid phone / password!'); // Change back
+    throw new UnauthorizedException('Invalid phone / password!');
   }
 
   async login(user: User) {
@@ -259,7 +259,7 @@ export class AuthService {
 
     if (user.refreshToken != refreshToken) {
       this.logger.error('Invalid refresh token!');
-      throw new UnauthorizedException('Invalid refresh token!'); // Change back
+      throw new UnauthorizedException('Invalid refresh token!');
     }
 
     this.logger.log(`Creating stream user if not exists for user ${user.id}`);

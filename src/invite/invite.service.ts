@@ -3,7 +3,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
@@ -48,7 +47,7 @@ export class InviteService {
     );
     if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         "You're not allowed to approve members for this INS!",
       );
     }
@@ -128,7 +127,7 @@ export class InviteService {
     );
     if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         "You're not allowed to approve members for this INS!",
       );
     }
