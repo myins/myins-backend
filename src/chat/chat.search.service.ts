@@ -44,12 +44,19 @@ export class ChatSearchService {
           },
         };
 
-    // const messageFilters: MessageFilters = {
-    //   $and: [
-    //     { 'attachments.type': { $in: ['image', 'video'] } },
-    //     { type: { $ne: 'deleted' } },
-    //   ],
-    // };
+    let messageFilters: MessageFilters = data.mediaTypes
+      ? {
+          'attachments.type': { $in: data.mediaTypes },
+        }
+      : {};
+    messageFilters = data.autocomplete?.length
+      ? {
+          text: { $autocomplete: data.autocomplete },
+        }
+      : messageFilters;
+    if (!messageFilters['attachments.type'] && !messageFilters.text) {
+      messageFilters = { created_at: { $lte: new Date().toISOString() } };
+    }
 
     const options: SearchOptions = {
       sort: { created_at: -1 },
@@ -59,11 +66,9 @@ export class ChatSearchService {
       options.next = data.next;
     }
 
-    // console.log('messageFilters', messageFilters);
-
     const search = await this.streamChat.search(
       channelFilters,
-      { deleted_at: { $exists: false } },
+      messageFilters,
       options,
     );
 
