@@ -165,6 +165,7 @@ export class InviteService {
     const data = usersNotInINS.map((otherUser) => ({
       userId: otherUser,
       role: UserRole.PENDING,
+      invitedBy: userID,
     }));
 
     this.logger.log(

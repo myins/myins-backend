@@ -53,6 +53,9 @@ export class UserPendingController {
     const userConnections = await this.userConnectionService.getConnections({
       where: {
         userId: id,
+        role: {
+          not: UserRole.PENDING,
+        },
       },
     });
     const countPendingUsers = await this.userConnectionService.count({
@@ -68,16 +71,20 @@ export class UserPendingController {
       },
     });
 
-    const dataPendingUsers = pendingConenctions.map((connection) => {
-      const conn = <PendingUsersInclude>connection;
-      return {
-        authorId: conn.user.id,
-        author: conn.user,
-        ins: conn.ins,
-        createdAt: conn.createdAt,
-        isInvitation: connection.userId === id,
-      };
-    });
+    const dataPendingUsers = await Promise.all(
+      pendingConenctions.map(async (connection) => {
+        const conn = <PendingUsersInclude>connection;
+        return {
+          authorId: conn.invitedBy ?? conn.user.id,
+          author: conn.invitedBy
+            ? await this.userService.shallowUser({ id: conn.invitedBy })
+            : conn.user,
+          ins: conn.ins,
+          createdAt: conn.createdAt,
+          isInvitation: connection.userId === id,
+        };
+      }),
+    );
 
     return {
       count: countPendingUsers,

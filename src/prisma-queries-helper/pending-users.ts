@@ -26,9 +26,13 @@ export const pendingUsersWhereQuery = (
             },
           },
         ],
+        invitedBy: {
+          equals: null,
+        },
       },
       {
         userId: userId,
+        role: UserRole.PENDING,
       },
     ],
   };

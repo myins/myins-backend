@@ -41,7 +41,7 @@ model User {
   disabledNotifications  NotificationSource[]
 
   disabledBiometryINSIds String[]
-  disabledAllBiometry Boolean @default(false)
+  disabledAllBiometry    Boolean  @default(false)
 }
 
 model PostContent {
@@ -166,6 +166,7 @@ model UserInsConnection {
 
   role UserRole @default(MEMBER)
 
+  invitedBy     String?
   deniedByUsers String[]
 
   createdAt DateTime @default(now())

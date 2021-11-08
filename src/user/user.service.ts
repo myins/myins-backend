@@ -39,11 +39,22 @@ export class UserService {
   async user(
     where: Prisma.UserWhereUniqueInput,
     include?: Prisma.UserInclude,
+    select?: Prisma.UserSelect,
   ): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: where,
-      include: include,
-    });
+    const data: Prisma.UserFindUniqueArgs = {
+      where,
+    };
+    if (include) {
+      data.include = include;
+    }
+    if (select) {
+      data.select = select;
+    }
+    return this.prisma.user.findUnique(data);
+  }
+
+  async shallowUser(where: Prisma.UserWhereUniqueInput): Promise<User | null> {
+    return this.user(where, undefined, ShallowUserSelect);
   }
 
   async getUserProfile(userID: string, asUserID?: string) {
@@ -57,7 +68,7 @@ export class UserService {
         },
       },
     );
-    if (userModel == null) {
+    if (!userModel) {
       this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }

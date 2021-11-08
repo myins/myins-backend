@@ -202,25 +202,25 @@ export class NotificationPushService {
 
     switch (source.source) {
       case NotificationSource.LIKE_POST:
-        const authorLikePost = await this.userService.user({
+        const authorLikePost = await this.userService.shallowUser({
           id: source.author.connect?.id,
         });
         body = `${authorLikePost?.firstName} ${authorLikePost?.lastName} liked your post!`;
         break;
       case NotificationSource.LIKE_COMMENT:
-        const authorLikeComment = await this.userService.user({
+        const authorLikeComment = await this.userService.shallowUser({
           id: source.author.connect?.id,
         });
         body = `${authorLikeComment?.firstName} ${authorLikeComment?.lastName} liked your comment!`;
         break;
       case NotificationSource.COMMENT:
-        const authorComment = await this.userService.user({
+        const authorComment = await this.userService.shallowUser({
           id: source.author.connect?.id,
         });
         body = `${authorComment?.firstName} ${authorComment?.lastName} left a comment!`;
         break;
       case NotificationSource.POST:
-        const authorPost = await this.userService.user({
+        const authorPost = await this.userService.shallowUser({
           id: source.author.connect?.id,
         });
         if (source.post?.connect?.id) {
@@ -253,7 +253,7 @@ export class NotificationPushService {
           `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
         );
       case NotificationSource.JOINED_INS:
-        const authorInsJoined = await this.userService.user({
+        const authorInsJoined = await this.userService.shallowUser({
           id: source.author.connect?.id,
         });
         const insJoined = await this.insService.ins({
