@@ -53,9 +53,6 @@ export class InsService {
               },
             }
           : undefined,
-      role: {
-        not: UserRole.PENDING,
-      },
     };
 
     const connectionQuery = await this.userConnectionService.getConnections({
