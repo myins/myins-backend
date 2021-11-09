@@ -169,17 +169,19 @@ export class UserPendingController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('users-pending')
   async deny(@PrismaUser('id') id: string, @Body() data: ApproveDenyUserAPI) {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: id,
-        insId: data.insID,
-      },
-    });
-    if (!connection || connection.role === UserRole.PENDING) {
-      this.logger.error("You're not allowed to deny members for this INS!");
-      throw new BadRequestException(
-        "You're not allowed to deny members for this INS!",
-      );
+    if (id !== data.userID) {
+      const connection = await this.userConnectionService.getConnection({
+        userId_insId: {
+          userId: id,
+          insId: data.insID,
+        },
+      });
+      if (!connection || connection.role === UserRole.PENDING) {
+        this.logger.error("You're not allowed to deny members for this INS!");
+        throw new BadRequestException(
+          "You're not allowed to deny members for this INS!",
+        );
+      }
     }
 
     const memberConnection = await this.userConnectionService.getConnection({

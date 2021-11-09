@@ -229,7 +229,10 @@ export class NotificationPushService {
             where: {
               members: {
                 some: {
-                  insId: target.id,
+                  userId: target.id,
+                  role: {
+                    not: UserRole.PENDING,
+                  },
                 },
               },
               posts: {

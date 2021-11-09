@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { User } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
@@ -126,6 +126,9 @@ export class PostCreateController {
         members: {
           some: {
             userId: user.id,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       })
