@@ -184,22 +184,27 @@ export class UserController {
       const inses = await this.insService.inses({
         where: {
           invitedPhoneNumbers: {
-            has: toCreate.phoneNumber,
+            has: createdUser.phoneNumber,
           },
         },
       });
 
       await Promise.all(
         inses.map(async (ins) => {
+          this.logger.log(`Adding user ${createdUser.id} in ins ${ins.id}`);
           await this.userService.approveUser(createdUser.id, ins.id);
+
+          this.logger.log(
+            `Update ins. Remove phone number ${createdUser.phoneNumber} from invitedPhoneNumbers`,
+          );
           await this.insService.update({
             where: {
               id: ins.id,
             },
             data: {
-              invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
+              invitedPhoneNumbers: ins?.invitedPhoneNumbers?.filter(
                 (invitedPhoneNumber) =>
-                  invitedPhoneNumber !== toCreate.phoneNumber,
+                  invitedPhoneNumber !== createdUser.phoneNumber,
               ),
             },
           });
