@@ -6,7 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma, UserRole, NotificationSource } from '@prisma/client';
+import {
+  User,
+  Prisma,
+  UserRole,
+  NotificationSource,
+  INS,
+} from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
@@ -122,7 +128,7 @@ export class UserService {
     return this.users(params);
   }
 
-  async createUser(data: Prisma.UserCreateInput) {
+  async createUser(data: Prisma.UserCreateInput, inses: INS[]) {
     const newUserModel = await this.prisma.user.create({
       data,
     });
@@ -143,6 +149,19 @@ export class UserService {
 
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(newUserModel);
+
+    if (inses.length) {
+      this.logger.log(
+        `Adding new user ${newUserModel.id} in inses ${inses.map(
+          (ins) => ins.id,
+        )}`,
+      );
+      await this.insService.addInvitedExternalUserIntoINSes(
+        inses,
+        newUserProfile.id,
+        newUserProfile.phoneNumber,
+      );
+    }
 
     this.logger.log(`User created ${addedTogether.id}`);
     return addedTogether;

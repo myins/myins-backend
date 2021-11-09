@@ -188,6 +188,40 @@ export class InsService {
     });
   }
 
+  async addInvitedExternalUserIntoINSes(
+    inses: INS[],
+    userID: string,
+    phoneNumber: string,
+  ) {
+    const data: Prisma.UserInsConnectionCreateManyInput[] = inses
+      .map((ins) => ins.id)
+      .map((insID) => ({
+        insId: insID,
+        userId: userID,
+      }));
+    await this.userConnectionService.createMany(data);
+    this.logger.log(
+      `Remove phone number ${phoneNumber} as invited phone number from inses ${inses.map(
+        (ins) => ins.id,
+      )}`,
+    );
+
+    return Promise.all(
+      inses.map(async (ins) => {
+        await this.update({
+          where: {
+            id: ins.id,
+          },
+          data: {
+            invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
+              (invitedPhoneNumber) => invitedPhoneNumber !== phoneNumber,
+            ),
+          },
+        });
+      }),
+    );
+  }
+
   async ins(
     where: Prisma.INSWhereUniqueInput,
     include?: Prisma.INSInclude,
@@ -202,10 +236,13 @@ export class InsService {
     return ins;
   }
 
-  async inses(params: Prisma.INSFindManyArgs): Promise<INS[]> {
+  async inses(
+    params: Prisma.INSFindManyArgs,
+    withInvitedPhoneNumbers?: boolean,
+  ): Promise<INS[]> {
     const inses = await this.prismaService.iNS.findMany(params);
     const insesWithoutPhoneNumbers = inses.map((ins) => {
-      if (ins.invitedPhoneNumbers) {
+      if (ins.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
         return <INS>omit(ins, 'invitedPhoneNumbers');
       }
       return ins;

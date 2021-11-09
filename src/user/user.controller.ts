@@ -14,7 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Prisma, User } from '@prisma/client';
+import { NotificationSource, Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -22,6 +22,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { NotificationService } from 'src/notification/notification.service';
 import { SmsService } from 'src/sms/sms.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { UserService } from 'src/user/user.service';
@@ -42,6 +43,7 @@ export class UserController {
     private readonly storageService: StorageService,
     private readonly smsService: SmsService,
     private readonly insService: InsService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Get('cloudfront-token')
@@ -176,36 +178,39 @@ export class UserController {
       password: hashedPassword,
     };
     try {
+      const inses = await this.insService.inses(
+        {
+          where: {
+            invitedPhoneNumbers: {
+              has: toCreate.phoneNumber,
+            },
+          },
+        },
+        true,
+      );
+
       this.logger.log(
         `Creating user with phone number ${toCreate.phoneNumber}`,
       );
-      const createdUser = await this.userService.createUser(toCreate); // This calls sendVerificationCode
+      const createdUser = await this.userService.createUser(toCreate, inses); // This calls sendVerificationCode
 
-      const inses = await this.insService.inses({
-        where: {
-          invitedPhoneNumbers: {
-            has: createdUser.phoneNumber,
-          },
-        },
-      });
-
+      console.log('inses', inses);
       await Promise.all(
         inses.map(async (ins) => {
-          this.logger.log(`Adding user ${createdUser.id} in ins ${ins.id}`);
-          await this.userService.approveUser(createdUser.id, ins.id);
-
           this.logger.log(
-            `Update ins. Remove phone number ${createdUser.phoneNumber} from invitedPhoneNumbers`,
+            `Creating notification for joining ins ${ins.id} by user ${createdUser.id}`,
           );
-          await this.insService.update({
-            where: {
-              id: ins.id,
+          await this.notificationService.createNotification({
+            source: NotificationSource.JOINED_INS,
+            author: {
+              connect: {
+                id: createdUser.id,
+              },
             },
-            data: {
-              invitedPhoneNumbers: ins?.invitedPhoneNumbers?.filter(
-                (invitedPhoneNumber) =>
-                  invitedPhoneNumber !== createdUser.phoneNumber,
-              ),
+            ins: {
+              connect: {
+                id: ins.id,
+              },
             },
           });
         }),
