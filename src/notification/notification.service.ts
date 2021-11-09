@@ -41,7 +41,7 @@ export class NotificationService {
     this.logger.log('Adding isSeen prop for every notification');
     const user = await this.userService.user({ id: userID });
     const notification = user?.lastReadNotificationID
-      ? await this.getById({ id: user?.lastReadNotificationID })
+      ? await this.getById({ id: user.lastReadNotificationID })
       : null;
     const dataReturn = feedNotifications.map((notif) => {
       const notificationsWithINs: NotificationSource[] = [
@@ -63,7 +63,12 @@ export class NotificationService {
       };
     });
 
-    await this.userService.setLastReadNotificationID(userID, dataReturn[0].id);
+    if (dataReturn.length) {
+      await this.userService.setLastReadNotificationID(
+        userID,
+        dataReturn[0].id,
+      );
+    }
 
     this.logger.log('Successfully getting notifications feed');
     return {

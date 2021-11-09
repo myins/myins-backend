@@ -194,7 +194,6 @@ export class UserController {
       );
       const createdUser = await this.userService.createUser(toCreate, inses); // This calls sendVerificationCode
 
-      console.log('inses', inses);
       await Promise.all(
         inses.map(async (ins) => {
           this.logger.log(
