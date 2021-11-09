@@ -1,4 +1,4 @@
-import { UserRole } from '.prisma/client';
+import { NotificationSource, UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -18,6 +18,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
@@ -33,6 +34,7 @@ export class InsController {
     private readonly chatService: ChatService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Post()
@@ -221,9 +223,13 @@ export class InsController {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
-    const theINS = await this.insService.ins({
-      shareCode: insCode,
-    });
+    const theINS = await this.insService.ins(
+      {
+        shareCode: insCode,
+      },
+      undefined,
+      true,
+    );
     if (!theINS) {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid ins code!');
@@ -246,31 +252,54 @@ export class InsController {
     }
 
     const user = await this.userService.user({ id: userID });
-    if (
-      user?.phoneNumber &&
-      theINS.invitedPhoneNumbers.includes(user.phoneNumber)
-    ) {
-      await this.userService.approveUser(userID, theINS.id);
-    } else {
-      this.logger.log(
-        `Adding user ${userID} as pending member in ins ${theINS.id}`,
-      );
-      await this.insService.update({
-        where: { id: theINS.id },
-        data: {
-          members: {
-            create: {
-              userId: userID,
-              role: UserRole.PENDING,
+    if (user?.phoneNumber) {
+      if (theINS.invitedPhoneNumbers?.includes(user.phoneNumber)) {
+        this.logger.log(`Adding new user ${user.id} in ins ${theINS.id}`);
+        await this.insService.addInvitedExternalUserIntoINSes(
+          [theINS],
+          user.id,
+          user.phoneNumber,
+        );
+
+        this.logger.log(
+          `Creating notification for joining ins ${theINS.id} by user ${user.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.JOINED_INS,
+          author: {
+            connect: {
+              id: user.id,
             },
           },
-        },
-      });
-    }
+          ins: {
+            connect: {
+              id: theINS.id,
+            },
+          },
+        });
 
-    this.logger.log('Joined the INS as pending member');
+        this.logger.log('Joined the INS');
+      } else {
+        this.logger.log(
+          `Adding user ${userID} as pending member in ins ${theINS.id}`,
+        );
+        await this.insService.update({
+          where: { id: theINS.id },
+          data: {
+            members: {
+              create: {
+                userId: userID,
+                role: UserRole.PENDING,
+              },
+            },
+          },
+        });
+
+        this.logger.log('Joined the INS as pending member');
+      }
+    }
     return {
-      message: 'Joined the INS as pending member!',
+      message: 'Joined the INS!',
     };
   }
 

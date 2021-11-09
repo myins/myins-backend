@@ -225,12 +225,13 @@ export class InsService {
   async ins(
     where: Prisma.INSWhereUniqueInput,
     include?: Prisma.INSInclude,
+    withInvitedPhoneNumbers?: boolean,
   ): Promise<INS | null> {
     let ins = await this.prismaService.iNS.findUnique({
       where: where,
       include: include,
     });
-    if (ins?.invitedPhoneNumbers) {
+    if (ins?.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
       ins = <INS>omit(ins, 'invitedPhoneNumbers');
     }
     return ins;

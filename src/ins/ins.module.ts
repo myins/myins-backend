@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
+import { NotificationModule } from 'src/notification/notification.module';
 import { PostModule } from 'src/post/post.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
@@ -19,6 +20,7 @@ import { InsService } from './ins.service';
     CommentModule,
     forwardRef(() => UserModule),
     PostModule,
+    NotificationModule,
   ],
   controllers: [InsController, InsAdminController, InsPinController],
   providers: [InsService, InsAdminService],
