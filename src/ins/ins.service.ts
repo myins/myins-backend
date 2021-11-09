@@ -53,18 +53,10 @@ export class InsService {
               },
             }
           : undefined,
-    };
-
-    const userIDs = [
-      'a714825b-bc0b-4f83-aa36-d23aaf6015cd',
-      '13370fc6-51c1-4847-b3b5-f4be2598d344',
-    ];
-
-    if (!userIDs.includes(userID)) {
-      whereQuery.role = {
+      role: {
         not: UserRole.PENDING,
-      };
-    }
+      },
+    };
 
     const connectionQuery = await this.userConnectionService.getConnections({
       where: whereQuery,
