@@ -188,37 +188,6 @@ export class InsService {
     });
   }
 
-  async addInvitedExternalUserIntoINSes(
-    insIDs: string[],
-    userID: string,
-    phoneNumber: string,
-  ) {
-    const data = insIDs.map((insID) => ({
-      insId: insID,
-      userId: userID,
-    }));
-    await this.userConnectionService.createMany(data);
-
-    this.logger.log(
-      `Remove phone number ${phoneNumber} as invited phone number from inses ${insIDs}`,
-    );
-    return Promise.all(
-      insIDs.map(async (insID) => {
-        const ins = await this.ins({ id: insID });
-        await this.update({
-          where: {
-            id: insID,
-          },
-          data: {
-            invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
-              (invitedPhoneNumber) => invitedPhoneNumber !== phoneNumber,
-            ),
-          },
-        });
-      }),
-    );
-  }
-
   async ins(
     where: Prisma.INSWhereUniqueInput,
     include?: Prisma.INSInclude,

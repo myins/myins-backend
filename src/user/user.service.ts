@@ -144,27 +144,6 @@ export class UserService {
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(newUserModel);
 
-    const inses = await this.insService.inses({
-      where: {
-        invitedPhoneNumbers: {
-          has: newUserProfile.phoneNumber,
-        },
-      },
-    });
-
-    if (inses.length) {
-      this.logger.log(
-        `Adding new user ${newUserModel.id} in inses ${inses.map(
-          (ins) => ins.id,
-        )}`,
-      );
-      await this.insService.addInvitedExternalUserIntoINSes(
-        inses.map((ins) => ins.id),
-        newUserProfile.id,
-        newUserProfile.phoneNumber,
-      );
-    }
-
     this.logger.log(`User created ${addedTogether.id}`);
     return addedTogether;
   }
