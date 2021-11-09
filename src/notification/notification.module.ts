@@ -16,6 +16,6 @@ import { InsModule } from 'src/ins/ins.module';
   ],
   providers: [NotificationPushService, NotificationService],
   controllers: [NotificationController],
-  exports: [NotificationService],
+  exports: [NotificationService, NotificationPushService],
 })
 export class NotificationModule {}

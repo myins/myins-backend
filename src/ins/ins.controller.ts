@@ -18,6 +18,11 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import {
+  NotificationPushService,
+  PushExtraNotification,
+  PushNotificationSource,
+} from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
@@ -35,6 +40,7 @@ export class InsController {
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
+    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   @Post()
@@ -294,6 +300,12 @@ export class InsController {
             },
           },
         });
+        const data: PushExtraNotification = {
+          source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
+          author: user,
+          ins: theINS,
+        };
+        await this.notificationPushService.pushNotification(data);
 
         this.logger.log('Joined the INS as pending member');
       }

@@ -3,10 +3,31 @@ import * as PushNotifications from 'node-pushnotifications';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 if (process.env.NODE_ENV !== 'production') require('dotenv').config(); // This fixes env variables on dev
 import { FirebaseMessagingService } from '@aginix/nestjs-firebase-admin';
-import { NotificationSource, Prisma, User, UserRole } from '.prisma/client';
+import {
+  INS,
+  NotificationSource,
+  Prisma,
+  User,
+  UserRole,
+} from '.prisma/client';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+
+export const PushNotificationSource = {
+  REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
+  REQUEST_FOR_ME: 'REQUEST_FOR_ME',
+};
+
+export type PushNotificationSource =
+  typeof PushNotificationSource[keyof typeof PushNotificationSource];
+
+export interface PushExtraNotification {
+  source: PushNotificationSource;
+  author: User | null;
+  ins: INS;
+  targetID?: string;
+}
 
 const sandboxSettings = {
   gcm: {
@@ -52,17 +73,27 @@ export class NotificationPushService {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  async pushNotification(notif: Prisma.NotificationCreateInput) {
+  async pushNotification(
+    notif: Prisma.NotificationCreateInput | PushExtraNotification,
+  ) {
     const usersIDs = await this.getUsersIDsBySource(notif);
 
     await Promise.all(
       usersIDs.map(async (userID) => {
         const target = await this.userService.user({ id: userID });
-        if (
-          target?.pushToken &&
-          !target.disabledNotifications.includes(notif.source)
-        ) {
-          this.logger.log('Adding push notification');
+        const pushNotifications: PushNotificationSource[] = Object.keys(
+          PushNotificationSource,
+        );
+        let realSource: NotificationSource | string = notif.source;
+        if (pushNotifications.includes(notif.source)) {
+          realSource = NotificationSource.JOINED_INS;
+        }
+        const isNotDisableNotification =
+          !target?.disabledNotifications.includes(
+            <NotificationSource>realSource,
+          );
+        if (target?.pushToken && isNotDisableNotification) {
+          this.logger.log(`Adding push notification for user ${target.id}`);
           const notifBody = await this.constructNotificationBody(target, notif);
           await this.pushData(
             target.pushToken,
@@ -74,7 +105,11 @@ export class NotificationPushService {
     );
   }
 
-  async getUsersIDsBySource(notif: Prisma.NotificationCreateInput) {
+  async getUsersIDsBySource(
+    notif: Prisma.NotificationCreateInput | PushExtraNotification,
+  ) {
+    const normalNotif = <Prisma.NotificationCreateInput>notif;
+    const pushNotif = <PushExtraNotification>notif;
     let usersIDs: string[] = [];
 
     const unreachable = (x: never) => {
@@ -87,14 +122,16 @@ export class NotificationPushService {
       case NotificationSource.LIKE_COMMENT:
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
-        usersIDs = notif.target?.connect?.id ? [notif.target?.connect?.id] : [];
+        usersIDs = normalNotif.target?.connect?.id
+          ? [normalNotif.target?.connect?.id]
+          : [];
         break;
       case NotificationSource.POST:
         const inses = await this.insService.inses({
           where: {
             posts: {
               some: {
-                id: notif.post?.connect?.id,
+                id: normalNotif.post?.connect?.id,
               },
             },
           },
@@ -123,7 +160,7 @@ export class NotificationPushService {
         const membersIns = await this.userConnectionService.getConnections({
           where: {
             insId: {
-              in: notif.ins?.connect?.id,
+              in: normalNotif.ins?.connect?.id,
             },
             role: {
               not: UserRole.PENDING,
@@ -131,9 +168,28 @@ export class NotificationPushService {
           },
         });
         usersIDs = membersIns.map((member) => member.userId);
+        usersIDs = [...new Set(usersIDs)];
+        break;
+      case PushNotificationSource.REQUEST_FOR_OTHER_USER:
+        const membersRequestIns =
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: {
+                in: pushNotif.ins.id,
+              },
+              role: {
+                not: UserRole.PENDING,
+              },
+            },
+          });
+        usersIDs = membersRequestIns.map((member) => member.userId);
+        usersIDs = [...new Set(usersIDs)];
+        break;
+      case PushNotificationSource.REQUEST_FOR_ME:
+        usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
         break;
       default:
-        unreachable(notif.source);
+        unreachable(<never>notif.source);
         break;
     }
 
@@ -192,8 +248,10 @@ export class NotificationPushService {
 
   async constructNotificationBody(
     target: User,
-    source: Prisma.NotificationCreateInput,
+    source: Prisma.NotificationCreateInput | PushExtraNotification,
   ): Promise<PushNotifications.Data> {
+    const normalNotif = <Prisma.NotificationCreateInput>source;
+    const pushNotif = <PushExtraNotification>source;
     let body = '';
 
     const unreachable = (x: never) => {
@@ -204,27 +262,27 @@ export class NotificationPushService {
     switch (source.source) {
       case NotificationSource.LIKE_POST:
         const authorLikePost = await this.userService.shallowUser({
-          id: source.author.connect?.id,
+          id: normalNotif.author.connect?.id,
         });
         body = `${authorLikePost?.firstName} ${authorLikePost?.lastName} liked your post!`;
         break;
       case NotificationSource.LIKE_COMMENT:
         const authorLikeComment = await this.userService.shallowUser({
-          id: source.author.connect?.id,
+          id: normalNotif.author.connect?.id,
         });
         body = `${authorLikeComment?.firstName} ${authorLikeComment?.lastName} liked your comment!`;
         break;
       case NotificationSource.COMMENT:
         const authorComment = await this.userService.shallowUser({
-          id: source.author.connect?.id,
+          id: normalNotif.author.connect?.id,
         });
         body = `${authorComment?.firstName} ${authorComment?.lastName} left a comment!`;
         break;
       case NotificationSource.POST:
         const authorPost = await this.userService.shallowUser({
-          id: source.author.connect?.id,
+          id: normalNotif.author.connect?.id,
         });
-        if (source.post?.connect?.id) {
+        if (normalNotif.post?.connect?.id) {
           const inses = await this.insService.inses({
             where: {
               members: {
@@ -237,7 +295,7 @@ export class NotificationPushService {
               },
               posts: {
                 some: {
-                  id: source.post.connect.id,
+                  id: normalNotif.post.connect.id,
                 },
               },
             },
@@ -258,12 +316,12 @@ export class NotificationPushService {
         );
       case NotificationSource.JOINED_INS:
         const authorInsJoined = await this.userService.shallowUser({
-          id: source.author.connect?.id,
+          id: normalNotif.author.connect?.id,
         });
         const insJoined = await this.insService.ins({
-          id: source.ins?.connect?.id,
+          id: normalNotif.ins?.connect?.id,
         });
-        if (source.author.connect?.id === target.id) {
+        if (normalNotif.author.connect?.id === target.id) {
           body = `You joined ${insJoined?.name} ins!`;
         } else {
           body = `${authorInsJoined?.firstName} ${authorInsJoined?.lastName} joined ${insJoined?.name} ins!`;
@@ -271,12 +329,18 @@ export class NotificationPushService {
         break;
       case NotificationSource.JOIN_INS_REJECTED:
         const insJoinRejected = await this.insService.ins({
-          id: source.ins?.connect?.id,
+          id: normalNotif.ins?.connect?.id,
         });
         body = `Access to ${insJoinRejected?.name} has been declined!`;
         break;
+      case PushNotificationSource.REQUEST_FOR_OTHER_USER:
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins.name} ins!`;
+        break;
+      case PushNotificationSource.REQUEST_FOR_ME:
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins.name} Ins!`;
+        break;
       default:
-        unreachable(source.source);
+        unreachable(<never>source.source);
         break;
     }
 
