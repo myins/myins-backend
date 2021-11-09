@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import * as PushNotifications from 'node-pushnotifications';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 if (process.env.NODE_ENV !== 'production') require('dotenv').config(); // This fixes env variables on dev
@@ -17,6 +23,7 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 export const PushNotificationSource = {
   REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
   REQUEST_FOR_ME: 'REQUEST_FOR_ME',
+  INVITATION_DECLINED: 'INVITATION_DECLINED',
 };
 
 export type PushNotificationSource =
@@ -25,8 +32,8 @@ export type PushNotificationSource =
 export interface PushExtraNotification {
   source: PushNotificationSource;
   author: User | null;
-  ins: INS;
-  targetID?: string;
+  ins: INS | null;
+  targetID?: string | null;
 }
 
 const sandboxSettings = {
@@ -68,6 +75,7 @@ export class NotificationPushService {
 
   constructor(
     private readonly messagingService: FirebaseMessagingService,
+    @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
@@ -175,7 +183,7 @@ export class NotificationPushService {
           await this.userConnectionService.getConnections({
             where: {
               insId: {
-                in: pushNotif.ins.id,
+                in: pushNotif.ins?.id,
               },
               role: {
                 not: UserRole.PENDING,
@@ -186,6 +194,7 @@ export class NotificationPushService {
         usersIDs = [...new Set(usersIDs)];
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
+      case PushNotificationSource.INVITATION_DECLINED:
         usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
         break;
       default:
@@ -331,13 +340,16 @@ export class NotificationPushService {
         const insJoinRejected = await this.insService.ins({
           id: normalNotif.ins?.connect?.id,
         });
-        body = `Access to ${insJoinRejected?.name} has been declined!`;
+        body = `Your request to access ${insJoinRejected?.name} ins has been declined!`;
         break;
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
-        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins.name} ins!`;
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins?.name} ins!`;
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
-        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins.name} Ins!`;
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} Ins!`;
+        break;
+      case PushNotificationSource.INVITATION_DECLINED:
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} declined the invitation to ${pushNotif.ins?.name} Ins!`;
         break;
       default:
         unreachable(<never>source.source);

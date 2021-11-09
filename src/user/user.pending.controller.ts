@@ -194,7 +194,12 @@ export class UserPendingController {
       this.logger.log(
         `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
       );
-      await this.userService.denyUser(id, data.userID, data.insID);
+      await this.userService.denyUser(
+        id,
+        data.userID,
+        data.insID,
+        memberConnection.invitedBy,
+      );
 
       if (id !== data.userID) {
         const connections = await this.userConnectionService.getConnections({

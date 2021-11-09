@@ -25,6 +25,11 @@ import {
   EnableDisableNotificationAPI,
 } from './user-api.entity';
 import { NotificationService } from 'src/notification/notification.service';
+import {
+  NotificationPushService,
+  PushExtraNotification,
+  PushNotificationSource,
+} from 'src/notification/notification.push.service';
 
 @Injectable()
 export class UserService {
@@ -40,6 +45,8 @@ export class UserService {
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => NotificationPushService))
+    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   async user(
@@ -226,28 +233,41 @@ export class UserService {
     await this.chatService.addMembersToChannel([userId], insId);
   }
 
-  async denyUser(id: string, userId: string, insId: string) {
+  async denyUser(
+    id: string,
+    userId: string,
+    insId: string,
+    invitedByID?: string | null,
+  ) {
     if (id === userId) {
-      return this.userConnectionService.removeMember({
+      await this.userConnectionService.removeMember({
         userId_insId: {
           insId: insId,
           userId: id,
         },
       });
+      const dataPush: PushExtraNotification = {
+        source: PushNotificationSource.INVITATION_DECLINED,
+        author: await this.shallowUser({ id }),
+        ins: await this.insService.ins({ id: insId }),
+        targetID: invitedByID,
+      };
+      await this.notificationPushService.pushNotification(dataPush);
+    } else {
+      await this.userConnectionService.update({
+        where: {
+          userId_insId: {
+            userId: userId,
+            insId: insId,
+          },
+        },
+        data: {
+          deniedByUsers: {
+            push: id,
+          },
+        },
+      });
     }
-    return this.userConnectionService.update({
-      where: {
-        userId_insId: {
-          userId: userId,
-          insId: insId,
-        },
-      },
-      data: {
-        deniedByUsers: {
-          push: id,
-        },
-      },
-    });
   }
 
   async setLastReadNotificationID(
