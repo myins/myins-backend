@@ -194,7 +194,7 @@ export class UserPendingController {
       this.logger.log(
         `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
       );
-      await this.userService.denyUser(
+      const updatedMemberConnection = await this.userService.denyUser(
         id,
         data.userID,
         data.insID,
@@ -212,7 +212,7 @@ export class UserPendingController {
         });
         const noDenyMembers = connections.find(
           (connection) =>
-            !memberConnection.deniedByUsers.includes(connection.userId),
+            !updatedMemberConnection.deniedByUsers.includes(connection.userId),
         );
 
         if (!noDenyMembers) {

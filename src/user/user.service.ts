@@ -12,6 +12,7 @@ import {
   UserRole,
   NotificationSource,
   INS,
+  UserInsConnection,
 } from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
@@ -238,9 +239,9 @@ export class UserService {
     userId: string,
     insId: string,
     invitedByID?: string | null,
-  ) {
+  ): Promise<UserInsConnection> {
     if (id === userId) {
-      await this.userConnectionService.removeMember({
+      const removedConnection = await this.userConnectionService.removeMember({
         userId_insId: {
           insId: insId,
           userId: id,
@@ -253,8 +254,9 @@ export class UserService {
         targetID: invitedByID,
       };
       await this.notificationPushService.pushNotification(dataPush);
+      return removedConnection;
     } else {
-      await this.userConnectionService.update({
+      return this.userConnectionService.update({
         where: {
           userId_insId: {
             userId: userId,
