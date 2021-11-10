@@ -201,6 +201,7 @@ export class NotificationPushService {
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
         usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
+        break;
       default:
         unreachable(<never>notif.source);
         break;
