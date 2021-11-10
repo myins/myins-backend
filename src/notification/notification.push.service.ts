@@ -108,6 +108,10 @@ export class NotificationPushService {
             target?.sandboxToken ?? false,
             notifBody,
           );
+        } else {
+          this.logger.log(
+            `Push notification has not been sent for user ${target?.id}`,
+          );
         }
       }),
     );
