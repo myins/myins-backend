@@ -132,6 +132,9 @@ export class InsService {
         inses: {
           some: {
             insId: insID,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
         OR:
