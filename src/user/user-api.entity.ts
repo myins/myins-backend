@@ -46,9 +46,11 @@ export class UpdateUserAPI {
 export class UpdatePushTokenAPI {
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   pushToken: string;
 
   @IsBoolean()
+  @IsOptional()
   isSandbox: boolean;
 }
 
