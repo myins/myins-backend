@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, Notification, NotificationSource } from '@prisma/client';
+import { Prisma, Notification, NotificationSource, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { NotificationPushService } from './notification.push.service';
@@ -97,23 +97,21 @@ export class NotificationService {
     });
   }
 
-  async countUnreadNotifications(
-    lastReadNotificationID: string | null,
-  ): Promise<number> {
-    let data = {};
+  async countUnreadNotifications(user: User): Promise<number | undefined> {
+    const { id, lastReadNotificationID } = user;
     if (lastReadNotificationID) {
       this.logger.log(
         `Getting notifications newer than notification ${lastReadNotificationID}`,
       );
       const notification = await this.getById({ id: lastReadNotificationID });
-      data = {
-        where: {
-          createdAt: {
-            gt: notification?.createdAt,
-          },
+      const dataQuery = notificationFeedCount(id);
+      dataQuery.where = {
+        ...dataQuery.where,
+        createdAt: {
+          gt: notification?.createdAt,
         },
       };
+      return this.prisma.notification.count(dataQuery);
     }
-    return this.prisma.notification.count(data);
   }
 }
