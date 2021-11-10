@@ -236,6 +236,7 @@ export class UserService {
     insId: string,
   ): Promise<UserInsConnection> {
     if (id === userId) {
+      this.logger.log(`Removing pending member ${id} from ins ${insId}`);
       return this.userConnectionService.removeMember({
         userId_insId: {
           insId: insId,
@@ -243,7 +244,7 @@ export class UserService {
         },
       });
     } else {
-      return this.userConnectionService.update({
+      const updatedMemberConnection = await this.userConnectionService.update({
         where: {
           userId_insId: {
             userId: userId,
@@ -256,6 +257,58 @@ export class UserService {
           },
         },
       });
+
+      this.logger.log(
+        `Checking if member ${userId} is denied by all users from ins ${insId}`,
+      );
+      const connections = await this.userConnectionService.getConnections({
+        where: {
+          insId: insId,
+          role: {
+            not: UserRole.PENDING,
+          },
+        },
+      });
+      const noDenyMembers = connections.find(
+        (connection) =>
+          !updatedMemberConnection.deniedByUsers.includes(connection.userId),
+      );
+
+      if (!noDenyMembers) {
+        this.logger.log(`Removing pending member ${userId} from ins ${insId}`);
+        const ret = await this.userConnectionService.removeMember({
+          userId_insId: {
+            insId: insId,
+            userId: userId,
+          },
+        });
+
+        this.logger.log(
+          `Creating notification for decining user ${userId} from ins ${insId}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.JOIN_INS_REJECTED,
+          target: {
+            connect: {
+              id: userId,
+            },
+          },
+          author: {
+            connect: {
+              id: userId,
+            },
+          },
+          ins: {
+            connect: {
+              id: insId,
+            },
+          },
+        });
+
+        return ret;
+      }
+
+      return updatedMemberConnection;
     }
   }
 

@@ -1,4 +1,4 @@
-import { NotificationSource, UserRole } from '.prisma/client';
+import { UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -194,50 +194,7 @@ export class UserPendingController {
       this.logger.log(
         `Denying user ${data.userID} from ins ${data.insID} by user ${id}`,
       );
-      const updatedMemberConnection = await this.userService.denyUser(
-        id,
-        data.userID,
-        data.insID,
-      );
-
-      if (id !== data.userID) {
-        const connections = await this.userConnectionService.getConnections({
-          where: {
-            insId: data.insID,
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        });
-        const noDenyMembers = connections.find(
-          (connection) =>
-            !updatedMemberConnection.deniedByUsers.includes(connection.userId),
-        );
-
-        if (!noDenyMembers) {
-          this.logger.log(
-            `Creating notification for decining user ${data.userID} from ins ${data.insID}`,
-          );
-          await this.notificationService.createNotification({
-            source: NotificationSource.JOIN_INS_REJECTED,
-            target: {
-              connect: {
-                id: data.userID,
-              },
-            },
-            author: {
-              connect: {
-                id: data.userID,
-              },
-            },
-            ins: {
-              connect: {
-                id: data.insID,
-              },
-            },
-          });
-        }
-      }
+      await this.userService.denyUser(id, data.userID, data.insID);
     }
 
     this.logger.log('User successfully denied');
