@@ -72,6 +72,32 @@ export class InsService {
       include: InsWithCountMembersInclude,
     });
 
+    // The following hack is due to https://github.com/prisma/prisma/issues/8413
+    // We can't filter relation counts, so instead we get all the PENDING members (should be a small amount)
+    // And we put them in a map where the key is the INS ID, and the value is the number of pending members
+    const pendingCountPerINS: { [key: string]: number } = {};
+    (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: {
+            in: onlyIDs,
+          },
+          role: 'PENDING',
+        },
+      })
+    ).forEach((cur) => {
+      pendingCountPerINS[cur.insId] = (pendingCountPerINS[cur.insId] ?? 0) + 1;
+    });
+
+    // Now we substract the pending count from the full count
+    toRet.forEach((each) => {
+      const theCount = (<InsWithCountMembers>each)._count;
+      if (pendingCountPerINS[each.id] && theCount) {
+        theCount.members -= pendingCountPerINS[each.id];
+        (<InsWithCountMembers>each)._count = theCount;
+      }
+    });
+
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {

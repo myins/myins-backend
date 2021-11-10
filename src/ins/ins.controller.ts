@@ -24,9 +24,12 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
+import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
+import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
+import { omit } from 'src/util/omit';
 import { CreateINSAPI } from './ins-api.entity';
 import { InsService } from './ins.service';
 
@@ -89,19 +92,25 @@ export class InsController {
     }
 
     this.logger.log(`Getting ins by code ${insCode}`);
-    const ins = await this.insService.ins(
+    let ins = await this.insService.ins(
       {
         shareCode: insCode,
       },
       {
-        _count: {
-          select: {
-            members: true,
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
     );
     if (ins) {
+      (<InsWithCountMembers>ins)._count = {
+        members: (<InsWithMembersID>ins).members.length,
+      };
+      ins = omit(<InsWithMembersID>ins, 'members');
       return ins;
     }
     this.logger.error(`Could not find ins with code ${insCode}!`);
@@ -193,9 +202,11 @@ export class InsController {
         },
       },
       include: {
-        _count: {
-          select: {
-            members: true,
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
@@ -205,15 +216,18 @@ export class InsController {
       throw new NotFoundException('Could not find that INS!');
     }
 
+    let ins = inses[0];
+    (<InsWithCountMembers>ins)._count = {
+      members: (<InsWithMembersID>ins).members.length,
+    };
+    ins = omit(<InsWithMembersID>ins, 'members');
+
     this.logger.log(
       `Create channel for ins ${id} by user stream ${userID} if not exists`,
     );
-    await this.chatService.createChannelINSWithMembersIfNotExists(
-      inses[0],
-      userID,
-    );
+    await this.chatService.createChannelINSWithMembersIfNotExists(ins, userID);
 
-    return inses[0];
+    return ins;
   }
 
   @Post('join/:code')
