@@ -162,7 +162,7 @@ export class UserController {
 
   @Post()
   @ApiTags('users')
-  async signupUser(@Body() userData: CreateUserAPI) {
+  async signupUser(@Body() userData: CreateUserAPI & UpdatePushTokenAPI) {
     this.logger.log(
       `Signing up user with phone number ${userData.phoneNumber}`,
     );
@@ -176,6 +176,8 @@ export class UserController {
       firstName: userData.firstName,
       lastName: userData.lastName,
       password: hashedPassword,
+      pushToken: userData.pushToken,
+      sandboxToken: userData.isSandbox,
     };
     try {
       const inses = await this.insService.inses(
@@ -232,7 +234,9 @@ export class UserController {
     @Body() dataModel: UpdatePushTokenAPI,
     @PrismaUser('id') userID: string,
   ) {
-    this.logger.log(`Updating user ${userID}. Adding tokens`);
+    this.logger.log(
+      `Updating user ${userID}. Change pushToken and sandboxToken`,
+    );
     await this.userService.updateUser({
       where: {
         id: userID,

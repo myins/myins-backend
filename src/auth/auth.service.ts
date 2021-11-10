@@ -11,6 +11,7 @@ import fetch from 'node-fetch';
 import { ChatService } from 'src/chat/chat.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
+import { UpdatePushTokenAPI } from 'src/user/user-api.entity';
 import { UserService } from 'src/user/user.service';
 import { isTestNumber } from 'src/util/test-numbers';
 import { ChangePasswordAPI, CodePhoneAPI } from './auth-api.entity';
@@ -230,19 +231,33 @@ export class AuthService {
     throw new UnauthorizedException('Invalid phone / password!');
   }
 
-  async login(user: User) {
+  async login(user: User, tokenData: UpdatePushTokenAPI) {
+    console.log('user', user);
     this.logger.log(`Generating token for user ${user.id}`);
     const authTokens = await this.jwtService.generateNewAuthTokens(
       user.phoneNumber,
       user.id,
     );
 
-    this.logger.log(`Getting profile for user ${user.id}`);
-    const userProfile = await this.usersService.getUserProfile(user.id);
+    this.logger.log(
+      `Updating user ${user.id}. Change pushToken and sandboxToken`,
+    );
+    const updatedUser = await this.usersService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        pushToken: tokenData.pushToken,
+        sandboxToken: tokenData.isSandbox,
+      },
+    });
+
+    this.logger.log(`Getting profile for user ${updatedUser.id}`);
+    const userProfile = await this.usersService.getUserProfile(updatedUser.id);
     const addedTogether = { ...userProfile, ...authTokens };
 
     this.logger.log('Sending verification code');
-    this.smsService.sendVerificationCode(user);
+    this.smsService.sendVerificationCode(updatedUser);
 
     this.logger.log(`User logged ${addedTogether.id}`);
     return addedTogether;
