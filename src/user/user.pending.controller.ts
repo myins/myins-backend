@@ -198,7 +198,6 @@ export class UserPendingController {
         id,
         data.userID,
         data.insID,
-        memberConnection.invitedBy,
       );
 
       if (id !== data.userID) {

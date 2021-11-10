@@ -26,11 +26,7 @@ import {
   EnableDisableNotificationAPI,
 } from './user-api.entity';
 import { NotificationService } from 'src/notification/notification.service';
-import {
-  NotificationPushService,
-  PushExtraNotification,
-  PushNotificationSource,
-} from 'src/notification/notification.push.service';
+import { NotificationPushService } from 'src/notification/notification.push.service';
 
 @Injectable()
 export class UserService {
@@ -238,23 +234,14 @@ export class UserService {
     id: string,
     userId: string,
     insId: string,
-    invitedByID?: string | null,
   ): Promise<UserInsConnection> {
     if (id === userId) {
-      const removedConnection = await this.userConnectionService.removeMember({
+      return this.userConnectionService.removeMember({
         userId_insId: {
           insId: insId,
           userId: id,
         },
       });
-      const dataPush: PushExtraNotification = {
-        source: PushNotificationSource.INVITATION_DECLINED,
-        author: await this.shallowUser({ id }),
-        ins: await this.insService.ins({ id: insId }),
-        targetID: invitedByID,
-      };
-      await this.notificationPushService.pushNotification(dataPush);
-      return removedConnection;
     } else {
       return this.userConnectionService.update({
         where: {

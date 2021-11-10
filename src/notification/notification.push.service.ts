@@ -23,7 +23,6 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 export const PushNotificationSource = {
   REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
   REQUEST_FOR_ME: 'REQUEST_FOR_ME',
-  INVITATION_DECLINED: 'INVITATION_DECLINED',
 };
 
 export type PushNotificationSource =
@@ -198,9 +197,6 @@ export class NotificationPushService {
         usersIDs = [...new Set(usersIDs)];
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
-      case PushNotificationSource.INVITATION_DECLINED:
-        usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
-        break;
       default:
         unreachable(<never>notif.source);
         break;
@@ -351,9 +347,6 @@ export class NotificationPushService {
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} Ins!`;
-        break;
-      case PushNotificationSource.INVITATION_DECLINED:
-        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} declined the invitation to ${pushNotif.ins?.name} Ins!`;
         break;
       default:
         unreachable(<never>source.source);
