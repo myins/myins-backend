@@ -167,6 +167,7 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
     @Query('filter') filter: string,
+    @Query('without') without?: boolean,
   ) {
     const inses = await this.insService.inses({
       where: {
@@ -184,7 +185,14 @@ export class InsController {
     }
 
     this.logger.log(`Getting members for ins ${id}`);
-    return this.insService.membersForIns(id, skip, take, filter);
+    return this.insService.membersForIns(
+      id,
+      userID,
+      skip,
+      take,
+      filter,
+      without,
+    );
   }
 
   @Get(':id')

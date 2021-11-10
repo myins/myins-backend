@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma, UserInsConnection, UserRole } from '@prisma/client';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -93,7 +94,7 @@ export class UserConnectionService {
           role: UserRole.MEMBER,
         },
       });
-      await this.update({
+      return this.update({
         where: {
           userId_insId: {
             userId: newAdminId,
@@ -102,6 +103,11 @@ export class UserConnectionService {
         },
         data: {
           role: UserRole.ADMIN,
+        },
+        select: {
+          user: {
+            select: ShallowUserSelect,
+          },
         },
       });
     });
