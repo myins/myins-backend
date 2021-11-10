@@ -63,7 +63,7 @@ export class NotificationService {
       };
     });
 
-    if (dataReturn.length) {
+    if (skip === 0 && dataReturn.length) {
       await this.userService.setLastReadNotificationID(
         userID,
         dataReturn[0].id,
