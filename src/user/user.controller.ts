@@ -14,7 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, Prisma, User } from '@prisma/client';
+import { NotificationSource, Prisma, User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -253,10 +253,10 @@ export class UserController {
     };
   }
 
-  @Delete(':id')
+  @Delete()
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@Param('id') userId: string) {
+  async deleteUser(@PrismaUser('id') userId: string) {
     const user = await this.userService.user({
       id: userId,
     });
@@ -265,12 +265,35 @@ export class UserController {
       throw new NotFoundException('Could not find this user!');
     }
 
-    this.logger.log(`Deleting user ${userId}`);
-    await this.userService.deleteUser({ id: userId });
+    this.logger.log(`Getting inses where user ${userId} is admin`);
+    const inses = await this.insService.inses({
+      where: {
+        members: {
+          some: {
+            userId: userId,
+            role: UserRole.ADMIN,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
 
-    this.logger.log('User successfully deleted');
-    return {
-      message: 'User successfully deleted!',
-    };
+    if (inses.length) {
+      this.logger.log(`User ${userId} is an admin for some inses`);
+      return {
+        inses: inses,
+      };
+    } else {
+      this.logger.log(`User ${userId} is an admin. Deleting user ${userId}`);
+      await this.userService.deleteUser({ id: userId });
+
+      this.logger.log('User successfully deleted');
+      return {
+        inses: [],
+      };
+    }
   }
 }

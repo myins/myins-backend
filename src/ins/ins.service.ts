@@ -149,38 +149,51 @@ export class InsService {
 
   async membersForIns(
     insID: string,
+    userID?: string,
     skip?: number,
     take?: number,
     filter?: string,
+    without?: boolean,
   ) {
-    return this.userService.users({
-      where: {
-        inses: {
-          some: {
-            insId: insID,
-            role: {
-              not: UserRole.PENDING,
-            },
+    let whereQuery: Prisma.UserWhereInput = {
+      inses: {
+        some: {
+          insId: insID,
+          role: {
+            not: UserRole.PENDING,
           },
         },
-        OR:
-          filter && filter.length > 0
-            ? [
-                {
-                  firstName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                },
-                {
-                  lastName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                },
-              ]
-            : undefined,
       },
+      OR:
+        filter && filter.length > 0
+          ? [
+              {
+                firstName: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                lastName: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              },
+            ]
+          : undefined,
+    };
+
+    if (without) {
+      whereQuery = {
+        ...whereQuery,
+        id: {
+          not: userID,
+        },
+      };
+    }
+
+    return this.userService.users({
+      where: whereQuery,
       skip: skip,
       take: take,
       orderBy: {
