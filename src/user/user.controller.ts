@@ -257,18 +257,10 @@ export class UserController {
     };
   }
 
-  @Delete()
+  @Get('inses/admin')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@PrismaUser('id') userId: string) {
-    const user = await this.userService.user({
-      id: userId,
-    });
-    if (!user) {
-      this.logger.error(`Could not find user ${userId}!`);
-      throw new NotFoundException('Could not find this user!');
-    }
-
+  async getInsesAdmin(@PrismaUser('id') userId: string) {
     this.logger.log(`Getting inses where user ${userId} is admin`);
     const inses = await this.insService.inses({
       where: {
@@ -291,14 +283,55 @@ export class UserController {
         inses: inses,
       };
     } else {
-      this.logger.log(`User ${userId} is an admin. Deleting user ${userId}`);
-      await this.userService.deleteUser({ id: userId });
+      this.logger.log(`Getting inses for user ${userId}`);
+      const userInses = await this.insService.inses({
+        where: {
+          members: {
+            some: {
+              userId: userId,
+              role: {
+                not: UserRole.PENDING,
+              },
+            },
+          },
+        },
+      });
 
-      this.logger.log('User successfully deleted');
+      if (userInses.length === 1) {
+        this.logger.log(
+          `User ${userId} is member only for an ins. Return ins name`,
+        );
+        return {
+          inses: [],
+          nameIns: userInses[0].name,
+        };
+      }
+
       return {
         inses: [],
       };
     }
+  }
+
+  @Delete()
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@PrismaUser('id') userId: string) {
+    const user = await this.userService.user({
+      id: userId,
+    });
+    if (!user) {
+      this.logger.error(`Could not find user ${userId}!`);
+      throw new NotFoundException('Could not find this user!');
+    }
+
+    this.logger.log(`Deleting user ${userId}`);
+    await this.userService.deleteUser({ id: userId });
+
+    this.logger.log('User successfully deleted');
+    return {
+      message: 'User successfully deleted',
+    };
   }
 
   @Put('make-myins-user')
