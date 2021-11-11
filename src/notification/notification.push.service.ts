@@ -155,6 +155,9 @@ export class NotificationPushService {
             role: {
               not: UserRole.PENDING,
             },
+            userId: {
+              not: normalNotif.author.connect?.id,
+            },
           },
         });
         usersIDs = members.map((member) => member.userId);
@@ -197,6 +200,8 @@ export class NotificationPushService {
         usersIDs = [...new Set(usersIDs)];
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
+        usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
+        break;
       default:
         unreachable(<never>notif.source);
         break;
