@@ -316,7 +316,7 @@ export class InsController {
         });
         const data: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
-          author: user,
+          author: await this.userService.shallowUser({ id: user.id }),
           ins: theINS,
         };
         await this.notificationPushService.pushNotification(data);
