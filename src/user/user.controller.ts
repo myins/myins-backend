@@ -34,6 +34,7 @@ import {
   UpdateUserAPI,
 } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
+import * as uuid from 'uuid';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -305,12 +306,13 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async makeMyInsUser(@PrismaUser() user: User) {
     this.logger.log(`Updating user ${user.id}. Make user a MyINS user`);
+    const hashedPhoneNumber = `-${user.phoneNumber}-${uuid.v4()}`;
     await this.userService.updateUser({
       where: {
         id: user.id,
       },
       data: {
-        phoneNumber: `-${user.phoneNumber}-hash`,
+        phoneNumber: hashedPhoneNumber,
         phoneNumberVerified: false,
         firstName: 'MyINS',
         lastName: 'User',
