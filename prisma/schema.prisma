@@ -42,6 +42,8 @@ model User {
 
   disabledBiometryINSIds String[]
   disabledAllBiometry    Boolean  @default(false)
+
+  isDeleted Boolean @default(false)
 }
 
 model PostContent {
