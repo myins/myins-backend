@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import * as path from 'path';
 import { ChatService } from 'src/chat/chat.service';
@@ -69,7 +70,7 @@ export class PostMediaService {
     );
     if (post == null) {
       this.logger.error(`Could not find post ${postID}!`);
-      throw new BadRequestException('Could not find post!');
+      throw new NotFoundException('Could not find post!');
     }
     if (userID) {
       if (post.authorId && post.authorId != userID) {
@@ -149,7 +150,7 @@ export class PostMediaService {
       );
       if (!transactionPost) {
         this.logger.error(`Could not find post ${postID}!`);
-        throw new BadRequestException('Could not find the post for!');
+        throw new NotFoundException('Could not find the post for!');
       }
       if (!transactionPost.pending) {
         this.logger.log(`Post isn't pending, returning early!`);
@@ -180,11 +181,7 @@ export class PostMediaService {
         updatedPost.authorId &&
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
-        this.logger.log(
-          `Creating notification for ${
-            userID ? 'adding photos to' : 'adding'
-          } post ${toRet.id}`,
-        );
+        this.logger.log(`Creating notification for adding post ${toRet.id}`);
         await this.notificationService.createNotification({
           source: NotificationSource.POST,
           author: {
@@ -200,7 +197,7 @@ export class PostMediaService {
         });
 
         this.logger.log(
-          `Send message by user ${userID} in inses 
+          `Send message by user ${updatedPost.authorId} in inses 
           ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(
             (ins: { id: string }) => ins.id,
           )} with new posts ${updatedPost.id}`,

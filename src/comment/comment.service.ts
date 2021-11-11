@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
 import { PostService } from 'src/post/post.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
@@ -56,7 +56,7 @@ export class CommentService {
     const x = await this.postService.post({ id: postID });
     if (x == null) {
       this.logger.error(`Could not find post ${postID}!`);
-      throw new BadRequestException('Could not find post!');
+      throw new NotFoundException('Could not find post!');
     }
     return this.comments({
       skip: skip,

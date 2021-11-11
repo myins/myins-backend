@@ -6,7 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma, UserRole, NotificationSource } from '@prisma/client';
+import {
+  User,
+  Prisma,
+  UserRole,
+  NotificationSource,
+  INS,
+  UserInsConnection,
+} from '@prisma/client';
 import { omit } from 'src/util/omit';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
@@ -18,6 +25,8 @@ import {
   EnableDisableByometryAPI,
   EnableDisableNotificationAPI,
 } from './user-api.entity';
+import { NotificationService } from 'src/notification/notification.service';
+import { NotificationPushService } from 'src/notification/notification.push.service';
 
 @Injectable()
 export class UserService {
@@ -27,19 +36,35 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly jwtService: SjwtService,
     private readonly smsService: SmsService,
-    @Inject(forwardRef(() => ChatService)) private chatService: ChatService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => NotificationPushService))
+    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   async user(
     where: Prisma.UserWhereUniqueInput,
     include?: Prisma.UserInclude,
+    select?: Prisma.UserSelect,
   ): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: where,
-      include: include,
-    });
+    const data: Prisma.UserFindUniqueArgs = {
+      where,
+    };
+    if (include) {
+      data.include = include;
+    }
+    if (select) {
+      data.select = select;
+    }
+    return this.prisma.user.findUnique(data);
+  }
+
+  async shallowUser(where: Prisma.UserWhereUniqueInput): Promise<User | null> {
+    return this.user(where, undefined, ShallowUserSelect);
   }
 
   async getUserProfile(userID: string, asUserID?: string) {
@@ -53,7 +78,7 @@ export class UserService {
         },
       },
     );
-    if (userModel == null) {
+    if (!userModel) {
       this.logger.error(`Could not find user ${userID}!`);
       throw new NotFoundException('Could not find user!');
     }
@@ -80,8 +105,7 @@ export class UserService {
       } catch (err) {
         const stringErr: string = <string>err;
         this.logger.error(
-          'Error generating stream chat token! Chat will not work',
-          stringErr,
+          `Error generating stream chat token! Chat will not work! + ${stringErr}`,
         );
       }
       toRet = {
@@ -108,7 +132,7 @@ export class UserService {
     return this.users(params);
   }
 
-  async createUser(data: Prisma.UserCreateInput) {
+  async createUser(data: Prisma.UserCreateInput, inses: INS[]) {
     const newUserModel = await this.prisma.user.create({
       data,
     });
@@ -130,14 +154,6 @@ export class UserService {
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(newUserModel);
 
-    const inses = await this.insService.inses({
-      where: {
-        invitedPhoneNumbers: {
-          has: newUserProfile.phoneNumber,
-        },
-      },
-    });
-
     if (inses.length) {
       this.logger.log(
         `Adding new user ${newUserModel.id} in inses ${inses.map(
@@ -145,7 +161,7 @@ export class UserService {
         )}`,
       );
       await this.insService.addInvitedExternalUserIntoINSes(
-        inses.map((ins) => ins.id),
+        inses,
         newUserProfile.id,
         newUserProfile.phoneNumber,
       );
@@ -179,7 +195,7 @@ export class UserService {
   }
 
   async approveUser(userId: string, insId: string) {
-    return this.userConnectionService.update({
+    await this.userConnectionService.update({
       where: {
         userId_insId: {
           userId: userId,
@@ -190,22 +206,113 @@ export class UserService {
         role: UserRole.MEMBER,
       },
     });
-  }
 
-  async denyUser(id: string, userId: string, insId: string) {
-    return this.userConnectionService.update({
-      where: {
-        userId_insId: {
-          userId: userId,
-          insId: insId,
+    this.logger.log(
+      `Creating notification for joining ins ${insId} by user ${userId}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.JOINED_INS,
+      author: {
+        connect: {
+          id: userId,
         },
       },
-      data: {
-        deniedByUsers: {
-          push: id,
+      ins: {
+        connect: {
+          id: insId,
         },
       },
     });
+
+    this.logger.log(
+      `Adding stream user ${userId} as members in channel ${insId}`,
+    );
+    await this.chatService.addMembersToChannel([userId], insId);
+  }
+
+  async denyUser(
+    id: string,
+    userId: string,
+    insId: string,
+  ): Promise<UserInsConnection> {
+    if (id === userId) {
+      this.logger.log(`Removing pending member ${id} from ins ${insId}`);
+      return this.userConnectionService.removeMember({
+        userId_insId: {
+          insId: insId,
+          userId: id,
+        },
+      });
+    } else {
+      const updatedMemberConnection = await this.userConnectionService.update({
+        where: {
+          userId_insId: {
+            userId: userId,
+            insId: insId,
+          },
+        },
+        data: {
+          deniedByUsers: {
+            push: id,
+          },
+        },
+      });
+
+      this.logger.log(
+        `Checking if member ${userId} is denied by all users from ins ${insId}`,
+      );
+      const connections = await this.userConnectionService.getConnections({
+        where: {
+          insId: insId,
+          role: {
+            not: UserRole.PENDING,
+          },
+          user: {
+            isDeleted: false,
+          },
+        },
+      });
+      const noDenyMembers = connections.find(
+        (connection) =>
+          !updatedMemberConnection.deniedByUsers.includes(connection.userId),
+      );
+
+      if (!noDenyMembers) {
+        this.logger.log(`Removing pending member ${userId} from ins ${insId}`);
+        const ret = await this.userConnectionService.removeMember({
+          userId_insId: {
+            insId: insId,
+            userId: userId,
+          },
+        });
+
+        this.logger.log(
+          `Creating notification for decining user ${userId} from ins ${insId}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.JOIN_INS_REJECTED,
+          target: {
+            connect: {
+              id: userId,
+            },
+          },
+          author: {
+            connect: {
+              id: userId,
+            },
+          },
+          ins: {
+            connect: {
+              id: insId,
+            },
+          },
+        });
+
+        return ret;
+      }
+
+      return updatedMemberConnection;
+    }
   }
 
   async setLastReadNotificationID(

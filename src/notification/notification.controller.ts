@@ -40,9 +40,7 @@ export class NotificationController {
   async countUnreadNotifications(@PrismaUser() user: User) {
     this.logger.log(`Counting unread notificaions for user ${user.id}`);
     return {
-      countUnread: await this.notifService.countUnreadNotifications(
-        user.lastReadNotificationID,
-      ),
+      countUnread: await this.notifService.countUnreadNotifications(user),
     };
   }
 }

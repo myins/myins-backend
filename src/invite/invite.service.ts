@@ -3,12 +3,10 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
-import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import {
@@ -20,6 +18,11 @@ import {
   InsWithMembersInUserIDsInclude,
 } from 'src/prisma-queries-helper/ins-include-members-in-user-ids';
 import { InviteTestMessageAPI } from './invite-api.entity';
+import {
+  NotificationPushService,
+  PushExtraNotification,
+  PushNotificationSource,
+} from 'src/notification/notification.push.service';
 
 @Injectable()
 export class InviteService {
@@ -28,9 +31,9 @@ export class InviteService {
   constructor(
     private readonly smsService: SmsService,
     private readonly userService: UserService,
-    private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   async inviteExternalUser(
@@ -48,7 +51,7 @@ export class InviteService {
     );
     if (!connection) {
       this.logger.error("You're not allowed to approve members for this INS!");
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         "You're not allowed to approve members for this INS!",
       );
     }
@@ -66,7 +69,7 @@ export class InviteService {
 
     if (!theINS.length) {
       this.logger.error('Could not find that INS!');
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     const existedUsers = await this.userService.users({
@@ -127,9 +130,9 @@ export class InviteService {
       },
     );
     if (!connection) {
-      this.logger.error("You're not allowed to approve members for this INS!");
-      throw new UnauthorizedException(
-        "You're not allowed to approve members for this INS!",
+      this.logger.error("You're not allowed to invite members in this INS!");
+      throw new BadRequestException(
+        "You're not allowed to invite members in this INS!",
       );
     }
 
@@ -147,7 +150,7 @@ export class InviteService {
 
     if (!theINS.length) {
       this.logger.error('Could not find that INS!');
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
     if (
       (<InsWithMembersInUserIDs>theINS[0]).members.length === otherUsers.length
@@ -165,6 +168,7 @@ export class InviteService {
     const data = usersNotInINS.map((otherUser) => ({
       userId: otherUser,
       role: UserRole.PENDING,
+      invitedBy: userID,
     }));
 
     this.logger.log(
@@ -182,6 +186,18 @@ export class InviteService {
         },
       },
     });
+
+    await Promise.all(
+      data.map(async (dataCreate) => {
+        const dataPush: PushExtraNotification = {
+          source: PushNotificationSource.REQUEST_FOR_ME,
+          author: await this.userService.shallowUser({ id: userID }),
+          ins: theINS[0],
+          targetID: dataCreate.userId,
+        };
+        await this.notificationPushService.pushNotification(dataPush);
+      }),
+    );
   }
 
   async invitesList(

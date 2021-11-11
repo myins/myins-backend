@@ -5,6 +5,8 @@ import {
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as path from 'path';
 
+const photoOrVideoSizeLimit = 1024 * 1024 * 15;
+
 export const photoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname);
@@ -18,7 +20,7 @@ export const photoOptions: MulterOptions = {
     callback(null, true);
   },
   limits: {
-    fileSize: 1024 * 1024 * 10, // 10 mb
+    fileSize: photoOrVideoSizeLimit, // 10 mb
   },
 };
 
@@ -35,16 +37,15 @@ export const photoOrVideoOptions: MulterOptions = {
         false,
       );
     }
-    const sizeLimit = isImage ? 1024 * 1024 * 10 : 1024 * 1024 * 10;
 
-    if (sizeLimit < file.size) {
+    if (photoOrVideoSizeLimit < file.size) {
       return callback(new Error('The file is too large!'), false);
     }
 
     callback(null, true);
   },
   limits: {
-    fileSize: 1024 * 1024 * 100, // largest of the 2
+    fileSize: photoOrVideoSizeLimit,
   },
 };
 

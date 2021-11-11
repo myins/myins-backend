@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
+import { UpdatePushTokenAPI } from 'src/user/user-api.entity';
 import {
   ChangePasswordAPI,
   CodePhoneAPI,
@@ -35,9 +36,12 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @ApiTags('auth')
   @Post('login')
-  async login(@Request() req: { user: User }) {
+  async login(
+    @Request() req: { user: User },
+    @Body() tokenData: UpdatePushTokenAPI,
+  ) {
     this.logger.log(`Login user ${req.user.id}`);
-    return this.authService.login(req.user);
+    return this.authService.login(req.user, tokenData);
   }
 
   @Post('refresh-auth')

@@ -115,7 +115,7 @@ async function main() {
   const firstINS = await prisma.iNS.create({
     data: {
       name: 'First INS',
-      shareCode: '#1111',
+      shareCode: '111111',
       members: {
         create: {
           userId: firstUser.id,
@@ -145,7 +145,7 @@ async function main() {
   const secondINS = await prisma.iNS.create({
     data: {
       name: 'Second INS',
-      shareCode: '#2222',
+      shareCode: '222222',
       members: {
         create: {
           userId: secondUser.id,

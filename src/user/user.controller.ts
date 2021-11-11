@@ -9,18 +9,21 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Prisma, User } from '@prisma/client';
+import { NotificationSource, Prisma, User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { NotificationService } from 'src/notification/notification.service';
 import { SmsService } from 'src/sms/sms.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { UserService } from 'src/user/user.service';
@@ -30,6 +33,8 @@ import {
   UpdatePushTokenAPI,
   UpdateUserAPI,
 } from './user-api.entity';
+import { UserConnectionService } from './user.connection.service';
+import * as uuid from 'uuid';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -38,8 +43,11 @@ export class UserController {
 
   constructor(
     private readonly userService: UserService,
+    private readonly userConnectionService: UserConnectionService,
     private readonly storageService: StorageService,
     private readonly smsService: SmsService,
+    private readonly insService: InsService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Get('cloudfront-token')
@@ -79,7 +87,7 @@ export class UserController {
   ) {
     if (!file) {
       this.logger.error('Could not find picture file!');
-      throw new BadRequestException('Could not find picture file!');
+      throw new NotFoundException('Could not find picture file!');
     }
 
     this.logger.log(`Updating profile picture for user ${user.id}`);
@@ -128,7 +136,7 @@ export class UserController {
         this.logger.error(
           `Could not find user with phone ${user.phoneNumber}!`,
         );
-        throw new BadRequestException('Could not find your user!');
+        throw new NotFoundException('Could not find your user!');
       }
 
       this.logger.log(`Updating user ${user.id}`);
@@ -158,7 +166,7 @@ export class UserController {
 
   @Post()
   @ApiTags('users')
-  async signupUser(@Body() userData: CreateUserAPI) {
+  async signupUser(@Body() userData: CreateUserAPI & UpdatePushTokenAPI) {
     this.logger.log(
       `Signing up user with phone number ${userData.phoneNumber}`,
     );
@@ -172,12 +180,48 @@ export class UserController {
       firstName: userData.firstName,
       lastName: userData.lastName,
       password: hashedPassword,
+      pushToken: userData.pushToken,
+      sandboxToken: userData.isSandbox,
     };
     try {
+      const inses = await this.insService.inses(
+        {
+          where: {
+            invitedPhoneNumbers: {
+              has: toCreate.phoneNumber,
+            },
+          },
+        },
+        true,
+      );
+
       this.logger.log(
         `Creating user with phone number ${toCreate.phoneNumber}`,
       );
-      return this.userService.createUser(toCreate); // This calls sendVerificationCode
+      const createdUser = await this.userService.createUser(toCreate, inses); // This calls sendVerificationCode
+
+      await Promise.all(
+        inses.map(async (ins) => {
+          this.logger.log(
+            `Creating notification for joining ins ${ins.id} by user ${createdUser.id}`,
+          );
+          await this.notificationService.createNotification({
+            source: NotificationSource.JOINED_INS,
+            author: {
+              connect: {
+                id: createdUser.id,
+              },
+            },
+            ins: {
+              connect: {
+                id: ins.id,
+              },
+            },
+          });
+        }),
+      );
+
+      return createdUser;
     } catch (error) {
       this.logger.error('Error creating user!');
       this.logger.error(error);
@@ -194,7 +238,9 @@ export class UserController {
     @Body() dataModel: UpdatePushTokenAPI,
     @PrismaUser('id') userID: string,
   ) {
-    this.logger.log(`Updating user ${userID}. Adding tokens`);
+    this.logger.log(
+      `Updating user ${userID}. Change pushToken and sandboxToken`,
+    );
     await this.userService.updateUser({
       where: {
         id: userID,
@@ -205,16 +251,72 @@ export class UserController {
       },
     });
 
-    this.logger.log(`'Updated token successfully`);
+    this.logger.log('Updated token successfully');
     return {
       message: 'Updated token successfully!',
     };
   }
 
-  @Delete(':id')
+  @Get('inses/admin')
   @ApiTags('users')
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@Param('id') userId: string) {
+  async getInsesAdmin(@PrismaUser('id') userId: string) {
+    this.logger.log(`Getting inses where user ${userId} is admin`);
+    const inses = await this.insService.inses({
+      where: {
+        members: {
+          some: {
+            userId: userId,
+            role: UserRole.ADMIN,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (inses.length) {
+      this.logger.log(`User ${userId} is an admin for some inses`);
+      return {
+        inses: inses,
+      };
+    } else {
+      this.logger.log(`Getting inses for user ${userId}`);
+      const userInses = await this.insService.inses({
+        where: {
+          members: {
+            some: {
+              userId: userId,
+              role: {
+                not: UserRole.PENDING,
+              },
+            },
+          },
+        },
+      });
+
+      if (userInses.length === 1) {
+        this.logger.log(
+          `User ${userId} is member only for an ins. Return ins name`,
+        );
+        return {
+          inses: [],
+          nameIns: userInses[0].name,
+        };
+      }
+
+      return {
+        inses: [],
+      };
+    }
+  }
+
+  @Delete()
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@PrismaUser('id') userId: string) {
     const user = await this.userService.user({
       id: userId,
     });
@@ -228,7 +330,47 @@ export class UserController {
 
     this.logger.log('User successfully deleted');
     return {
-      message: 'User successfully deleted!',
+      message: 'User successfully deleted',
+    };
+  }
+
+  @Put('make-myins-user')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async makeMyInsUser(@PrismaUser() user: User) {
+    this.logger.log(`Updating user ${user.id}. Make user a MyINS user`);
+    const hashedPhoneNumber = `-${user.phoneNumber}-${uuid.v4()}`;
+    await this.userService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        phoneNumber: hashedPhoneNumber,
+        phoneNumberVerified: false,
+        firstName: 'MyINS',
+        lastName: 'User',
+        profilePicture: null,
+        refreshToken: null,
+        pushToken: null,
+        sandboxToken: null,
+        lastAcceptedTermsAndConditionsVersion: null,
+        lastAcceptedPrivacyPolicyVersion: null,
+        lastReadNotificationID: null,
+        disabledNotifications: [],
+        disabledBiometryINSIds: [],
+        disabledAllBiometry: false,
+        isDeleted: true,
+      },
+    });
+
+    await this.userConnectionService.removeManyMembers({
+      invitedBy: user.id,
+      role: UserRole.PENDING,
+    });
+
+    this.logger.log('Successfully updated user as a MyINS user');
+    return {
+      message: 'Successfully updated user as a MyINS user!',
     };
   }
 }

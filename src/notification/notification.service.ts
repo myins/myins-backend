@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, Notification, NotificationSource } from '@prisma/client';
+import { Prisma, Notification, NotificationSource, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { NotificationPushService } from './notification.push.service';
@@ -17,7 +17,7 @@ export class NotificationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly users: UserService,
+    private readonly userService: UserService,
     private readonly pushService: NotificationPushService,
   ) {}
 
@@ -39,9 +39,9 @@ export class NotificationService {
     );
 
     this.logger.log('Adding isSeen prop for every notification');
-    const user = await this.users.user({ id: userID });
+    const user = await this.userService.user({ id: userID });
     const notification = user?.lastReadNotificationID
-      ? await this.getById({ id: user?.lastReadNotificationID })
+      ? await this.getById({ id: user.lastReadNotificationID })
       : null;
     const dataReturn = feedNotifications.map((notif) => {
       const notificationsWithINs: NotificationSource[] = [
@@ -63,6 +63,13 @@ export class NotificationService {
       };
     });
 
+    if (skip === 0 && dataReturn.length) {
+      await this.userService.setLastReadNotificationID(
+        userID,
+        dataReturn[0].id,
+      );
+    }
+
     this.logger.log('Successfully getting notifications feed');
     return {
       count: feedNotificationsCount,
@@ -79,29 +86,32 @@ export class NotificationService {
   async createNotification(
     data: Prisma.NotificationCreateInput,
   ): Promise<Notification> {
-    await this.pushService.pushNotification(data);
+    try {
+      await this.pushService.pushNotification(data);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`Error pushing device notifications! + ${stringErr}`);
+    }
     return this.prisma.notification.create({
       data,
     });
   }
 
-  async countUnreadNotifications(
-    lastReadNotificationID: string | null,
-  ): Promise<number> {
-    let data = {};
+  async countUnreadNotifications(user: User): Promise<number | undefined> {
+    const { id, lastReadNotificationID } = user;
     if (lastReadNotificationID) {
       this.logger.log(
         `Getting notifications newer than notification ${lastReadNotificationID}`,
       );
       const notification = await this.getById({ id: lastReadNotificationID });
-      data = {
-        where: {
-          createdAt: {
-            gt: notification?.createdAt,
-          },
+      const dataQuery = notificationFeedCount(id);
+      dataQuery.where = {
+        ...dataQuery.where,
+        createdAt: {
+          gt: notification?.createdAt,
         },
       };
+      return this.prisma.notification.count(dataQuery);
     }
-    return this.prisma.notification.count(data);
   }
 }

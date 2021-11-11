@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
@@ -48,7 +48,7 @@ export class OnboardingService {
     );
     if (!ins || (<InsWithCountMembers>ins)._count?.members != 0) {
       this.logger.error(`Could not find INS ${insID}!`);
-      throw new BadRequestException('Could not find INS!');
+      throw new NotFoundException('Could not find INS!');
     }
 
     // Firstly, we want to create the chat channel

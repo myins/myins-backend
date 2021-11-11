@@ -1,11 +1,11 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import {
-  BadRequestException,
   forwardRef,
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 
@@ -34,7 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.userService.user({ id: toRet.userId });
     if (!user) {
       this.logger.error('Could not find user!');
-      throw new BadRequestException('Could not find user!');
+      throw new NotFoundException('Could not find user!');
     }
     return user;
   }

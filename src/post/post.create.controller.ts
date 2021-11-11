@@ -5,13 +5,12 @@ import {
   Logger,
   Param,
   Post,
-  UnauthorizedException,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { User } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
@@ -127,6 +126,9 @@ export class PostCreateController {
         members: {
           some: {
             userId: user.id,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       })
@@ -135,7 +137,7 @@ export class PostCreateController {
     for (const each of mappedINSIDs) {
       if (!inses.includes(each.id)) {
         this.logger.error("You're not allowed to post to that INS!");
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           "You're not allowed to post to that INS!",
         );
       }

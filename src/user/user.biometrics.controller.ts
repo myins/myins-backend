@@ -5,7 +5,6 @@ import {
   Controller,
   Logger,
   Patch,
-  UnauthorizedException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -55,9 +54,7 @@ export class UserBiometricsController {
         });
       if (!connection) {
         this.logger.error("You're not allowed to enable this INS!");
-        throw new UnauthorizedException(
-          "You're not allowed to enable this INS!",
-        );
+        throw new BadRequestException("You're not allowed to enable this INS!");
       }
     }
 
@@ -97,7 +94,7 @@ export class UserBiometricsController {
         });
       if (!connection) {
         this.logger.error("You're not allowed to disable this INS!");
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           "You're not allowed to disable this INS!",
         );
       }

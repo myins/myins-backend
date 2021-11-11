@@ -1,5 +1,6 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma, UserInsConnection, UserRole } from '@prisma/client';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -59,9 +60,7 @@ export class UserConnectionService {
     });
     if (!connection) {
       this.logger.error("You're not allowed to do this operation!");
-      throw new UnauthorizedException(
-        "You're not allowed to do this operation!",
-      );
+      throw new BadRequestException("You're not allowed to do this operation!");
     }
 
     this.logger.log(
@@ -95,7 +94,7 @@ export class UserConnectionService {
           role: UserRole.MEMBER,
         },
       });
-      await this.update({
+      return this.update({
         where: {
           userId_insId: {
             userId: newAdminId,
@@ -105,6 +104,11 @@ export class UserConnectionService {
         data: {
           role: UserRole.ADMIN,
         },
+        select: {
+          user: {
+            select: ShallowUserSelect,
+          },
+        },
       });
     });
   }
@@ -113,6 +117,12 @@ export class UserConnectionService {
     where: Prisma.UserInsConnectionWhereUniqueInput,
   ): Promise<UserInsConnection> {
     return this.prisma.userInsConnection.delete({
+      where,
+    });
+  }
+
+  async removeManyMembers(where: Prisma.UserInsConnectionWhereInput) {
+    return this.prisma.userInsConnection.deleteMany({
       where,
     });
   }

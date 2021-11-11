@@ -49,7 +49,7 @@ export class MiddlewareService {
             });
           } catch (e) {
             const stringErr: string = <string>e;
-            this.logger.error('Error getting stream channel!', stringErr);
+            this.logger.error(`Error getting stream channel! + ${stringErr}`);
           }
 
           if (channels.length) {
@@ -140,7 +140,7 @@ export class MiddlewareService {
           );
           if (importantKeys.length > 0) {
             this.logger.log(
-              `'Update' user ${userResult.id} => update user stream ${userResult.id}`,
+              `Update user ${userResult.id} => update user stream ${userResult.id}`,
             );
             await this.chatService.createOrUpdateStreamUsers([userResult]);
           }

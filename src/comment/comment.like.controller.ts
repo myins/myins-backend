@@ -4,7 +4,7 @@ import {
   NotFoundException,
   Param,
   Post,
-  UnauthorizedException,
+  BadRequestException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -38,7 +38,7 @@ export class CommentLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before liking comments!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before liking comments!',
       );
     }
@@ -65,7 +65,7 @@ export class CommentLikeController {
       this.logger.error(
         `You must verify phone ${user.phoneNumber} before unliking comments!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before unliking comments!',
       );
     }

@@ -8,7 +8,6 @@ import {
   NotFoundException,
   Param,
   Patch,
-  UnauthorizedException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -85,7 +84,7 @@ export class PostController {
     }
     if (post.authorId != userID) {
       this.logger.error(`You're not allowed to edit post ${postID}!`);
-      throw new UnauthorizedException("You're not allowed to edit this post!");
+      throw new BadRequestException("You're not allowed to edit this post!");
     }
 
     this.logger.log(
@@ -118,9 +117,7 @@ export class PostController {
     }
     if (post.authorId !== userID) {
       this.logger.error(`You're not allowed to delete post ${postID}!`);
-      throw new UnauthorizedException(
-        "You're not allowed to delete this post!",
-      );
+      throw new BadRequestException("You're not allowed to delete this post!");
     }
 
     this.logger.log(`Deleting post ${postID} by user ${userID}`);
@@ -152,7 +149,7 @@ export class PostController {
       this.logger.error(
         `You're not allowed to delete post media ${postMediaID}!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         "You're not allowed to delete this post media!",
       );
     }
@@ -199,7 +196,7 @@ export class PostController {
     }
     if (post.authorId !== userID) {
       this.logger.error(`You're not allowed to share post ${postID}!`);
-      throw new UnauthorizedException("You're not allowed to share this post!");
+      throw new BadRequestException("You're not allowed to share this post!");
     }
 
     const inses = (
@@ -214,7 +211,7 @@ export class PostController {
     for (const each of ins) {
       if (!inses.includes(each)) {
         this.logger.error("You're not allowed to post to one of that INS!");
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           "You're not allowed to post to one of that INS!",
         );
       }

@@ -55,12 +55,6 @@ export class InsService {
           : undefined,
     };
 
-    if (userID !== 'a714825b-bc0b-4f83-aa36-d23aaf6015cd') {
-      whereQuery.role = {
-        not: UserRole.PENDING,
-      };
-    }
-
     const connectionQuery = await this.userConnectionService.getConnections({
       where: whereQuery,
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
@@ -76,6 +70,32 @@ export class InsService {
         },
       },
       include: InsWithCountMembersInclude,
+    });
+
+    // The following hack is due to https://github.com/prisma/prisma/issues/8413
+    // We can't filter relation counts, so instead we get all the PENDING members (should be a small amount)
+    // And we put them in a map where the key is the INS ID, and the value is the number of pending members
+    const pendingCountPerINS: { [key: string]: number } = {};
+    (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: {
+            in: onlyIDs,
+          },
+          role: 'PENDING',
+        },
+      })
+    ).forEach((cur) => {
+      pendingCountPerINS[cur.insId] = (pendingCountPerINS[cur.insId] ?? 0) + 1;
+    });
+
+    // Now we substract the pending count from the full count
+    toRet.forEach((each) => {
+      const theCount = (<InsWithCountMembers>each)._count;
+      if (pendingCountPerINS[each.id] && theCount) {
+        theCount.members -= pendingCountPerINS[each.id];
+        (<InsWithCountMembers>each)._count = theCount;
+      }
     });
 
     // And finally sort the received inses by their position in the onlyIDs array
@@ -129,35 +149,51 @@ export class InsService {
 
   async membersForIns(
     insID: string,
+    userID?: string,
     skip?: number,
     take?: number,
     filter?: string,
+    without?: boolean,
   ) {
-    return this.userService.users({
-      where: {
-        inses: {
-          some: {
-            insId: insID,
+    let whereQuery: Prisma.UserWhereInput = {
+      inses: {
+        some: {
+          insId: insID,
+          role: {
+            not: UserRole.PENDING,
           },
         },
-        OR:
-          filter && filter.length > 0
-            ? [
-                {
-                  firstName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                },
-                {
-                  lastName: {
-                    contains: filter,
-                    mode: 'insensitive',
-                  },
-                },
-              ]
-            : undefined,
       },
+      OR:
+        filter && filter.length > 0
+          ? [
+              {
+                firstName: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                lastName: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              },
+            ]
+          : undefined,
+    };
+
+    if (without) {
+      whereQuery = {
+        ...whereQuery,
+        id: {
+          not: userID,
+        },
+      };
+    }
+
+    return this.userService.users({
+      where: whereQuery,
       skip: skip,
       take: take,
       orderBy: {
@@ -184,25 +220,28 @@ export class InsService {
   }
 
   async addInvitedExternalUserIntoINSes(
-    insIDs: string[],
+    inses: INS[],
     userID: string,
     phoneNumber: string,
   ) {
-    const data = insIDs.map((insID) => ({
-      insId: insID,
-      userId: userID,
-    }));
+    const data: Prisma.UserInsConnectionCreateManyInput[] = inses
+      .map((ins) => ins.id)
+      .map((insID) => ({
+        insId: insID,
+        userId: userID,
+      }));
     await this.userConnectionService.createMany(data);
-
     this.logger.log(
-      `Remove phone number ${phoneNumber} as invited phone number from inses ${insIDs}`,
+      `Remove phone number ${phoneNumber} as invited phone number from inses ${inses.map(
+        (ins) => ins.id,
+      )}`,
     );
+
     return Promise.all(
-      insIDs.map(async (insID) => {
-        const ins = await this.ins({ id: insID });
+      inses.map(async (ins) => {
         await this.update({
           where: {
-            id: insID,
+            id: ins.id,
           },
           data: {
             invitedPhoneNumbers: ins?.invitedPhoneNumbers.filter(
@@ -217,21 +256,25 @@ export class InsService {
   async ins(
     where: Prisma.INSWhereUniqueInput,
     include?: Prisma.INSInclude,
+    withInvitedPhoneNumbers?: boolean,
   ): Promise<INS | null> {
     let ins = await this.prismaService.iNS.findUnique({
       where: where,
       include: include,
     });
-    if (ins?.invitedPhoneNumbers) {
+    if (ins?.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
       ins = <INS>omit(ins, 'invitedPhoneNumbers');
     }
     return ins;
   }
 
-  async inses(params: Prisma.INSFindManyArgs): Promise<INS[]> {
+  async inses(
+    params: Prisma.INSFindManyArgs,
+    withInvitedPhoneNumbers?: boolean,
+  ): Promise<INS[]> {
     const inses = await this.prismaService.iNS.findMany(params);
     const insesWithoutPhoneNumbers = inses.map((ins) => {
-      if (ins.invitedPhoneNumbers) {
+      if (ins.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
         return <INS>omit(ins, 'invitedPhoneNumbers');
       }
       return ins;

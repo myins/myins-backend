@@ -1,14 +1,15 @@
-import { UserRole } from '.prisma/client';
+import { INS, NotificationSource, UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
+  NotFoundException,
   Param,
   Post,
   Query,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,10 +19,20 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import {
+  NotificationPushService,
+  PushExtraNotification,
+  PushNotificationSource,
+} from 'src/notification/notification.push.service';
+import { NotificationService } from 'src/notification/notification.service';
+import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
+import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
+import { omit } from 'src/util/omit';
 import { CreateINSAPI } from './ins-api.entity';
+import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
 @Controller('ins')
@@ -30,9 +41,12 @@ export class InsController {
 
   constructor(
     private readonly insService: InsService,
+    private readonly insAdminService: InsAdminService,
     private readonly chatService: ChatService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
+    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   @Post()
@@ -45,13 +59,13 @@ export class InsController {
     const user = userID ? await this.userService.user({ id: userID }) : null;
     if (!user && userID) {
       this.logger.error(`Could not find user ${userID}!`);
-      throw new UnauthorizedException('Could not find this user!');
+      throw new NotFoundException('Could not find this user!');
     }
     if (!user?.phoneNumberVerified && userID) {
       this.logger.error(
         `You must verify phone ${user?.phoneNumber} before creating an INS!`,
       );
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         'You must verify your phone before creating an INS!',
       );
     }
@@ -81,9 +95,29 @@ export class InsController {
     }
 
     this.logger.log(`Getting ins by code ${insCode}`);
-    return this.insService.ins({
-      shareCode: insCode,
-    });
+    let ins = await this.insService.ins(
+      {
+        shareCode: insCode,
+      },
+      {
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
+      },
+    );
+    if (ins) {
+      (<InsWithCountMembers>ins)._count = {
+        members: (<InsWithMembersID>ins).members.length,
+      };
+      ins = omit(<InsWithMembersID>ins, 'members');
+      return ins;
+    }
+    this.logger.error(`Could not find ins with code ${insCode}!`);
+    throw new NotFoundException('Could not find ins with that code!');
   }
 
   @Get('list')
@@ -120,7 +154,7 @@ export class InsController {
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     this.logger.log(`Getting posts with all media for ins ${id}`);
@@ -136,6 +170,7 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
     @Query('filter') filter: string,
+    @Query('without') without?: boolean,
   ) {
     const inses = await this.insService.inses({
       where: {
@@ -149,11 +184,18 @@ export class InsController {
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
 
     this.logger.log(`Getting members for ins ${id}`);
-    return this.insService.membersForIns(id, skip, take, filter);
+    return this.insService.membersForIns(
+      id,
+      userID,
+      skip,
+      take,
+      filter,
+      without,
+    );
   }
 
   @Get(':id')
@@ -171,27 +213,32 @@ export class InsController {
         },
       },
       include: {
-        _count: {
-          select: {
-            members: true,
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
     });
     if (!inses || inses.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
-      throw new BadRequestException('Could not find that INS!');
+      throw new NotFoundException('Could not find that INS!');
     }
+
+    let ins = inses[0];
+    (<InsWithCountMembers>ins)._count = {
+      members: (<InsWithMembersID>ins).members.length,
+    };
+    ins = omit(<InsWithMembersID>ins, 'members');
 
     this.logger.log(
       `Create channel for ins ${id} by user stream ${userID} if not exists`,
     );
-    await this.chatService.createChannelINSWithMembersIfNotExists(
-      inses[0],
-      userID,
-    );
+    await this.chatService.createChannelINSWithMembersIfNotExists(ins, userID);
 
-    return inses[0];
+    return ins;
   }
 
   @Post('join/:code')
@@ -207,9 +254,13 @@ export class InsController {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
-    const theINS = await this.insService.ins({
-      shareCode: insCode,
-    });
+    const theINS = await this.insService.ins(
+      {
+        shareCode: insCode,
+      },
+      undefined,
+      true,
+    );
     if (!theINS) {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid ins code!');
@@ -231,24 +282,65 @@ export class InsController {
       };
     }
 
-    this.logger.log(
-      `Adding user ${userID} as pending member in ins ${theINS.id}`,
-    );
-    await this.insService.update({
-      where: { id: theINS.id },
-      data: {
-        members: {
-          create: {
-            userId: userID,
-            role: UserRole.PENDING,
-          },
-        },
-      },
-    });
+    const user = await this.userService.user({ id: userID });
+    if (user?.phoneNumber) {
+      if (theINS.invitedPhoneNumbers?.includes(user.phoneNumber)) {
+        this.logger.log(`Adding new user ${user.id} in ins ${theINS.id}`);
+        await this.insService.addInvitedExternalUserIntoINSes(
+          [theINS],
+          user.id,
+          user.phoneNumber,
+        );
 
-    this.logger.log('Joined the INS as pending member');
+        this.logger.log(
+          `Creating notification for joining ins ${theINS.id} by user ${user.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.JOINED_INS,
+          author: {
+            connect: {
+              id: user.id,
+            },
+          },
+          ins: {
+            connect: {
+              id: theINS.id,
+            },
+          },
+        });
+
+        this.logger.log('Joined the INS');
+      } else {
+        this.logger.log(
+          `Adding user ${userID} as pending member in ins ${theINS.id}`,
+        );
+        await this.insService.update({
+          where: { id: theINS.id },
+          data: {
+            members: {
+              create: {
+                userId: userID,
+                role: UserRole.PENDING,
+              },
+            },
+          },
+        });
+        const insForPushNotification: INS = {
+          ...theINS,
+          invitedPhoneNumbers: [],
+        };
+        const data: PushExtraNotification = {
+          source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
+          author: await this.userService.shallowUser({ id: user.id }),
+          ins: insForPushNotification,
+        };
+        await this.notificationPushService.pushNotification(data);
+
+        this.logger.log('Joined the INS as pending member');
+      }
+    }
     return {
-      message: 'Joined the INS as pending member!',
+      message: 'Joined the INS!',
     };
   }
 
@@ -265,7 +357,7 @@ export class InsController {
     this.logger.log(`Update cover for ins ${insID} by user ${userID}`);
     if (!file) {
       this.logger.error('Could not find picture file!');
-      throw new BadRequestException('Could not find picture file!');
+      throw new NotFoundException('Could not find picture file!');
     }
     const validINS = await this.insService.inses({
       where: {
@@ -286,5 +378,41 @@ export class InsController {
 
     this.logger.log(`Attach cover with name '${file.originalname}'`);
     return this.insService.attachCoverToPost(file, theINS.id);
+  }
+
+  @Delete('/:id/leave')
+  @ApiTags('ins')
+  @UseGuards(JwtAuthGuard)
+  async leaveINS(@PrismaUser('id') userId: string, @Param('id') insId: string) {
+    const user = await this.userService.user({
+      id: userId,
+    });
+    if (!user) {
+      this.logger.error(`Could not find user ${userId}!`);
+      throw new NotFoundException('Could not find this user!');
+    }
+
+    this.logger.log(`Checking if user ${userId} is admin for ins ${insId}`);
+    const isAdmin = await this.insAdminService.isAdmin(userId, insId);
+    let message = 'User cannot be deleted because is admin!';
+
+    if (!isAdmin) {
+      this.logger.log(
+        `User ${userId} is not an admin for ins ${insId}. Removing from ins`,
+      );
+      await this.userConnectionService.removeMember({
+        userId_insId: {
+          insId: insId,
+          userId: userId,
+        },
+      });
+      message = 'User successfully removed from ins';
+      this.logger.log(message);
+    }
+
+    return {
+      isAdmin: isAdmin,
+      message: message,
+    };
   }
 }
