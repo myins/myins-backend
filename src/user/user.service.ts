@@ -267,6 +267,9 @@ export class UserService {
           role: {
             not: UserRole.PENDING,
           },
+          user: {
+            isDeleted: false,
+          },
         },
       });
       const noDenyMembers = connections.find(

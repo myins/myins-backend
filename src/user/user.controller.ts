@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -32,6 +33,7 @@ import {
   UpdatePushTokenAPI,
   UpdateUserAPI,
 } from './user-api.entity';
+import { UserConnectionService } from './user.connection.service';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -40,6 +42,7 @@ export class UserController {
 
   constructor(
     private readonly userService: UserService,
+    private readonly userConnectionService: UserConnectionService,
     private readonly storageService: StorageService,
     private readonly smsService: SmsService,
     private readonly insService: InsService,
@@ -295,5 +298,44 @@ export class UserController {
         inses: [],
       };
     }
+  }
+
+  @Put('make-myins-user')
+  @ApiTags('users')
+  @UseGuards(JwtAuthGuard)
+  async makeMyInsUser(@PrismaUser() user: User) {
+    this.logger.log(`Updating user ${user.id}. Make user a MyINS user`);
+    await this.userService.updateUser({
+      where: {
+        id: user.id,
+      },
+      data: {
+        phoneNumber: `-${user.phoneNumber}-hash`,
+        phoneNumberVerified: false,
+        firstName: 'MyINS',
+        lastName: 'User',
+        profilePicture: null,
+        refreshToken: null,
+        pushToken: null,
+        sandboxToken: null,
+        lastAcceptedTermsAndConditionsVersion: null,
+        lastAcceptedPrivacyPolicyVersion: null,
+        lastReadNotificationID: null,
+        disabledNotifications: [],
+        disabledBiometryINSIds: [],
+        disabledAllBiometry: false,
+        isDeleted: true,
+      },
+    });
+
+    await this.userConnectionService.removeManyMembers({
+      invitedBy: user.id,
+      role: UserRole.PENDING,
+    });
+
+    this.logger.log('Successfully updated user as a MyINS user');
+    return {
+      message: 'Successfully updated user as a MyINS user!',
+    };
   }
 }

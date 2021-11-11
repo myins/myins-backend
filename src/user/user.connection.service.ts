@@ -120,4 +120,10 @@ export class UserConnectionService {
       where,
     });
   }
+
+  async removeManyMembers(where: Prisma.UserInsConnectionWhereInput) {
+    return this.prisma.userInsConnection.deleteMany({
+      where,
+    });
+  }
 }

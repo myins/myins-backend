@@ -40,6 +40,9 @@ export const pendingUsersWhereQuery = (
         },
       },
     ],
+    user: {
+      isDeleted: false,
+    },
   };
 };
 

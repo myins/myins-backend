@@ -232,7 +232,6 @@ export class AuthService {
   }
 
   async login(user: User, tokenData: UpdatePushTokenAPI) {
-    console.log('user', user);
     this.logger.log(`Generating token for user ${user.id}`);
     const authTokens = await this.jwtService.generateNewAuthTokens(
       user.phoneNumber,
