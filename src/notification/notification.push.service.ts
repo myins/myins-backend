@@ -19,6 +19,7 @@ import {
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { NotificationService } from './notification.service';
 
 export const PushNotificationSource = {
   REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
@@ -78,6 +79,8 @@ export class NotificationPushService {
     private readonly userService: UserService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
   ) {}
 
   async pushNotification(
@@ -363,7 +366,7 @@ export class NotificationPushService {
     return {
       title: 'MyINS',
       body: body,
-      badge: 1,
+      badge: await this.notificationService.countUnreadNotifications(target),
       contentAvailable: true,
       topic: target.sandboxToken
         ? 'com.squid40.dev.myins'
