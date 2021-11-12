@@ -362,11 +362,14 @@ export class NotificationPushService {
     }
 
     this.logger.log(`Body: ${body}`);
+    const unreadNotif = await this.notificationService.countUnreadNotifications(
+      target,
+    );
 
     return {
       title: 'MyINS',
       body: body,
-      badge: await this.notificationService.countUnreadNotifications(target),
+      badge: unreadNotif ? unreadNotif + 1 : 1,
       contentAvailable: true,
       topic: target.sandboxToken
         ? 'com.squid40.dev.myins'
