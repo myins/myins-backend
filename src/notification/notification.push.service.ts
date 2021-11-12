@@ -364,7 +364,7 @@ export class NotificationPushService {
       title: 'MyINS',
       body: body,
       badge: 1,
-      contentAvailable: '1',
+      contentAvailable: true,
       topic: target.sandboxToken
         ? 'com.squid40.dev.myins'
         : 'com.squid40.dev.myins',
