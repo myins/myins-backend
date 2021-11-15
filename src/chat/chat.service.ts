@@ -156,8 +156,6 @@ export class ChatService {
         );
         await this.streamChat.addDevice(deviceToken, 'apn', userID);
       }
-      const devices = await this.streamChat.getDevices(userID);
-      console.log('devices', devices);
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(
