@@ -22,6 +22,7 @@ import {
   pendingUsersWhereQuery,
 } from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
+import { omit } from 'src/util/omit';
 import { ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 
@@ -78,12 +79,26 @@ export class UserPendingController {
           author: conn.invitedBy
             ? await this.userService.shallowUser({ id: conn.invitedBy })
             : conn.user,
-          ins: conn.ins,
+          ins: omit(conn.ins, 'invitedPhoneNumbers'),
           createdAt: conn.createdAt,
           isInvitation: connection.userId === id,
         };
       }),
     );
+
+    if (skip === 0) {
+      this.logger.log(
+        `Updating user ${id}. Set last read request to current date`,
+      );
+      await this.userService.updateUser({
+        where: {
+          id: id,
+        },
+        data: {
+          lastReadRequest: new Date(),
+        },
+      });
+    }
 
     return {
       count: countPendingUsers,
