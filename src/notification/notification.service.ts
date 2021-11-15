@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, Notification, NotificationSource, User } from '@prisma/client';
+import {
+  Prisma,
+  Notification,
+  NotificationSource,
+  User,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { NotificationPushService } from './notification.push.service';
@@ -10,6 +16,8 @@ import {
   notificationFeedWithourPost,
 } from 'src/prisma-queries-helper/notification-feed';
 import { omit } from 'src/util/omit';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { pendingUsersWhereQuery } from 'src/prisma-queries-helper/pending-users';
 
 @Injectable()
 export class NotificationService {
@@ -18,6 +26,7 @@ export class NotificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly userConnectionService: UserConnectionService,
     private readonly pushService: NotificationPushService,
   ) {}
 
@@ -98,20 +107,50 @@ export class NotificationService {
   }
 
   async countUnreadNotifications(user: User): Promise<number | undefined> {
-    const { id, lastReadNotificationID } = user;
+    const { id, lastReadNotificationID, lastReadRequest } = user;
+
+    this.logger.log(`Counting unread notificaions for user ${user.id}`);
+    const dataQuery: Prisma.NotificationCountArgs = notificationFeedCount(id);
     if (lastReadNotificationID) {
       this.logger.log(
-        `Getting notifications newer than notification ${lastReadNotificationID}`,
+        `Counting notifications newer than notification ${lastReadNotificationID}`,
       );
       const notification = await this.getById({ id: lastReadNotificationID });
-      const dataQuery = notificationFeedCount(id);
       dataQuery.where = {
         ...dataQuery.where,
         createdAt: {
           gt: notification?.createdAt,
         },
       };
-      return this.prisma.notification.count(dataQuery);
     }
+    const unreadNotif = await this.prisma.notification.count(dataQuery);
+
+    this.logger.log(`Counting unread requests for user ${user.id}`);
+    const userConnections = await this.userConnectionService.getConnections({
+      where: {
+        userId: id,
+        role: {
+          not: UserRole.PENDING,
+        },
+      },
+    });
+
+    const dataPendingQuery: Prisma.UserInsConnectionCountArgs = {
+      where: pendingUsersWhereQuery(id, userConnections),
+    };
+    if (lastReadRequest) {
+      this.logger.log(`Counting requests newer than ${lastReadRequest}`);
+      dataPendingQuery.where = {
+        ...dataPendingQuery.where,
+        createdAt: {
+          gt: lastReadRequest,
+        },
+      };
+    }
+    const unreadRequests = await this.userConnectionService.count(
+      dataPendingQuery,
+    );
+
+    return unreadNotif + unreadRequests;
   }
 }

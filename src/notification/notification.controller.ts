@@ -38,7 +38,6 @@ export class NotificationController {
   @ApiTags('notification')
   @UseGuards(JwtAuthGuard)
   async countUnreadNotifications(@PrismaUser() user: User) {
-    this.logger.log(`Counting unread notificaions for user ${user.id}`);
     return {
       countUnread: await this.notifService.countUnreadNotifications(user),
     };
