@@ -138,6 +138,52 @@ export class ChatService {
     }
   }
 
+  async updateDeviceToken(
+    userID: string,
+    oldDeviceToken: string | null,
+    deviceToken: string | null,
+  ) {
+    try {
+      if (oldDeviceToken) {
+        this.logger.log(
+          `Removing device token ${oldDeviceToken} for user stream ${userID}`,
+        );
+        await this.streamChat.removeDevice(oldDeviceToken, userID);
+      }
+      if (deviceToken) {
+        this.logger.log(
+          `Adding device token ${deviceToken} for user stream ${userID}`,
+        );
+        await this.streamChat.addDevice(deviceToken, 'apn', userID);
+      }
+      const devices = await this.streamChat.getDevices(userID);
+      console.log('devices', devices);
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(
+        `Error adding device token to stream chat user! + ${stringErr}`,
+      );
+    }
+  }
+
+  async removeAllDevices(userID: string) {
+    try {
+      const devices = await this.streamChat.getDevices(userID);
+      if (devices.devices) {
+        await Promise.all(
+          devices.devices?.map(async (device) => {
+            await this.streamChat.removeDevice(device.id, userID);
+          }),
+        );
+      }
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(
+        `Error removing all devices tokens for stream chat user! + ${stringErr}`,
+      );
+    }
+  }
+
   async createChannelINS(ins: INS, userID: string) {
     try {
       const channel = this.streamChat.channel('messaging', ins.id, {

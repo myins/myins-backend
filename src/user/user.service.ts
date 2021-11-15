@@ -151,12 +151,23 @@ export class UserService {
       ...authTokens,
     };
 
+    if (data.pushToken) {
+      this.logger.log(
+        `Updating device token for user stream ${addedTogether.id}`,
+      );
+      await this.chatService.updateDeviceToken(
+        addedTogether.id,
+        null,
+        data.pushToken,
+      );
+    }
+
     this.logger.log('Sending verification code');
     this.smsService.sendVerificationCode(newUserModel);
 
     if (inses.length) {
       this.logger.log(
-        `Adding new user ${newUserModel.id} in inses ${inses.map(
+        `Adding new user ${addedTogether.id} in inses ${inses.map(
           (ins) => ins.id,
         )}`,
       );
@@ -181,11 +192,14 @@ export class UserService {
     });
   }
 
-  async logoutUser(userID: string): Promise<User> {
-    this.logger.log(`Updating user ${userID}. Removing tokens`);
+  async logoutUser(user: User): Promise<User> {
+    this.logger.log(`Updating device token for user stream ${user.id}`);
+    await this.chatService.updateDeviceToken(user.id, user.pushToken, null);
+
+    this.logger.log(`Updating user ${user.id}. Removing tokens`);
     return this.updateUser({
       where: {
-        id: userID,
+        id: user.id,
       },
       data: {
         refreshToken: null,
