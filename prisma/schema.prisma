@@ -164,6 +164,7 @@ model UserInsConnection {
 
   interactions Int     @default(0)
   pinned       Boolean @default(false)
+  isMute       Boolean @default(false)
 
   role UserRole @default(MEMBER)
 
