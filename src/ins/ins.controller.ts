@@ -234,7 +234,7 @@ export class InsController {
     const insWithoutInvitedPhoneNumbers = omit(ins, 'invitedPhoneNumbers');
     const retIns = {
       ...insWithoutInvitedPhoneNumbers,
-      role: connection.role,
+      userRole: connection.role,
     };
 
     this.logger.log(
