@@ -77,12 +77,13 @@ export class ChatController {
     @Body() data: SearchMessgesAPI,
   ) {
     if (data.channelId) {
-      const connection = this.userConnectionService.getNotPendingConnection({
-        userId_insId: {
-          insId: data.channelId,
-          userId: userID,
-        },
-      });
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            insId: data.channelId,
+            userId: userID,
+          },
+        });
       if (!connection) {
         this.logger.error(
           "You're not allowed to search message in this channel!",

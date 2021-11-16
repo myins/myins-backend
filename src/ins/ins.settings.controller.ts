@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -34,6 +35,19 @@ export class InsSettingsController {
     @Param('id') insId: string,
     @Body() data: MuteINSAPI,
   ) {
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          insId: insId,
+          userId: userId,
+        },
+      },
+    );
+    if (!connection) {
+      this.logger.error("You're not allowed to mute this ins!");
+      throw new BadRequestException("You're not allowed to mute this ins!");
+    }
+
     this.logger.log(
       `Updating connection between user ${userId} and ins ${insId}. Set isMute to ${data.isMute}`,
     );
