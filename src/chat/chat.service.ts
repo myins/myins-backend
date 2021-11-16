@@ -143,24 +143,31 @@ export class ChatService {
     oldDeviceToken: string | null,
     deviceToken: string | null,
   ) {
-    try {
-      if (oldDeviceToken) {
+    if (oldDeviceToken) {
+      try {
         this.logger.log(
           `Removing device token ${oldDeviceToken} for user stream ${userID}`,
         );
         await this.streamChat.removeDevice(oldDeviceToken, userID);
+      } catch (e) {
+        const stringErr: string = <string>e;
+        this.logger.error(
+          `Error removing device token for stream chat user! + ${stringErr}`,
+        );
       }
-      if (deviceToken) {
+    }
+    if (deviceToken) {
+      try {
         this.logger.log(
           `Adding device token ${deviceToken} for user stream ${userID}`,
         );
         await this.streamChat.addDevice(deviceToken, 'apn', userID);
+      } catch (e) {
+        const stringErr: string = <string>e;
+        this.logger.error(
+          `Error adding device token for stream chat user! + ${stringErr}`,
+        );
       }
-    } catch (e) {
-      const stringErr: string = <string>e;
-      this.logger.error(
-        `Error adding device token to stream chat user! + ${stringErr}`,
-      );
     }
   }
 

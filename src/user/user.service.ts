@@ -386,8 +386,12 @@ export class UserService {
 
     if (all || sources.includes(NotificationSource.MESSAGE)) {
       if (disable) {
+        this.logger.log(
+          `Removing all devices tokens for user stream ${user.id}`,
+        );
         await this.chatService.removeAllDevices(user.id);
       } else {
+        this.logger.log(`Updating device token for user stream ${user.id}`);
         await this.chatService.updateDeviceToken(user.id, null, user.pushToken);
       }
     }
