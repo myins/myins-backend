@@ -169,8 +169,6 @@ export class ChatService {
         );
       }
     }
-    const devices = await this.streamChat.getDevices(userID);
-    console.log('devices', devices);
   }
 
   async removeAllDevices(userID: string) {
