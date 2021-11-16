@@ -194,6 +194,7 @@ enum NotificationSource {
   ADDED_PHOTOS
   JOINED_INS
   JOIN_INS_REJECTED
+  MESSAGE
 }
 
 enum UserRole {

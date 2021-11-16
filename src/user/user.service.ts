@@ -383,6 +383,15 @@ export class UserService {
       : user.disabledNotifications.filter(
           (notifSource) => !sources.includes(notifSource),
         );
+
+    if (all || sources.includes(NotificationSource.MESSAGE)) {
+      if (disable) {
+        await this.chatService.removeAllDevices(user.id);
+      } else {
+        await this.chatService.updateDeviceToken(user.id, null, user.pushToken);
+      }
+    }
+
     return this.updateUser({
       where: {
         id: user.id,
