@@ -24,6 +24,10 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
+import {
+  ConnectionIncludeMembers,
+  ConnectionIncludeMembersInclude,
+} from 'src/prisma-queries-helper/connection-include-members';
 import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
 import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -202,42 +206,42 @@ export class InsController {
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
     this.logger.log(`Getting ins by id ${id}`);
-    const inses = await this.insService.inses({
+    const connections = await this.userConnectionService.getConnections({
       where: {
-        id: id,
-        members: {
-          some: {
-            userId: userID,
-          },
-        },
+        insId: id,
+        userId: userID,
       },
-      include: {
-        members: {
-          where: {
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        },
-      },
+      include: ConnectionIncludeMembersInclude,
     });
-    if (!inses || inses.length !== 1) {
+    if (!connections || connections.length !== 1) {
       this.logger.error(`Could not find INS ${id}!`);
       throw new NotFoundException('Could not find that INS!');
     }
 
-    let ins = inses[0];
-    (<InsWithCountMembers>ins)._count = {
-      members: (<InsWithMembersID>ins).members.length,
+    const connection = <ConnectionIncludeMembers>connections[0];
+    const insConnection = connection.ins;
+    const insWithoutMembers = omit(<InsWithMembersID>insConnection, 'members');
+    const ins: InsWithCountMembers = {
+      ...insWithoutMembers,
+      _count: {
+        members: 0,
+      },
     };
-    ins = omit(<InsWithMembersID>ins, 'members');
+    ins._count = {
+      members: insConnection.members.length,
+    };
+    const insWithoutInvitedPhoneNumbers = omit(ins, 'invitedPhoneNumbers');
+    const retIns = {
+      ...insWithoutInvitedPhoneNumbers,
+      userRole: connection.role,
+    };
 
     this.logger.log(
       `Create channel for ins ${id} by user stream ${userID} if not exists`,
     );
     await this.chatService.createChannelINSWithMembersIfNotExists(ins, userID);
 
-    return ins;
+    return retIns;
   }
 
   @Post('join/:code')
