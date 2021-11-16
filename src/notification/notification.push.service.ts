@@ -106,7 +106,7 @@ export class NotificationPushService {
 
         const isMute = await this.checkIfInsIsMuteForUser(target, notif);
 
-        if (target?.pushToken && isNotDisableNotification) {
+        if (target?.pushToken && isNotDisableNotification && !isMute) {
           this.logger.log(`Adding push notification for user ${target.id}`);
           const notifBody = await this.constructNotificationBody(target, notif);
           await this.pushData(
@@ -230,7 +230,7 @@ export class NotificationPushService {
   ): Promise<boolean> {
     const normalNotif = <Prisma.NotificationCreateInput>notif;
     const pushNotif = <PushExtraNotification>notif;
-    let isMute = true;
+    let isMute = false;
 
     const unreachable = (x: never) => {
       this.logger.error(`This shouldn't be possible! ${x}`);
@@ -273,14 +273,22 @@ export class NotificationPushService {
             where: {
               ins: {
                 posts: {
-                  some: normalNotif.post?.connect?.id,
+                  some: {
+                    id: normalNotif.post?.connect?.id,
+                  },
                 },
                 members: {
-                  some: user?.id,
+                  some: {
+                    userId: user?.id,
+                  },
                 },
               },
+              isMute: false,
             },
           });
+          if (connections.length) {
+            isMute = false;
+          }
         }
         break;
       case NotificationSource.ADDED_PHOTOS:
