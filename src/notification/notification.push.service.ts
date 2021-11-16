@@ -187,6 +187,13 @@ export class NotificationPushService {
         usersIDs = membersIns.map((member) => member.userId);
         usersIDs = [...new Set(usersIDs)];
         break;
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
         const membersRequestIns =
           await this.userConnectionService.getConnections({
@@ -350,6 +357,13 @@ export class NotificationPushService {
         });
         body = `Your request to access ${insJoinRejected?.name} ins has been declined!`;
         break;
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins?.name} ins!`;
         break;
