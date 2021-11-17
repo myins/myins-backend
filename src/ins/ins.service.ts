@@ -360,7 +360,7 @@ export class InsService {
       },
     });
     const deletePostIDs: string[] = [];
-    await Promise.all(
+    await this.prismaService.$transaction(async () => {
       postsInIns.map(async (post) => {
         await this.postService.updatePost({
           where: {
@@ -386,8 +386,8 @@ export class InsService {
         if (!inses.length) {
           deletePostIDs.push(post.id);
         }
-      }),
-    );
+      });
+    });
     if (deletePostIDs.length) {
       await this.postService.deleteManyPosts({
         where: {
