@@ -286,10 +286,12 @@ export class UserController {
       },
     });
 
+    const hasIns = true;
     if (inses.length) {
       this.logger.log(`User ${userId} is an admin for some inses`);
       return {
         inses: inses,
+        hasIns: hasIns,
       };
     } else {
       this.logger.log(`Getting inses for user ${userId}`);
@@ -313,11 +315,13 @@ export class UserController {
         return {
           inses: [],
           nameIns: userInses[0].name,
+          hasIns: hasIns,
         };
       }
 
       return {
         inses: [],
+        hasIns: userInses.length > 0,
       };
     }
   }
