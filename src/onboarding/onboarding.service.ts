@@ -22,7 +22,7 @@ export class OnboardingService {
 
   @Cron('0 1 * * *')
   async removeOldINS() {
-    this.logger.log('Removing old unclaimed INSes..');
+    this.logger.log('[Cron] Removing old unclaimed INSes..');
     const d = new Date();
     d.setDate(d.getDate() - 2);
 
@@ -36,7 +36,7 @@ export class OnboardingService {
         },
       },
     });
-    this.logger.log(`Cleaned up ${res.count} unclaimed INSes!`);
+    this.logger.log(`[Cron] Cleaned up ${res.count} unclaimed INSes!`);
   }
 
   async claimINS(insID: string, userID: string) {
