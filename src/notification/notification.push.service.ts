@@ -385,6 +385,7 @@ export class NotificationPushService {
       body: body,
       badge: unreadNotif ? unreadNotif + 1 : 1,
       contentAvailable: true,
+      mutableContent: 1,
       topic: target.sandboxToken
         ? 'com.squid40.dev.myins'
         : 'com.squid40.dev.myins',
