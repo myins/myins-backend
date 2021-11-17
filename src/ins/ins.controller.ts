@@ -369,6 +369,7 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: UserRole.ADMIN,
           },
         },
       },
@@ -381,7 +382,20 @@ export class InsController {
     const theINS = validINS[0];
 
     this.logger.log(`Attach cover with name '${file.originalname}'`);
-    return this.insService.attachCoverToPost(file, theINS.id);
+    let updatedIns = await this.insService.attachCoverToPost(file, theINS.id);
+    const updateInsWithoutInvitedPhoneNumbers = omit(
+      updatedIns,
+      'invitedPhoneNumbers',
+    );
+    (<InsWithCountMembers>updateInsWithoutInvitedPhoneNumbers)._count = {
+      members: (<InsWithMembersID>updateInsWithoutInvitedPhoneNumbers).members
+        .length,
+    };
+    updatedIns = omit(
+      <InsWithMembersID>updateInsWithoutInvitedPhoneNumbers,
+      'members',
+    );
+    return updatedIns;
   }
 
   @Delete('/:id/leave')

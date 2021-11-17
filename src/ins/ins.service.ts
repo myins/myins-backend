@@ -323,6 +323,15 @@ export class InsService {
       data: {
         cover: dataURL,
       },
+      include: {
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
+      },
     });
   }
 
