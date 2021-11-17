@@ -5,4 +5,5 @@ export const ShallowUserSelect: Prisma.UserSelect = {
   lastName: true,
   profilePicture: true,
   id: true,
+  isDeleted: true,
 };
