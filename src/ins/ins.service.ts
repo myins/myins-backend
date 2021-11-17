@@ -189,6 +189,14 @@ export class InsService {
         id: {
           not: userID,
         },
+        inses: {
+          some: {
+            ...whereQuery.inses?.some,
+            user: {
+              isDeleted: false,
+            },
+          },
+        },
       };
     }
 
