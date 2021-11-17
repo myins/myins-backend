@@ -35,7 +35,7 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import { omit } from 'src/util/omit';
-import { CreateINSAPI } from './ins-api.entity';
+import { CreateINSAPI, LeaveINSAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
@@ -401,7 +401,11 @@ export class InsController {
   @Delete('/:id/leave')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async leaveINS(@PrismaUser('id') userId: string, @Param('id') insId: string) {
+  async leaveINS(
+    @PrismaUser('id') userId: string,
+    @Param('id') insId: string,
+    data: LeaveINSAPI,
+  ) {
     const user = await this.userService.user({
       id: userId,
     });
@@ -415,15 +419,18 @@ export class InsController {
     let message = 'User cannot be deleted because is admin!';
 
     if (!isAdmin) {
-      this.logger.log(
-        `User ${userId} is not an admin for ins ${insId}. Removing from ins`,
-      );
-      await this.userConnectionService.removeMember({
-        userId_insId: {
-          insId: insId,
-          userId: userId,
-        },
-      });
+      this.logger.log(`User ${userId} is not an admin for ins ${insId}`);
+      if (data.keepData) {
+        this.logger.log(
+          `Keep data ${data.keepData}. Just remove member ${userId} from ins ${insId}`,
+        );
+        await this.userConnectionService.removeMember({
+          userId_insId: {
+            insId: insId,
+            userId: userId,
+          },
+        });
+      }
       message = 'User successfully removed from ins';
       this.logger.log(message);
     }
