@@ -359,6 +359,7 @@ export class InsService {
         },
       },
     });
+    const deletePostIDs: string[] = [];
     await Promise.all(
       postsInIns.map(async (post) => {
         await this.postService.updatePost({
@@ -373,8 +374,29 @@ export class InsService {
             },
           },
         });
+        const inses = await this.inses({
+          where: {
+            posts: {
+              some: {
+                id: post.id,
+              },
+            },
+          },
+        });
+        if (!inses.length) {
+          deletePostIDs.push(post.id);
+        }
       }),
     );
+    if (deletePostIDs.length) {
+      await this.postService.deleteManyPosts({
+        where: {
+          id: {
+            in: deletePostIDs,
+          },
+        },
+      });
+    }
   }
 
   async randomCode() {
