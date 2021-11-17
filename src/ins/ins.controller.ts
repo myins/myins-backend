@@ -35,7 +35,6 @@ import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import { omit } from 'src/util/omit';
 import { CreateINSAPI } from './ins-api.entity';
-import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
 @Controller('ins')
@@ -44,7 +43,6 @@ export class InsController {
 
   constructor(
     private readonly insService: InsService,
-    private readonly insAdminService: InsAdminService,
     private readonly chatService: ChatService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,

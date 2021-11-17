@@ -15,14 +15,16 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
-import { MuteINSAPI } from './ins-api.entity';
+import { LeaveINSAPI, MuteINSAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
+import { InsService } from './ins.service';
 
 @Controller('ins')
 export class InsSettingsController {
   private readonly logger = new Logger(InsSettingsController.name);
 
   constructor(
+    private readonly insService: InsService,
     private readonly insAdminService: InsAdminService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
@@ -97,7 +99,11 @@ export class InsSettingsController {
   @Delete('/:id/leave')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async leaveINS(@PrismaUser('id') userId: string, @Param('id') insId: string) {
+  async leaveINS(
+    @PrismaUser('id') userId: string,
+    @Param('id') insId: string,
+    @Body() data: LeaveINSAPI,
+  ) {
     const user = await this.userService.user({
       id: userId,
     });
@@ -111,9 +117,14 @@ export class InsSettingsController {
     let message = 'User cannot be deleted because is admin!';
 
     if (!isAdmin) {
-      this.logger.log(
-        `User ${userId} is not an admin for ins ${insId}. Removing from ins`,
-      );
+      if (!data.keepData) {
+        this.logger.log(
+          `Cleaning media that belongs to member ${userId} from ins ${insId}`,
+        );
+        await this.insService.cleanMedia(userId, insId);
+      }
+
+      this.logger.log(`Removing member ${userId} from ins ${insId}`);
       await this.userConnectionService.removeMember({
         userId_insId: {
           insId: insId,

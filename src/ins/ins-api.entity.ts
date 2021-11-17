@@ -22,6 +22,12 @@ export class UpdateINSAdminAPI {
   memberID: string;
 }
 
+export class LeaveINSAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  keepData: boolean;
+}
+
 export class MuteINSAPI {
   @IsBoolean()
   @IsNotEmpty()
