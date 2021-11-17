@@ -90,7 +90,11 @@ export class NotificationPushService {
 
     await Promise.all(
       usersIDs.map(async (userID) => {
+        this.logger.log(
+          `Preparing push notification of type ${notif.source} for user ${userID}`,
+        );
         const target = await this.userService.user({ id: userID });
+
         const pushNotifications: PushNotificationSource[] = Object.keys(
           PushNotificationSource,
         );
@@ -102,7 +106,10 @@ export class NotificationPushService {
           !target?.disabledNotifications.includes(
             <NotificationSource>realSource,
           );
-        if (target?.pushToken && isNotDisableNotification) {
+
+        const isMute = await this.checkIfInsIsMuteForUser(target, notif);
+
+        if (target?.pushToken && isNotDisableNotification && !isMute) {
           this.logger.log(`Adding push notification for user ${target.id}`);
           const notifBody = await this.constructNotificationBody(target, notif);
           await this.pushData(
@@ -121,7 +128,7 @@ export class NotificationPushService {
 
   async getUsersIDsBySource(
     notif: Prisma.NotificationCreateInput | PushExtraNotification,
-  ) {
+  ): Promise<string[]> {
     const normalNotif = <Prisma.NotificationCreateInput>notif;
     const pushNotif = <PushExtraNotification>notif;
     let usersIDs: string[] = [];
@@ -218,6 +225,95 @@ export class NotificationPushService {
     }
 
     return usersIDs;
+  }
+
+  async checkIfInsIsMuteForUser(
+    user: User | null,
+    notif: Prisma.NotificationCreateInput | PushExtraNotification,
+  ): Promise<boolean> {
+    const normalNotif = <Prisma.NotificationCreateInput>notif;
+    const pushNotif = <PushExtraNotification>notif;
+    let isMute = false;
+
+    const unreachable = (x: never) => {
+      this.logger.error(`This shouldn't be possible! ${x}`);
+      throw new Error(`This shouldn't be possible! ${x}`);
+    };
+
+    switch (notif.source) {
+      case NotificationSource.JOINED_INS:
+      case NotificationSource.JOIN_INS_REJECTED:
+        if (normalNotif.ins?.connect?.id && user?.id) {
+          const connectionNormalNotif =
+            await this.userConnectionService.getConnection({
+              userId_insId: {
+                insId: normalNotif.ins?.connect?.id,
+                userId: user.id,
+              },
+            });
+          isMute = !!connectionNormalNotif?.muteUntil;
+        }
+        break;
+      case PushNotificationSource.REQUEST_FOR_ME:
+      case PushNotificationSource.REQUEST_FOR_OTHER_USER:
+        if (pushNotif.ins?.id && user?.id) {
+          const connectionPushNotif =
+            await this.userConnectionService.getConnection({
+              userId_insId: {
+                insId: pushNotif.ins?.id,
+                userId: user.id,
+              },
+            });
+          isMute = !!connectionPushNotif?.muteUntil;
+        }
+        break;
+      case NotificationSource.LIKE_POST:
+      case NotificationSource.LIKE_COMMENT:
+      case NotificationSource.COMMENT:
+      case NotificationSource.POST:
+        if (normalNotif.post?.connect?.id && user?.id) {
+          const connections = await this.userConnectionService.getConnections({
+            where: {
+              ins: {
+                posts: {
+                  some: {
+                    id: normalNotif.post?.connect?.id,
+                  },
+                },
+                members: {
+                  some: {
+                    userId: user?.id,
+                  },
+                },
+              },
+              muteUntil: null,
+            },
+          });
+          if (connections.length) {
+            isMute = false;
+          }
+        }
+        break;
+      case NotificationSource.ADDED_PHOTOS:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+      default:
+        unreachable(<never>notif.source);
+        break;
+    }
+
+    return isMute;
   }
 
   async pushData(

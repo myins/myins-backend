@@ -1,4 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateINSAPI {
   @IsString()
@@ -20,4 +26,14 @@ export class LeaveINSAPI {
   @IsBoolean()
   @IsNotEmpty()
   keepData: boolean;
+}
+
+export class MuteINSAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  isMute: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  minutes: number;
 }

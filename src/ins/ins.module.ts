@@ -11,6 +11,7 @@ import { InsAdminService } from './ins.admin.service';
 import { InsController } from './ins.controller';
 import { InsPinController } from './ins.pin.controller';
 import { InsService } from './ins.service';
+import { InsSettingsController } from './ins.settings.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,12 @@ import { InsService } from './ins.service';
     PostModule,
     NotificationModule,
   ],
-  controllers: [InsController, InsAdminController, InsPinController],
+  controllers: [
+    InsController,
+    InsAdminController,
+    InsPinController,
+    InsSettingsController,
+  ],
   providers: [InsService, InsAdminService],
   exports: [InsService],
 })
