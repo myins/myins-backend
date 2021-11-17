@@ -101,4 +101,8 @@ export class PostService {
       where,
     });
   }
+
+  async deleteManyPosts(data: Prisma.PostDeleteManyArgs) {
+    return this.prisma.post.deleteMany(data);
+  }
 }

@@ -420,17 +420,17 @@ export class InsController {
 
     if (!isAdmin) {
       this.logger.log(`User ${userId} is not an admin for ins ${insId}`);
-      if (data.keepData) {
-        this.logger.log(
-          `Keep data ${data.keepData}. Just remove member ${userId} from ins ${insId}`,
-        );
-        await this.userConnectionService.removeMember({
-          userId_insId: {
-            insId: insId,
-            userId: userId,
-          },
-        });
+      if (!data.keepData) {
+        await this.insService.cleanMedia(userId, insId);
       }
+
+      this.logger.log(`Removing member ${userId} from ins ${insId}`);
+      await this.userConnectionService.removeMember({
+        userId_insId: {
+          insId: insId,
+          userId: userId,
+        },
+      });
       message = 'User successfully removed from ins';
       this.logger.log(message);
     }

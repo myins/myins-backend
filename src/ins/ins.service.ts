@@ -339,6 +339,12 @@ export class InsService {
     return this.prismaService.iNS.deleteMany(params);
   }
 
+  async cleanMedia(userId: string, insId: string) {
+    await this.postService.deleteManyPosts({
+      
+    })
+  }
+
   async randomCode() {
     const makeRandom = () => {
       const length = 20;
