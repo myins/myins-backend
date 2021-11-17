@@ -348,9 +348,32 @@ export class InsService {
   }
 
   async cleanMedia(userId: string, insId: string) {
-    await this.postService.deleteManyPosts({
-      
-    })
+    const postsInIns = await this.postService.posts({
+      where: {
+        authorId: userId,
+        inses: {
+          some: {
+            id: insId,
+          },
+        },
+      },
+    });
+    await Promise.all(
+      postsInIns.map(async (post) => {
+        await this.postService.updatePost({
+          where: {
+            id: post.id,
+          },
+          data: {
+            inses: {
+              disconnect: {
+                id: insId,
+              },
+            },
+          },
+        });
+      }),
+    );
   }
 
   async randomCode() {
