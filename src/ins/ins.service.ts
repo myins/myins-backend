@@ -111,6 +111,7 @@ export class InsService {
           ...theRightINS,
           userRole: each.role,
           pinned: each.pinned,
+          isMute: !!each.muteUntil,
         };
       })
       .filter((each) => {

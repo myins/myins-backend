@@ -90,6 +90,9 @@ export class NotificationPushService {
 
     await Promise.all(
       usersIDs.map(async (userID) => {
+        this.logger.log(
+          `Preparing push notification of type ${notif.source} for user ${userID}`,
+        );
         const target = await this.userService.user({ id: userID });
 
         const pushNotifications: PushNotificationSource[] = Object.keys(
@@ -248,7 +251,7 @@ export class NotificationPushService {
                 userId: user.id,
               },
             });
-          isMute = connectionNormalNotif ? connectionNormalNotif.isMute : true;
+          isMute = !!connectionNormalNotif?.muteUntil;
         }
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
@@ -261,7 +264,7 @@ export class NotificationPushService {
                 userId: user.id,
               },
             });
-          isMute = connectionPushNotif ? connectionPushNotif.isMute : true;
+          isMute = !!connectionPushNotif?.muteUntil;
         }
         break;
       case NotificationSource.LIKE_POST:
@@ -283,7 +286,7 @@ export class NotificationPushService {
                   },
                 },
               },
-              isMute: false,
+              muteUntil: null,
             },
           });
           if (connections.length) {

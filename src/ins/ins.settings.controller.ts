@@ -9,6 +9,7 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
@@ -26,6 +27,24 @@ export class InsSettingsController {
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
+
+  @Cron('*/10 * * * *')
+  async setUnmutedIns() {
+    this.logger.log('[Cron] Setting unmute for inses that is no more muted');
+    const res = await this.userConnectionService.updateMany({
+      where: {
+        muteUntil: {
+          lt: new Date(),
+        },
+      },
+      data: {
+        muteUntil: null,
+      },
+    });
+    this.logger.log(
+      `[Cron] Successfully set unmute for ${res.count} muted inses!`,
+    );
+  }
 
   @Patch('/:id/mute')
   @ApiTags('ins')
@@ -49,8 +68,14 @@ export class InsSettingsController {
     }
 
     this.logger.log(
-      `Updating connection between user ${userId} and ins ${insId}. Set isMute to ${data.isMute}`,
+      `Updating connection between user ${userId} and ins ${insId}. Set muteUntil`,
     );
+    const milliseconds = data.minutes * 60 * 1000;
+    const muteUntilValue: Date | null = data.isMute
+      ? data.minutes > 0
+        ? new Date(new Date().getTime() + milliseconds)
+        : new Date(new Date().setFullYear(3000))
+      : null;
     await this.userConnectionService.update({
       where: {
         userId_insId: {
@@ -59,7 +84,7 @@ export class InsSettingsController {
         },
       },
       data: {
-        isMute: data.isMute,
+        muteUntil: muteUntilValue,
       },
     });
 

@@ -234,6 +234,7 @@ export class InsController {
     const retIns = {
       ...insWithoutInvitedPhoneNumbers,
       userRole: connection.role,
+      isMute: !!connection.muteUntil,
     };
 
     this.logger.log(

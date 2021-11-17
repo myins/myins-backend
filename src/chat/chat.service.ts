@@ -25,13 +25,13 @@ export class ChatService {
   @Cron('0 1 * * *')
   async cleanUpStreamChat() {
     try {
-      this.logger.log('Clean up stream chat users');
+      this.logger.log('[Cron] Clean up stream chat users');
 
-      this.logger.log('Getting users from db');
+      this.logger.log('[Cron] Getting users from db');
       const users = await this.userService.users({});
       const usersIDs = users.map((user) => user.id);
 
-      this.logger.log('Getting stream chat users');
+      this.logger.log('[Cron] Getting stream chat users');
       const limit = 100;
       let offset = 0;
       let streamUsers;
@@ -59,16 +59,16 @@ export class ChatService {
       );
 
       this.logger.log(
-        `Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
+        `[Cron] Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
       );
 
-      this.logger.log('Clean up channels');
+      this.logger.log('[Cron] Clean up channels');
 
-      this.logger.log('Getting inses from db');
+      this.logger.log('[Cron] Getting inses from db');
       const inses = await this.insService.inses({});
       const insesIDs = inses.map((ins) => ins.id);
 
-      this.logger.log('Getting channels');
+      this.logger.log('[Cron] Getting channels');
       offset = 0;
       let channels;
       const allChannels: Channel[] = [];
@@ -92,11 +92,11 @@ export class ChatService {
       );
 
       this.logger.log(
-        `Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
+        `[Cron] Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
       );
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error(`Error cleaned up stream chat! + ${stringErr}`);
+      this.logger.error(`[Cron] Error cleaned up stream chat! + ${stringErr}`);
     }
   }
 
