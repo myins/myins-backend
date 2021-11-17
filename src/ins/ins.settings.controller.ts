@@ -49,7 +49,7 @@ export class InsSettingsController {
   @Patch('/:id/mute')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
-  async toogleMute(
+  async toggleMute(
     @PrismaUser('id') userId: string,
     @Param('id') insId: string,
     @Body() data: MuteINSAPI,
