@@ -129,7 +129,24 @@ export class InsService {
     insID: string,
     skip: number,
     take: number,
+    onlyMine: boolean,
   ): Promise<Post[]> {
+    let whereQuery: Prisma.PostWhereInput = {
+      inses: {
+        some: {
+          id: insID,
+        },
+      },
+      pending: false,
+    };
+
+    if (onlyMine) {
+      whereQuery = {
+        ...whereQuery,
+        authorId: userID,
+      };
+    }
+
     return this.postService.posts({
       skip: skip,
       take: take,
@@ -137,14 +154,7 @@ export class InsService {
       orderBy: {
         createdAt: 'desc',
       },
-      where: {
-        inses: {
-          some: {
-            id: insID,
-          },
-        },
-        pending: false,
-      },
+      where: whereQuery,
     });
   }
 

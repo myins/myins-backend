@@ -51,10 +51,18 @@ export class ChatSearchService {
       : {};
     messageFilters = data.autocomplete?.length
       ? {
+          ...messageFilters,
           text: { $autocomplete: data.autocomplete },
         }
       : messageFilters;
-    if (!messageFilters['attachments.type'] && !messageFilters.text) {
+    messageFilters = data.onlyMine
+      ? { ...messageFilters, user_id: userID }
+      : messageFilters;
+    if (
+      !messageFilters['attachments.type'] &&
+      !messageFilters.text &&
+      !messageFilters.user_id
+    ) {
       messageFilters = { created_at: { $lte: new Date().toISOString() } };
     }
 

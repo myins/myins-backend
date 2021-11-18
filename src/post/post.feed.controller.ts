@@ -27,6 +27,7 @@ export class PostFeedController {
     @PrismaUser('id') userID: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
+    @Query('onlyMine') onlyMine: boolean,
   ) {
     if (take < 0 || take > 20) {
       this.logger.error('Take must be between 0 and 20!');
@@ -42,7 +43,7 @@ export class PostFeedController {
     }
 
     this.logger.log(`Getting posts feed for user ${userID}`);
-    return this.postFeedService.getFeed(skip, take, userID);
+    return this.postFeedService.getFeed(skip, take, userID, onlyMine);
   }
 
   @Get('stories-feed')

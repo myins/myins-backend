@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Post, UserRole } from '@prisma/client';
+import { Post, Prisma, UserRole } from '@prisma/client';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { PostService } from './post.service';
 
@@ -12,7 +12,35 @@ export class PostFeedService {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  async getFeed(skip: number, take: number, userID: string): Promise<Post[]> {
+  async getFeed(
+    skip: number,
+    take: number,
+    userID: string,
+    onlyMine: boolean,
+  ): Promise<Post[]> {
+    let whereQuery: Prisma.PostWhereInput = {
+      inses: {
+        some: {
+          members: {
+            some: {
+              userId: userID,
+              role: {
+                not: UserRole.PENDING,
+              },
+            },
+          },
+        },
+      },
+      pending: false,
+    };
+
+    if (onlyMine) {
+      whereQuery = {
+        ...whereQuery,
+        authorId: userID,
+      };
+    }
+
     return this.postService.posts({
       skip: skip,
       take: take,
@@ -20,21 +48,7 @@ export class PostFeedService {
       orderBy: {
         createdAt: 'desc',
       },
-      where: {
-        inses: {
-          some: {
-            members: {
-              some: {
-                userId: userID,
-                role: {
-                  not: UserRole.PENDING,
-                },
-              },
-            },
-          },
-        },
-        pending: false,
-      },
+      where: whereQuery,
     });
   }
 
