@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -26,4 +27,8 @@ export class SearchMessgesAPI {
   @IsString()
   @IsOptional()
   next: string;
+
+  @IsBoolean()
+  @IsOptional()
+  onlyMine: boolean;
 }

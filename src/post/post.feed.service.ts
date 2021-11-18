@@ -12,7 +12,12 @@ export class PostFeedService {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  async getFeed(skip: number, take: number, userID: string): Promise<Post[]> {
+  async getFeed(
+    skip: number,
+    take: number,
+    userID: string,
+    onlyMine: boolean,
+  ): Promise<Post[]> {
     return this.postService.posts({
       skip: skip,
       take: take,
@@ -34,6 +39,7 @@ export class PostFeedService {
           },
         },
         pending: false,
+        authorId: onlyMine ? userID : undefined,
       },
     });
   }
