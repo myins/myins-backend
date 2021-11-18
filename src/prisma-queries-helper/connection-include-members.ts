@@ -8,6 +8,9 @@ const connectionIncludeMembersData = {
           role: {
             not: UserRole.PENDING,
           },
+          user: {
+            isDeleted: false,
+          },
         },
       },
     },

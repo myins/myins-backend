@@ -82,7 +82,16 @@ export class InsService {
           insId: {
             in: onlyIDs,
           },
-          role: 'PENDING',
+          OR: [
+            {
+              role: 'PENDING',
+            },
+            {
+              user: {
+                isDeleted: true,
+              },
+            },
+          ],
         },
       })
     ).forEach((cur) => {
@@ -330,6 +339,9 @@ export class InsService {
           where: {
             role: {
               not: UserRole.PENDING,
+            },
+            user: {
+              isDeleted: false,
             },
           },
         },

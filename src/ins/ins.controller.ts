@@ -106,6 +106,9 @@ export class InsController {
             role: {
               not: UserRole.PENDING,
             },
+            user: {
+              isDeleted: false,
+            },
           },
         },
       },
