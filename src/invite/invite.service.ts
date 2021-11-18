@@ -261,6 +261,7 @@ export class InviteService {
               },
             },
           },
+      isDeleted: false,
     };
 
     this.logger.log('Getting shallow users');
