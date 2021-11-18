@@ -131,22 +131,6 @@ export class InsService {
     take: number,
     onlyMine: boolean,
   ): Promise<Post[]> {
-    let whereQuery: Prisma.PostWhereInput = {
-      inses: {
-        some: {
-          id: insID,
-        },
-      },
-      pending: false,
-    };
-
-    if (onlyMine) {
-      whereQuery = {
-        ...whereQuery,
-        authorId: userID,
-      };
-    }
-
     return this.postService.posts({
       skip: skip,
       take: take,
@@ -154,7 +138,15 @@ export class InsService {
       orderBy: {
         createdAt: 'desc',
       },
-      where: whereQuery,
+      where: {
+        inses: {
+          some: {
+            id: insID,
+          },
+        },
+        pending: false,
+        authorId: onlyMine ? userID : undefined,
+      },
     });
   }
 
@@ -166,12 +158,20 @@ export class InsService {
     filter?: string,
     without?: boolean,
   ) {
-    let whereQuery: Prisma.UserWhereInput = {
+    const whereQuery: Prisma.UserWhereInput = {
+      id: without
+        ? {
+            not: userID,
+          }
+        : undefined,
       inses: {
         some: {
           insId: insID,
           role: {
             not: UserRole.PENDING,
+          },
+          user: {
+            isDeleted: false,
           },
         },
       },
@@ -193,23 +193,6 @@ export class InsService {
             ]
           : undefined,
     };
-
-    if (without) {
-      whereQuery = {
-        ...whereQuery,
-        id: {
-          not: userID,
-        },
-        inses: {
-          some: {
-            ...whereQuery.inses?.some,
-            user: {
-              isDeleted: false,
-            },
-          },
-        },
-      };
-    }
 
     return this.userService.users({
       where: whereQuery,
