@@ -143,6 +143,7 @@ export class NotificationPushService {
       case NotificationSource.LIKE_COMMENT:
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
+      case NotificationSource.CHANGE_ADMIN:
         usersIDs = normalNotif.target?.connect?.id
           ? [normalNotif.target?.connect?.id]
           : [];
@@ -243,6 +244,7 @@ export class NotificationPushService {
     switch (notif.source) {
       case NotificationSource.JOINED_INS:
       case NotificationSource.JOIN_INS_REJECTED:
+      case NotificationSource.CHANGE_ADMIN:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -314,56 +316,6 @@ export class NotificationPushService {
     }
 
     return isMute;
-  }
-
-  async pushData(
-    token: string,
-    sandbox: boolean,
-    data: PushNotifications.Data,
-  ) {
-    if (token.toLowerCase() !== token) {
-      // Android token
-      const x = data.custom;
-
-      let couldUnwrapAndSend = false;
-      if (x !== undefined) {
-        if (typeof x !== 'string') {
-          const copy: { [key: string]: string } = {};
-          Object.keys(x).forEach((each) => {
-            copy[each] = JSON.stringify(x[each]);
-          });
-
-          await this.messagingService.sendToDevice(token, {
-            notification: {
-              title: data.title,
-              body: data.body,
-            },
-            data: copy,
-          });
-          couldUnwrapAndSend = true;
-        }
-      }
-
-      if (!couldUnwrapAndSend) {
-        // No data, send it without
-
-        await this.messagingService.sendToDevice(token, {
-          notification: {
-            title: data.title,
-            body: data.body,
-            target: token,
-            author: '',
-          },
-        });
-      }
-    } else {
-      this.logger.log(`Send push notification with sandbox ${sandbox}`);
-      if (sandbox) {
-        return sandboxPush.send(token, data);
-      } else {
-        return prodPush.send(token, data);
-      }
-    }
   }
 
   async constructNotificationBody(
@@ -453,6 +405,15 @@ export class NotificationPushService {
         });
         body = `Your request to access ${insJoinRejected?.name} ins has been declined!`;
         break;
+      case NotificationSource.CHANGE_ADMIN:
+        const authorChangeAdmin = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        const insChangeAdmin = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `You have been assigned as Admin in ${insChangeAdmin?.name} ins by ${authorChangeAdmin?.firstName} ${authorChangeAdmin?.lastName}!`;
+        break;
       case NotificationSource.MESSAGE:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
@@ -489,6 +450,56 @@ export class NotificationPushService {
         ...clean(source),
       },
     };
+  }
+
+  async pushData(
+    token: string,
+    sandbox: boolean,
+    data: PushNotifications.Data,
+  ) {
+    if (token.toLowerCase() !== token) {
+      // Android token
+      const x = data.custom;
+
+      let couldUnwrapAndSend = false;
+      if (x !== undefined) {
+        if (typeof x !== 'string') {
+          const copy: { [key: string]: string } = {};
+          Object.keys(x).forEach((each) => {
+            copy[each] = JSON.stringify(x[each]);
+          });
+
+          await this.messagingService.sendToDevice(token, {
+            notification: {
+              title: data.title,
+              body: data.body,
+            },
+            data: copy,
+          });
+          couldUnwrapAndSend = true;
+        }
+      }
+
+      if (!couldUnwrapAndSend) {
+        // No data, send it without
+
+        await this.messagingService.sendToDevice(token, {
+          notification: {
+            title: data.title,
+            body: data.body,
+            target: token,
+            author: '',
+          },
+        });
+      }
+    } else {
+      this.logger.log(`Send push notification with sandbox ${sandbox}`);
+      if (sandbox) {
+        return sandboxPush.send(token, data);
+      } else {
+        return prodPush.send(token, data);
+      }
+    }
   }
 }
 

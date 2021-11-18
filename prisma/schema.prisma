@@ -196,6 +196,7 @@ enum NotificationSource {
   JOINED_INS
   JOIN_INS_REJECTED
   MESSAGE
+  CHANGE_ADMIN
 }
 
 enum UserRole {

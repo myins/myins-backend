@@ -188,7 +188,7 @@ export class InsController {
       throw new NotFoundException('Could not find that INS!');
     }
 
-    this.logger.log(`Getting members for ins ${id}`);
+    this.logger.log(`Getting members for ins ${id} by user ${userID}`);
     return this.insService.membersForIns(
       id,
       userID,
