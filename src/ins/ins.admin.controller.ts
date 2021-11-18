@@ -1,3 +1,4 @@
+import { NotificationSource } from '.prisma/client';
 import {
   Body,
   Controller,
@@ -12,6 +13,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
@@ -25,6 +27,7 @@ export class InsAdminController {
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Post('/change')
@@ -44,7 +47,34 @@ export class InsAdminController {
     this.logger.log(
       `Removing all admins for ins ${data.insID} and changing user ${data.memberID} as admin`,
     );
-    return this.insAdminService.changeAdmin(data.insID, data.memberID);
+    const changedAdmin = await this.insAdminService.changeAdmin(
+      data.insID,
+      data.memberID,
+    );
+
+    this.logger.log(
+      `Creating notification for changing admin user ${data.memberID} from ins ${data.insID} by current admin user ${userID}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.CHANGE_ADMIN,
+      target: {
+        connect: {
+          id: data.memberID,
+        },
+      },
+      author: {
+        connect: {
+          id: userID,
+        },
+      },
+      ins: {
+        connect: {
+          id: data.insID,
+        },
+      },
+    });
+
+    return changedAdmin;
   }
 
   @Delete('/remove-member')

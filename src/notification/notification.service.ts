@@ -56,6 +56,7 @@ export class NotificationService {
       const notificationsWithINs: NotificationSource[] = [
         NotificationSource.JOINED_INS,
         NotificationSource.JOIN_INS_REJECTED,
+        NotificationSource.CHANGE_ADMIN,
       ];
       if (notificationsWithINs.includes(notif.source)) {
         const ins = (<NotificationFeed>notif).ins;
