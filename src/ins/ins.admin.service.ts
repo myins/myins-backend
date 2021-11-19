@@ -39,6 +39,10 @@ export class InsAdminService {
         insId: insId,
       },
     });
+    if (!connection) {
+      this.logger.error("You're not a member of this ins!");
+      throw new BadRequestException("You're not a member of this ins!");
+    }
     return connection?.role === UserRole.ADMIN;
   }
 }
