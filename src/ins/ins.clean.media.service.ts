@@ -78,7 +78,7 @@ export class InsCleanMediaService {
 
     if (deleteCommentIDs.length) {
       this.logger.log(`Removing comments ${deleteCommentIDs}`);
-      await this.commentService.deleteManyComment({
+      await this.commentService.deleteManyComments({
         where: {
           id: {
             in: deleteCommentIDs,
