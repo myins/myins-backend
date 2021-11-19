@@ -18,7 +18,7 @@ import { InteractionModule } from 'src/interaction/interaction.module';
     InteractionModule,
   ],
   providers: [CommentService, CommentLikeService],
-  exports: [CommentService],
+  exports: [CommentService, CommentLikeService],
   controllers: [CommentLikeController, CommentController],
 })
 export class CommentModule {}

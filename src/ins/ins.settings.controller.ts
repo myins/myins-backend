@@ -124,13 +124,13 @@ export class InsSettingsController {
         return this.insCleanMediaService.cleanMedia(userId, insId);
       }
 
-      // this.logger.log(`Removing member ${userId} from ins ${insId}`);
-      // await this.userConnectionService.removeMember({
-      //   userId_insId: {
-      //     insId: insId,
-      //     userId: userId,
-      //   },
-      // });
+      this.logger.log(`Removing member ${userId} from ins ${insId}`);
+      await this.userConnectionService.removeMember({
+        userId_insId: {
+          insId: insId,
+          userId: userId,
+        },
+      });
       message = 'User successfully removed from ins';
       this.logger.log(message);
     }
