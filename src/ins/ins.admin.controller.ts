@@ -127,6 +127,23 @@ export class InsAdminController {
       throw new BadRequestException("You're not allowed to delete this INS!");
     }
 
+    this.logger.log(
+      `Creating notification for deleting ins ${insID} by user ${userID}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.DELETED_INS,
+      author: {
+        connect: {
+          id: userID,
+        },
+      },
+      ins: {
+        connect: {
+          id: insID,
+        },
+      },
+    });
+
     this.logger.log(`Deleting ins ${insID}`);
     return this.insAdminService.deleteINS({ id: insID });
   }

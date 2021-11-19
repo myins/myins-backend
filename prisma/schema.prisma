@@ -122,21 +122,21 @@ model Notification {
   id        String             @id @default(uuid())
   createdAt DateTime           @default(now())
   source    NotificationSource
-  target    User?              @relation(name: "target", fields: [targetId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  target    User?              @relation(name: "target", fields: [targetId], references: [id])
   targetId  String?
 
   // Some notifications come from the ether, others from the user
-  author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id])
   authorId String
 
-  ins   INS?    @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ins   INS?    @relation(fields: [insId], references: [id])
   insId String?
 
   //Some notifications have a related post / comment, sometimes both
-  post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  post   Post?   @relation(fields: [postId], references: [id])
   postId String?
 
-  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id])
   commentId String?
 
   photoCount Int?
@@ -197,6 +197,7 @@ enum NotificationSource {
   JOIN_INS_REJECTED
   MESSAGE
   CHANGE_ADMIN
+  DELETED_INS
 }
 
 enum UserRole {
