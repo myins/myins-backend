@@ -1,16 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationSource } from 'prisma/prisma-client';
+import {
+  NotificationSource,
+  Prisma,
+  UserCommentLikeConnection,
+} from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CommentLikeService {
   private readonly logger = new Logger(CommentLikeService.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly commentService: CommentService,
     private readonly notifsService: NotificationService,
   ) {}
+
+  async commentLikes(
+    params: Prisma.UserCommentLikeConnectionFindManyArgs,
+  ): Promise<UserCommentLikeConnection[]> {
+    return this.prisma.userCommentLikeConnection.findMany(params);
+  }
+
+  async deleteLike(where: Prisma.UserCommentLikeConnectionWhereUniqueInput) {
+    return this.prisma.userCommentLikeConnection.delete({ where });
+  }
 
   async likeComment(userID: string, commentID: string) {
     this.logger.log(

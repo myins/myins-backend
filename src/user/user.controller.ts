@@ -384,8 +384,8 @@ export class UserController {
       role: UserRole.PENDING,
     });
 
-    this.logger.log(`Removing all devices tokens for user stream ${user.id}`);
-    await this.chatService.removeAllDevices(user.id);
+    this.logger.log(`Removing user stream ${user.id}`);
+    await this.chatService.deleteStreamUser(user.id);
 
     this.logger.log('Successfully updated user as a MyINS user');
     return {

@@ -353,57 +353,6 @@ export class InsService {
     return this.prismaService.iNS.deleteMany(params);
   }
 
-  async cleanMedia(userId: string, insId: string) {
-    const postsInIns = await this.postService.posts({
-      where: {
-        authorId: userId,
-        inses: {
-          some: {
-            id: insId,
-          },
-        },
-      },
-    });
-    const deletePostIDs: string[] = [];
-    await this.prismaService.$transaction(async () => {
-      postsInIns.map(async (post) => {
-        await this.postService.updatePost({
-          where: {
-            id: post.id,
-          },
-          data: {
-            inses: {
-              disconnect: {
-                id: insId,
-              },
-            },
-          },
-        });
-        const inses = await this.inses({
-          where: {
-            posts: {
-              some: {
-                id: post.id,
-              },
-            },
-          },
-        });
-        if (!inses.length) {
-          deletePostIDs.push(post.id);
-        }
-      });
-    });
-    if (deletePostIDs.length) {
-      await this.postService.deleteManyPosts({
-        where: {
-          id: {
-            in: deletePostIDs,
-          },
-        },
-      });
-    }
-  }
-
   async randomCode() {
     const makeRandom = () => {
       const length = 20;

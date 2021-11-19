@@ -38,6 +38,6 @@ import { PostService } from './post.service';
     PostCreateController,
   ],
   providers: [PostMediaService, PostService, PostFeedService, PostLikeService],
-  exports: [PostService, PostMediaService],
+  exports: [PostService, PostMediaService, PostLikeService],
 })
 export class PostModule {}
