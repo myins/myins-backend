@@ -184,16 +184,30 @@ export class NotificationPushService {
       case NotificationSource.JOINED_INS:
         const membersIns = await this.userConnectionService.getConnections({
           where: {
-            insId: {
-              in: normalNotif.ins?.connect?.id,
-            },
+            insId: normalNotif.ins?.connect?.id,
             role: {
               not: UserRole.PENDING,
             },
           },
         });
         usersIDs = membersIns.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
+        break;
+      case NotificationSource.DELETED_INS:
+        const membersDeletedIns =
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: normalNotif.ins?.connect?.id,
+              role: {
+                not: UserRole.PENDING,
+              },
+              user: {
+                id: {
+                  not: normalNotif.author.connect?.id,
+                },
+              },
+            },
+          });
+        usersIDs = membersDeletedIns.map((member) => member.userId);
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
@@ -206,16 +220,13 @@ export class NotificationPushService {
         const membersRequestIns =
           await this.userConnectionService.getConnections({
             where: {
-              insId: {
-                in: pushNotif.ins?.id,
-              },
+              insId: pushNotif.ins?.id,
               role: {
                 not: UserRole.PENDING,
               },
             },
           });
         usersIDs = membersRequestIns.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
         usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
@@ -245,6 +256,7 @@ export class NotificationPushService {
       case NotificationSource.JOINED_INS:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
+      case NotificationSource.DELETED_INS:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -413,6 +425,15 @@ export class NotificationPushService {
           id: normalNotif.ins?.connect?.id,
         });
         body = `You have been assigned as Admin in ${insChangeAdmin?.name} ins by ${authorChangeAdmin?.firstName} ${authorChangeAdmin?.lastName}!`;
+        break;
+      case NotificationSource.DELETED_INS:
+        const authorDeletedIns = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        const insDeletedIns = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${insDeletedIns?.name} ins!`;
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
