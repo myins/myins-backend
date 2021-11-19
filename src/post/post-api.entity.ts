@@ -55,3 +55,8 @@ export class SharePostAPI {
   @ArrayNotEmpty()
   ins: string[];
 }
+
+export class DeletePostsAPI {
+  @ArrayNotEmpty()
+  postIDs: string[];
+}

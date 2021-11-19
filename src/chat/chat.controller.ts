@@ -86,10 +86,10 @@ export class ChatController {
         });
       if (!connection) {
         this.logger.error(
-          "You're not allowed to search message in this channel!",
+          "You're not allowed to search messages in this channel!",
         );
         throw new BadRequestException(
-          "You're not allowed to search message in this channel!",
+          "You're not allowed to search messages in this channel!",
         );
       }
     }
