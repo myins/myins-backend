@@ -121,7 +121,7 @@ export class InsSettingsController {
         this.logger.log(
           `Cleaning media that belongs to member ${userId} from ins ${insId}`,
         );
-        return this.insCleanMediaService.cleanMedia(userId, insId);
+        await this.insCleanMediaService.cleanMedia(userId, insId);
       }
 
       this.logger.log(`Removing member ${userId} from ins ${insId}`);
