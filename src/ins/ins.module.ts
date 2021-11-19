@@ -8,6 +8,7 @@ import { StorageModule } from 'src/storage/storage.module';
 import { UserModule } from 'src/user/user.module';
 import { InsAdminController } from './ins.admin.controller';
 import { InsAdminService } from './ins.admin.service';
+import { InsCleanMediaService } from './ins.clean.media.service';
 import { InsController } from './ins.controller';
 import { InsPinController } from './ins.pin.controller';
 import { InsService } from './ins.service';
@@ -29,7 +30,7 @@ import { InsSettingsController } from './ins.settings.controller';
     InsPinController,
     InsSettingsController,
   ],
-  providers: [InsService, InsAdminService],
+  providers: [InsService, InsAdminService, InsCleanMediaService],
   exports: [InsService],
 })
 export class InsModule {}

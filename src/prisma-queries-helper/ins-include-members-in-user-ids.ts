@@ -15,15 +15,7 @@ const insWithMembersInUserIDsData = (userIDs: string[]) => {
 export const InsWithMembersInUserIDsInclude = (
   userIDs: string[],
 ): Prisma.INSInclude => {
-  return {
-    members: {
-      where: {
-        userId: {
-          in: userIDs,
-        },
-      },
-    },
-  };
+  return insWithMembersInUserIDsData(userIDs);
 };
 
 const insWithMembersInUserIDs = Prisma.validator<Prisma.INSArgs>()({
