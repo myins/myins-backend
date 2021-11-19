@@ -17,15 +17,15 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { LeaveINSAPI, MuteINSAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
-import { InsService } from './ins.service';
+import { InsCleanMediaService } from './ins.clean.media.service';
 
 @Controller('ins')
 export class InsSettingsController {
   private readonly logger = new Logger(InsSettingsController.name);
 
   constructor(
-    private readonly insService: InsService,
     private readonly insAdminService: InsAdminService,
+    private readonly insCleanMediaService: InsCleanMediaService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
@@ -121,16 +121,16 @@ export class InsSettingsController {
         this.logger.log(
           `Cleaning media that belongs to member ${userId} from ins ${insId}`,
         );
-        await this.insService.cleanMedia(userId, insId);
+        return this.insCleanMediaService.cleanMedia(userId, insId);
       }
 
-      this.logger.log(`Removing member ${userId} from ins ${insId}`);
-      await this.userConnectionService.removeMember({
-        userId_insId: {
-          insId: insId,
-          userId: userId,
-        },
-      });
+      // this.logger.log(`Removing member ${userId} from ins ${insId}`);
+      // await this.userConnectionService.removeMember({
+      //   userId_insId: {
+      //     insId: insId,
+      //     userId: userId,
+      //   },
+      // });
       message = 'User successfully removed from ins';
       this.logger.log(message);
     }
