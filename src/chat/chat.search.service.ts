@@ -56,7 +56,12 @@ export class ChatSearchService {
         }
       : messageFilters;
     messageFilters = data.onlyMine
-      ? { ...messageFilters, user_id: userID }
+      ? {
+          ...messageFilters,
+          'user.id': {
+            $eq: userID,
+          },
+        }
       : messageFilters;
     if (
       !messageFilters['attachments.type'] &&
