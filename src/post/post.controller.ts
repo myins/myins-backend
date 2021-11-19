@@ -19,7 +19,7 @@ import { PostService } from 'src/post/post.service';
 import { PostMediaService } from 'src/post/post.media.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { SharePostAPI } from './post-api.entity';
+import { DeletePostsAPI, SharePostAPI } from './post-api.entity';
 import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
@@ -122,6 +122,44 @@ export class PostController {
 
     this.logger.log(`Deleting post ${postID} by user ${userID}`);
     return this.postService.deletePost({ id: postID });
+  }
+
+  @Delete()
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async deletePosts(
+    @PrismaUser('id') userID: string,
+    @Body() data: DeletePostsAPI,
+  ) {
+    const posts = await this.postService.posts({
+      where: {
+        id: {
+          in: data.postIDs,
+        },
+      },
+    });
+    posts.forEach((post) => {
+      if (post.authorId !== userID) {
+        this.logger.error(`You're not allowed to delete post ${post.id}!`);
+        throw new BadRequestException(
+          "You're not allowed to delete those posts!",
+        );
+      }
+    });
+
+    this.logger.log(`Deleting posts ${data.postIDs} by user ${userID}`);
+    await this.postService.deleteManyPosts({
+      where: {
+        id: {
+          in: data.postIDs,
+        },
+      },
+    });
+
+    this.logger.log('Posts successfully deleted');
+    return {
+      message: 'Posts successfully deleted',
+    };
   }
 
   @Delete('/media/:id')
