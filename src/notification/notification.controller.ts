@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
@@ -16,7 +17,21 @@ import { NotificationService } from './notification.service';
 export class NotificationController {
   private readonly logger = new Logger(NotificationController.name);
 
-  constructor(private readonly notifService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @Cron('* * * * *')
+  async removeOldINS() {
+    this.logger.log('[Cron] Removing all notifications older then a month');
+    const currDate = new Date();
+    const res = await this.notificationService.deleteNotifications({
+      createdAt: {
+        lt: new Date(currDate.setMonth(currDate.getMonth() - 1)),
+      },
+    });
+    this.logger.log(
+      `[Cron] Successfully removed ${res.count} old notifications!`,
+    );
+  }
 
   @Get('feed')
   @ApiTags('notification')
@@ -31,7 +46,7 @@ export class NotificationController {
       throw new BadRequestException("Don't get greedy!");
     }
     this.logger.log(`Getting notifications feed for user ${userID}`);
-    return this.notifService.getFeed(userID, skip, take);
+    return this.notificationService.getFeed(userID, skip, take);
   }
 
   @Get('count-unread')
@@ -39,7 +54,9 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard)
   async countUnreadNotifications(@PrismaUser() user: User) {
     return {
-      countUnread: await this.notifService.countUnreadNotifications(user),
+      countUnread: await this.notificationService.countUnreadNotifications(
+        user,
+      ),
     };
   }
 }
