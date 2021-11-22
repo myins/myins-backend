@@ -21,13 +21,10 @@ import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
 
-export const PushNotificationSource = {
-  REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
-  REQUEST_FOR_ME: 'REQUEST_FOR_ME',
-};
-
-export type PushNotificationSource =
-  typeof PushNotificationSource[keyof typeof PushNotificationSource];
+export enum PushNotificationSource {
+  REQUEST_FOR_OTHER_USER,
+  REQUEST_FOR_ME,
+}
 
 export interface PushExtraNotification {
   source: PushNotificationSource;
@@ -95,11 +92,12 @@ export class NotificationPushService {
         );
         const target = await this.userService.user({ id: userID });
 
-        const pushNotifications: PushNotificationSource[] = Object.keys(
-          PushNotificationSource,
-        );
-        let realSource: NotificationSource | string = notif.source;
-        if (pushNotifications.includes(notif.source)) {
+        const pushNotifications: PushNotificationSource[] = <
+          PushNotificationSource[]
+        >(<unknown>Object.keys(PushNotificationSource));
+        let realSource: NotificationSource | PushNotificationSource =
+          notif.source;
+        if (pushNotifications.includes(<PushNotificationSource>notif.source)) {
           realSource = NotificationSource.JOINED_INS;
         }
         const isNotDisableNotification =
@@ -223,7 +221,7 @@ export class NotificationPushService {
         usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
         break;
       default:
-        unreachable(<never>notif.source);
+        unreachable(notif);
         break;
     }
 
@@ -315,7 +313,7 @@ export class NotificationPushService {
       case NotificationSource.DELETED_INS:
         break;
       default:
-        unreachable(<never>notif.source);
+        unreachable(notif);
         break;
     }
 
@@ -439,7 +437,7 @@ export class NotificationPushService {
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} Ins!`;
         break;
       default:
-        unreachable(<never>source.source);
+        unreachable(source);
         break;
     }
 

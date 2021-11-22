@@ -42,21 +42,19 @@ export class InsService {
 
   async insList(userID: string, filter: string) {
     // First we get all the user's ins connections, ordered by his interaction count
-    const whereQuery: Prisma.UserInsConnectionWhereInput = {
-      userId: userID,
-      ins:
-        filter && filter.length > 0
-          ? {
-              name: {
-                contains: filter,
-                mode: 'insensitive',
-              },
-            }
-          : undefined,
-    };
-
     const connectionQuery = await this.userConnectionService.getConnections({
-      where: whereQuery,
+      where: {
+        userId: userID,
+        ins:
+          filter && filter.length > 0
+            ? {
+                name: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              }
+            : undefined,
+      },
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
     const onlyIDs = connectionQuery.map((each) => each.insId);
