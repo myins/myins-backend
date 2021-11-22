@@ -1,4 +1,4 @@
-import { NotificationSource } from '.prisma/client';
+import { NotificationSource, Prisma, UserRole } from '.prisma/client';
 import {
   Body,
   Controller,
@@ -57,7 +57,7 @@ export class InsAdminController {
     );
     await this.notificationService.createNotification({
       source: NotificationSource.CHANGE_ADMIN,
-      target: {
+      targets: {
         connect: {
           id: data.memberID,
         },
@@ -130,18 +130,31 @@ export class InsAdminController {
     this.logger.log(
       `Creating notification for deleting ins ${insID} by user ${userID}`,
     );
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: insID,
+        role: {
+          not: UserRole.PENDING,
+        },
+        userId: {
+          not: userID,
+        },
+      },
+    });
+    const notifMetadata = {
+      deletedInsName: ins.name,
+    } as Prisma.JsonObject;
     await this.notificationService.createNotification({
       source: NotificationSource.DELETED_INS,
+      targets: {
+        connect: connections.map((connection) => ({ id: connection.userId })),
+      },
       author: {
         connect: {
           id: userID,
         },
       },
-      ins: {
-        connect: {
-          id: insID,
-        },
-      },
+      metadata: notifMetadata,
     });
 
     this.logger.log(`Deleting ins ${insID}`);

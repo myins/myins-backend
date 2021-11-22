@@ -1,5 +1,5 @@
 import { UserRole } from '.prisma/client';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import {
   ChannelFilters,
@@ -11,6 +11,8 @@ import { SearchMessgesAPI } from './chat-api.entity';
 
 @Injectable()
 export class ChatSearchService {
+  private readonly logger = new Logger(ChatSearchService.name);
+
   private streamChat: StreamChat;
 
   constructor(private readonly insService: InsService) {
@@ -79,11 +81,20 @@ export class ChatSearchService {
       options.next = data.next;
     }
 
-    const search = await this.streamChat.search(
-      channelFilters,
-      messageFilters,
-      options,
-    );
+    let search = null;
+    try {
+      search = await this.streamChat.search(
+        channelFilters,
+        messageFilters,
+        options,
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`Error searching for messages! + ${stringErr}`);
+      throw new BadRequestException(
+        `Error searching for messages! + ${stringErr}`,
+      );
+    }
 
     return {
       next: search.next ?? null,

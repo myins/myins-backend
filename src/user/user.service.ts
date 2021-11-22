@@ -305,7 +305,7 @@ export class UserService {
         );
         await this.notificationService.createNotification({
           source: NotificationSource.JOIN_INS_REJECTED,
-          target: {
+          targets: {
             connect: {
               id: userId,
             },

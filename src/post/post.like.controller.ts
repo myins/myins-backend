@@ -134,7 +134,7 @@ export class PostLikeController {
       );
       await this.notificationService.createNotification({
         source: NotificationSource.LIKE_POST,
-        target: {
+        targets: {
           connect: {
             id: post.authorId,
           },

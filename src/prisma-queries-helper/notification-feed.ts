@@ -3,42 +3,40 @@ import { NotificationSource, Prisma, UserRole } from '.prisma/client';
 const whereQuery = (targetId: string): Prisma.NotificationWhereInput => {
   return {
     OR: [
-      { targetId },
+      {
+        targets: {
+          some: {
+            id: targetId,
+          },
+        },
+      },
       {
         AND: [
           {
-            OR: [
-              {
-                source: NotificationSource.POST,
-              },
-            ],
+            source: NotificationSource.POST,
           },
           {
-            AND: [
-              {
-                post: {
-                  inses: {
+            post: {
+              inses: {
+                some: {
+                  members: {
                     some: {
-                      members: {
-                        some: {
-                          userId: targetId,
-                          role: {
-                            not: UserRole.PENDING,
-                          },
-                        },
+                      userId: targetId,
+                      role: {
+                        not: UserRole.PENDING,
                       },
                     },
                   },
                 },
               },
-              {
-                post: {
-                  NOT: {
-                    authorId: targetId,
-                  },
-                },
+            },
+          },
+          {
+            post: {
+              NOT: {
+                authorId: targetId,
               },
-            ],
+            },
           },
         ],
       },

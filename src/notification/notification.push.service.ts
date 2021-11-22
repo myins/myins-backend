@@ -144,9 +144,17 @@ export class NotificationPushService {
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
-        usersIDs = normalNotif.target?.connect?.id
-          ? [normalNotif.target?.connect?.id]
-          : [];
+        const id = (<Prisma.UserWhereUniqueInput>normalNotif.targets?.connect)
+          .id;
+        usersIDs = id !== undefined ? [id] : [];
+        break;
+      case NotificationSource.DELETED_INS:
+        const ids = (<Array<Prisma.UserWhereUniqueInput>>(
+          normalNotif.targets?.connect
+        ))
+          .map((connect) => connect.id)
+          .filter((id) => id !== undefined);
+        usersIDs = <Array<string>>ids;
         break;
       case NotificationSource.POST:
         const inses = await this.insService.inses({
@@ -191,23 +199,6 @@ export class NotificationPushService {
           },
         });
         usersIDs = membersIns.map((member) => member.userId);
-        break;
-      case NotificationSource.DELETED_INS:
-        const membersDeletedIns =
-          await this.userConnectionService.getConnections({
-            where: {
-              insId: normalNotif.ins?.connect?.id,
-              role: {
-                not: UserRole.PENDING,
-              },
-              user: {
-                id: {
-                  not: normalNotif.author.connect?.id,
-                },
-              },
-            },
-          });
-        usersIDs = membersDeletedIns.map((member) => member.userId);
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
@@ -256,7 +247,6 @@ export class NotificationPushService {
       case NotificationSource.JOINED_INS:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
-      case NotificationSource.DELETED_INS:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -322,6 +312,8 @@ export class NotificationPushService {
         throw new BadRequestException(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
         );
+      case NotificationSource.DELETED_INS:
+        break;
       default:
         unreachable(<never>notif.source);
         break;
@@ -430,10 +422,8 @@ export class NotificationPushService {
         const authorDeletedIns = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        const insDeletedIns = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
-        body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${insDeletedIns?.name} ins!`;
+        const metadata = normalNotif.metadata as Prisma.JsonObject;
+        body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${metadata?.deletedInsName} ins!`;
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
