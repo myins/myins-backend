@@ -49,7 +49,7 @@ export class CommentLikeService {
       );
       await this.notifsService.createNotification({
         source: NotificationSource.LIKE_COMMENT,
-        target: {
+        targets: {
           connect: {
             id: toRet.authorId,
           },
