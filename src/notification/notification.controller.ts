@@ -19,7 +19,7 @@ export class NotificationController {
 
   constructor(private readonly notificationService: NotificationService) {}
 
-  @Cron('* * * * *')
+  @Cron('0 1 * * *')
   async removeOldINS() {
     this.logger.log('[Cron] Removing all notifications older then a month');
     const currDate = new Date();
