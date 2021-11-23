@@ -45,11 +45,13 @@ export class ChatController {
     };
   }
 
-  @Post('create-all-channels')
+  @Post('migration')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
-  async createAllChannels() {
-    this.logger.log('Create channels for all inses');
+  async migration() {
+    this.logger.log(
+      'Create channel for all inses and stream user for all users',
+    );
     const allINses = await this.insService.insesWithAdmin();
     await Promise.all(
       allINses.map(async (ins) => {
@@ -64,8 +66,10 @@ export class ChatController {
         }
       }),
     );
+
+    this.logger.log('Successfully migrated data');
     return {
-      message: 'All channels created',
+      message: 'Successfully migrated data',
     };
   }
 

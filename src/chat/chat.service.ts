@@ -209,16 +209,22 @@ export class ChatService {
     try {
       const channels = await this.getChannelsINS({ id: ins.id });
       if (!channels.length) {
+        this.logger.log(
+          `Channel ${ins.id} not exist. Create channel and add all members`,
+        );
         await this.createChannelINS(ins, userID);
 
         const members = await this.insService.membersForIns(ins.id);
         if (members.length) {
-          this.addMembersToChannel(
+          await this.addMembersToChannel(
             members.map((member) => member.id),
             ins.id,
           );
         }
       } else {
+        this.logger.log(
+          `Channel ${ins.id} exist. Add members that are not in channel`,
+        );
         await this.addMembersIfNotInChannel(channels[0]);
       }
     } catch (e) {
