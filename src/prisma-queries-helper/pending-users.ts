@@ -1,4 +1,5 @@
 import { Prisma, UserInsConnection, UserRole } from '.prisma/client';
+import { ShallowINSSelect } from './shallow-ins-select';
 import { ShallowUserSelect } from './shallow-user-select';
 
 export const pendingUsersWhereQuery = (
@@ -48,7 +49,9 @@ const pendingUsersIncludeQuery = {
 };
 
 export const pendingUsersIncludeQueryType: Prisma.UserInsConnectionInclude = {
-  ins: true,
+  ins: {
+    select: ShallowINSSelect,
+  },
   user: {
     select: ShallowUserSelect,
   },

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -52,7 +53,9 @@ export class PostService {
           createdAt: desc ? 'desc' : 'asc',
         },
       },
-      inses: true,
+      inses: {
+        select: ShallowINSSelect,
+      },
       author: {
         select: ShallowUserSelect,
       },

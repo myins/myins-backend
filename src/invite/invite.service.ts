@@ -17,7 +17,6 @@ import {
   InsWithMembersInUserIDs,
   InsWithMembersInUserIDsInclude,
 } from 'src/prisma-queries-helper/ins-include-members-in-user-ids';
-import { InviteTestMessageAPI } from './invite-api.entity';
 import {
   NotificationPushService,
   PushExtraNotification,
@@ -281,9 +280,5 @@ export class InviteService {
       skip: skip,
       take: take,
     });
-  }
-
-  async testMessage(body: InviteTestMessageAPI) {
-    await this.smsService.sendSMS(body.phoneNumber, body.message);
   }
 }
