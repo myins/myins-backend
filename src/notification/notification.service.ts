@@ -67,11 +67,14 @@ export class NotificationService {
             ...(<notificationFeedWithourPost>notif).post,
             inses: [ins],
           },
-          isSeen: !!notification && notification.createdAt > notif.createdAt,
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
         };
       }
 
-      return notif;
+      return {
+        ...notif,
+        isSeen: !!notification && notification.createdAt >= notif.createdAt,
+      };
     });
 
     if (skip === 0 && dataReturn.length) {

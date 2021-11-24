@@ -277,11 +277,14 @@ export class InsService {
     params: Prisma.INSFindManyArgs,
     withInvitedPhoneNumbers?: boolean,
   ): Promise<INS[]> {
-    if (!withInvitedPhoneNumbers) {
-      params.select = ShallowINSSelect;
-    }
     const inses = await this.prismaService.iNS.findMany(params);
-    return inses;
+    const insesWithoutPhoneNumbers = inses.map((ins) => {
+      if (ins.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
+        return <INS>omit(ins, 'invitedPhoneNumbers');
+      }
+      return ins;
+    });
+    return insesWithoutPhoneNumbers;
   }
 
   //FIXME: figure out type safety with select statements
