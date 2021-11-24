@@ -60,17 +60,18 @@ export class NotificationService {
       ];
       if (notificationsWithINs.includes(notif.source)) {
         const ins = (<NotificationFeed>notif).ins;
-        if (ins) {
-          (<notificationFeedWithourPost>notif).post = {
+        notif = omit(<NotificationFeed>notif, 'ins');
+        return {
+          ...notif,
+          post: {
+            ...(<notificationFeedWithourPost>notif).post,
             inses: [ins],
-          };
-        }
+          },
+          isSeen: !!notification && notification.createdAt > notif.createdAt,
+        };
       }
-      notif = omit(<NotificationFeed>notif, 'ins');
-      return {
-        ...notif,
-        isSeen: !!notification && notification.createdAt > notif.createdAt,
-      };
+
+      return notif;
     });
 
     if (skip === 0 && dataReturn.length) {

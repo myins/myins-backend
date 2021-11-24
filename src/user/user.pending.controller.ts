@@ -22,7 +22,6 @@ import {
   pendingUsersWhereQuery,
 } from 'src/prisma-queries-helper/pending-users';
 import { UserService } from 'src/user/user.service';
-import { omit } from 'src/util/omit';
 import { ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 
@@ -79,7 +78,7 @@ export class UserPendingController {
           author: conn.invitedBy
             ? await this.userService.shallowUser({ id: conn.invitedBy })
             : conn.user,
-          ins: omit(conn.ins, 'invitedPhoneNumbers'),
+          ins: conn.ins,
           createdAt: conn.createdAt,
           isInvitation: connection.userId === id,
         };

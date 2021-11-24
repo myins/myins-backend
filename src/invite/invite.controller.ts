@@ -14,7 +14,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import {
   InviteExternalUserToINSAPI,
-  InviteTestMessageAPI,
   InviteUserToINSAPI,
 } from './invite-api.entity';
 import { InviteService } from './invite.service';
@@ -101,19 +100,5 @@ export class InviteController {
       userID,
       insID,
     );
-  }
-
-  @Post('test-message')
-  @ApiTags('invite')
-  async testMessage(@Body() body: InviteTestMessageAPI) {
-    this.logger.log(
-      `Test message '${body.message}' sended for phone ${body.phoneNumber}`,
-    );
-    await this.inviteService.testMessage(body);
-
-    this.logger.log('Tested successfully');
-    return {
-      message: 'Tested successfully!',
-    };
   }
 }

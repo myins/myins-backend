@@ -209,44 +209,34 @@ export class InsController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
-    this.logger.log(`Getting ins by id ${id}`);
-    const connections = await this.userConnectionService.getConnections({
-      where: {
-        insId: id,
-        userId: userID,
-      },
-      include: ConnectionIncludeMembersInclude,
+    const ins = await this.insService.ins({
+      id: id,
     });
-    if (!connections || connections.length !== 1) {
+    if (!ins) {
       this.logger.error(`Could not find INS ${id}!`);
       throw new NotFoundException('Could not find that INS!');
     }
 
-    const connection = <ConnectionIncludeMembers>connections[0];
-    const insConnection = connection.ins;
-    const insWithoutMembers = omit(<InsWithMembersID>insConnection, 'members');
-    const ins: InsWithCountMembers = {
-      ...insWithoutMembers,
-      _count: {
-        members: 0,
-      },
-    };
-    ins._count = {
-      members: insConnection.members.length,
-    };
     const insWithoutInvitedPhoneNumbers = omit(ins, 'invitedPhoneNumbers');
-    const retIns = {
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: insWithoutInvitedPhoneNumbers.id,
+        userId: userID,
+      },
+      include: ConnectionIncludeMembersInclude,
+    });
+
+    const connection = <ConnectionIncludeMembers>connections[0];
+    const toRet = {
       ...insWithoutInvitedPhoneNumbers,
+      _count: {
+        members: connection.ins.members.length,
+      },
       userRole: connection.role,
       isMute: !!connection.muteUntil,
     };
 
-    this.logger.log(
-      `Create channel for ins ${id} by user stream ${userID} if not exists`,
-    );
-    await this.chatService.createChannelINSWithMembersIfNotExists(ins, userID);
-
-    return retIns;
+    return toRet;
   }
 
   @Post('join/:code')
@@ -386,19 +376,24 @@ export class InsController {
     const theINS = validINS[0];
 
     this.logger.log(`Attach cover with name '${file.originalname}'`);
-    let updatedIns = await this.insService.attachCoverToPost(file, theINS.id);
-    const updateInsWithoutInvitedPhoneNumbers = omit(
-      updatedIns,
-      'invitedPhoneNumbers',
-    );
-    (<InsWithCountMembers>updateInsWithoutInvitedPhoneNumbers)._count = {
-      members: (<InsWithMembersID>updateInsWithoutInvitedPhoneNumbers).members
-        .length,
+    const updatedIns = await this.insService.attachCoverToPost(file, theINS.id);
+
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: updatedIns.id,
+        userId: userID,
+      },
+      include: ConnectionIncludeMembersInclude,
+    });
+
+    const connection = <ConnectionIncludeMembers>connections[0];
+    const toRet = {
+      ...updatedIns,
+      _count: {
+        members: connection.ins.members.length,
+      },
     };
-    updatedIns = omit(
-      <InsWithMembersID>updateInsWithoutInvitedPhoneNumbers,
-      'members',
-    );
-    return updatedIns;
+
+    return toRet;
   }
 }

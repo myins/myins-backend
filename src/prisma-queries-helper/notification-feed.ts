@@ -75,7 +75,15 @@ const includeQuery = (targetId: string) => {
         content: true,
       },
     },
-    ins: true,
+    ins: {
+      select: {
+        id: true,
+        name: true,
+        cover: true,
+        shareCode: true,
+        createdAt: true,
+      },
+    },
     post: {
       include: {
         inses: {
@@ -108,7 +116,15 @@ const includeQueryWithoutPost = (targetId: string) => {
         content: true,
       },
     },
-    ins: true,
+    ins: {
+      select: {
+        id: true,
+        name: true,
+        cover: true,
+        shareCode: true,
+        createdAt: true,
+      },
+    },
     post: {
       select: {
         inses: {

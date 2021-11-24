@@ -15,6 +15,7 @@ import {
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 
 @Injectable()
 export class InsService {
@@ -108,12 +109,7 @@ export class InsService {
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {
-        let theRightINS = toRet.find((each2) => each2.id == each.insId);
-        if (theRightINS?.invitedPhoneNumbers) {
-          theRightINS = <InsWithCountMembers>(
-            omit(theRightINS, 'invitedPhoneNumbers')
-          );
-        }
+        const theRightINS = toRet.find((each2) => each2.id == each.insId);
         return {
           ...theRightINS,
           userRole: each.role,
@@ -281,14 +277,11 @@ export class InsService {
     params: Prisma.INSFindManyArgs,
     withInvitedPhoneNumbers?: boolean,
   ): Promise<INS[]> {
+    if (!withInvitedPhoneNumbers) {
+      params.select = ShallowINSSelect;
+    }
     const inses = await this.prismaService.iNS.findMany(params);
-    const insesWithoutPhoneNumbers = inses.map((ins) => {
-      if (ins.invitedPhoneNumbers && !withInvitedPhoneNumbers) {
-        return <INS>omit(ins, 'invitedPhoneNumbers');
-      }
-      return ins;
-    });
-    return insesWithoutPhoneNumbers;
+    return inses;
   }
 
   //FIXME: figure out type safety with select statements
@@ -332,18 +325,7 @@ export class InsService {
       data: {
         cover: dataURL,
       },
-      include: {
-        members: {
-          where: {
-            role: {
-              not: UserRole.PENDING,
-            },
-            user: {
-              isDeleted: false,
-            },
-          },
-        },
-      },
+      select: ShallowINSSelect,
     });
   }
 

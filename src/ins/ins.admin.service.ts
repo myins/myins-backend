@@ -1,5 +1,6 @@
-import { INS, Prisma, UserRole } from '.prisma/client';
+import { Prisma, UserRole } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 
@@ -26,9 +27,10 @@ export class InsAdminService {
     return this.userConnectionService.changeAdmin(insId, newAdminId);
   }
 
-  async deleteINS(where: Prisma.INSWhereUniqueInput): Promise<INS> {
+  async deleteINS(where: Prisma.INSWhereUniqueInput) {
     return this.prismaService.iNS.delete({
       where,
+      select: ShallowINSSelect,
     });
   }
 
