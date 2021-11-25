@@ -391,6 +391,9 @@ async function main() {
     await prisma.userInsConnection.findMany({
       where: {
         insId: firstINS.id,
+        userId: {
+          not: firstUser.id,
+        },
       },
     })
   ).map((connection) => {
@@ -480,6 +483,9 @@ async function main() {
       where: {
         insId: {
           in: [firstINS.id, secondINS.id],
+        },
+        userId: {
+          not: secondUser.id,
         },
       },
     })

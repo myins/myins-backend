@@ -191,6 +191,9 @@ export class PostMediaService {
               insId: {
                 in: inses.map((ins) => ins.id),
               },
+              userId: {
+                not: updatedPost.authorId,
+              },
             },
           })
         ).map((connection) => {

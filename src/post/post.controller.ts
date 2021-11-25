@@ -278,6 +278,9 @@ export class PostController {
           insId: {
             in: ins,
           },
+          userId: {
+            not: userID,
+          },
         },
       })
     ).map((connection) => {
