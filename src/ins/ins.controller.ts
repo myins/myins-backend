@@ -274,6 +274,13 @@ export class InsController {
       },
     });
     if (connection) {
+      if (connection.role === UserRole.PENDING) {
+        return {
+          statusCode: 585858,
+          message:
+            'You already requested access to this INS. Please wait for approval!',
+        };
+      }
       return {
         statusCode: 585858,
         message: 'Already in INS!',
