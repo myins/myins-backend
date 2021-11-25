@@ -7,7 +7,10 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import {
+  ShallowUserSelectWithRole,
+  ShallowUserSelectWithRoleInclude,
+} from 'src/prisma-queries-helper/shallow-user-select';
 import {
   InsWithCountMembers,
   InsWithCountMembersInclude,
@@ -197,15 +200,26 @@ export class InsService {
           : undefined,
     };
 
-    return this.userService.users({
+    const users = await this.userService.users({
       where: whereQuery,
       skip: skip,
       take: take,
       orderBy: {
         firstName: 'desc',
       },
-      select: ShallowUserSelect,
+      select: ShallowUserSelectWithRoleInclude(insID),
     });
+
+    const usersWithRole = users.map((user) => {
+      const role = (<ShallowUserSelectWithRole>(<unknown>user)).inses[0].role;
+      const newUser = omit(<ShallowUserSelectWithRole>(<unknown>user), 'inses');
+      return {
+        ...newUser,
+        userRole: role,
+      };
+    });
+
+    return usersWithRole;
   }
 
   async addAsInvitedPhoneNumbers(
