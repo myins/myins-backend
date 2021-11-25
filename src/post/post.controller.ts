@@ -23,6 +23,7 @@ import { DeletePostsAPI, SharePostAPI } from './post-api.entity';
 import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -35,6 +36,7 @@ export class PostController {
     private readonly chatService: ChatService,
     private readonly postMediaService: PostMediaService,
     private readonly notificationService: NotificationService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Get('pending')
@@ -270,8 +272,22 @@ export class PostController {
     });
 
     this.logger.log(`Creating notification for adding post ${postID}`);
+    const targetIDs = (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: {
+            in: ins,
+          },
+        },
+      })
+    ).map((connection) => {
+      return { id: connection.userId };
+    });
     await this.notificationService.createNotification({
       source: NotificationSource.POST,
+      targets: {
+        connect: targetIDs,
+      },
       author: {
         connect: {
           id: userID,

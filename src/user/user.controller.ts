@@ -207,8 +207,20 @@ export class UserController {
           this.logger.log(
             `Creating notification for joining ins ${ins.id} by user ${createdUser.id}`,
           );
+          const targetIDs = (
+            await this.userConnectionService.getConnections({
+              where: {
+                insId: ins.id,
+              },
+            })
+          ).map((connection) => {
+            return { id: connection.userId };
+          });
           await this.notificationService.createNotification({
             source: NotificationSource.JOINED_INS,
+            targets: {
+              connect: targetIDs,
+            },
             author: {
               connect: {
                 id: createdUser.id,

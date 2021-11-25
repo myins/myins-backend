@@ -30,7 +30,7 @@ export interface PushExtraNotification {
   source: PushNotificationSource;
   author: User | null;
   ins: INS | null;
-  targetID?: string | null;
+  targets: string[];
 }
 
 const sandboxSettings = {
@@ -147,38 +147,14 @@ export class NotificationPushService {
         usersIDs = id !== undefined ? [id] : [];
         break;
       case NotificationSource.DELETED_INS:
+      case NotificationSource.POST:
+      case NotificationSource.JOINED_INS:
         const ids = (<Array<Prisma.UserWhereUniqueInput>>(
           normalNotif.targets?.connect
         ))
           .map((connect) => connect.id)
           .filter((id) => id !== undefined);
         usersIDs = <Array<string>>ids;
-        break;
-      case NotificationSource.POST:
-        const inses = await this.insService.inses({
-          where: {
-            posts: {
-              some: {
-                id: normalNotif.post?.connect?.id,
-              },
-            },
-          },
-        });
-        const members = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: inses.map((ins) => ins.id),
-            },
-            role: {
-              not: UserRole.PENDING,
-            },
-            userId: {
-              not: normalNotif.author.connect?.id,
-            },
-          },
-        });
-        usersIDs = members.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
         break;
       case NotificationSource.ADDED_PHOTOS:
         this.logger.error(
@@ -187,17 +163,6 @@ export class NotificationPushService {
         throw new BadRequestException(
           `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
         );
-      case NotificationSource.JOINED_INS:
-        const membersIns = await this.userConnectionService.getConnections({
-          where: {
-            insId: normalNotif.ins?.connect?.id,
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        });
-        usersIDs = membersIns.map((member) => member.userId);
-        break;
       case NotificationSource.MESSAGE:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
@@ -206,19 +171,8 @@ export class NotificationPushService {
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
         );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
-        const membersRequestIns =
-          await this.userConnectionService.getConnections({
-            where: {
-              insId: pushNotif.ins?.id,
-              role: {
-                not: UserRole.PENDING,
-              },
-            },
-          });
-        usersIDs = membersRequestIns.map((member) => member.userId);
-        break;
       case PushNotificationSource.REQUEST_FOR_ME:
-        usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
+        usersIDs = pushNotif.targets;
         break;
       default:
         unreachable(notif);

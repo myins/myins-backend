@@ -43,54 +43,51 @@ export class NotificationService {
     const feedNotificationsCount = await this.prisma.notification.count(
       notificationFeedCount(userID),
     );
-    const feedNotifications = await this.prisma.$queryRaw<
-      Notification[]
-    >`SELECT * FROM "public"."Notification" as n
-    INNER JOIN "_NotificationToUser" as nu on n.id=nu."A"
-    where nu."B"=${userID}
-    ORDER BY n."createdAt" DESC;`;
+    const feedNotifications = await this.prisma.notification.findMany(
+      notificationFeedQuery(userID, skip, take),
+    );
 
-    // this.logger.log('Adding isSeen prop for every notification');
-    // const user = await this.userService.user({ id: userID });
-    // const notification = user?.lastReadNotificationID
-    //   ? await this.getById({ id: user.lastReadNotificationID })
-    //   : null;
-    // const dataReturn = feedNotifications.map((notif) => {
-    //   const notificationsWithINs: NotificationSource[] = [
-    //     NotificationSource.JOINED_INS,
-    //     NotificationSource.JOIN_INS_REJECTED,
-    //     NotificationSource.CHANGE_ADMIN,
-    //   ];
-    //   if (notificationsWithINs.includes(notif.source)) {
-    //     const ins = (<NotificationFeed>notif).ins;
-    //     notif = omit(<NotificationFeed>notif, 'ins');
-    //     return {
-    //       ...notif,
-    //       post: {
-    //         ...(<notificationFeedWithourPost>notif).post,
-    //         inses: [ins],
-    //       },
-    //       isSeen: !!notification && notification.createdAt >= notif.createdAt,
-    //     };
-    //   }
+    this.logger.log('Adding isSeen prop for every notification');
+    const user = await this.userService.user({ id: userID });
+    const notification = user?.lastReadNotificationID
+      ? await this.getById({ id: user.lastReadNotificationID })
+      : null;
+    const dataReturn = feedNotifications.map((notif) => {
+      const notificationsWithINs: NotificationSource[] = [
+        NotificationSource.JOINED_INS,
+        NotificationSource.JOIN_INS_REJECTED,
+        NotificationSource.CHANGE_ADMIN,
+      ];
+      if (notificationsWithINs.includes(notif.source)) {
+        const ins = (<NotificationFeed>notif).ins;
+        notif = omit(<NotificationFeed>notif, 'ins');
+        return {
+          ...notif,
+          post: {
+            ...(<notificationFeedWithourPost>notif).post,
+            inses: [ins],
+          },
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+        };
+      }
 
-    //   return {
-    //     ...notif,
-    //     isSeen: !!notification && notification.createdAt >= notif.createdAt,
-    //   };
-    // });
+      return {
+        ...notif,
+        isSeen: !!notification && notification.createdAt >= notif.createdAt,
+      };
+    });
 
-    // if (skip === 0 && dataReturn.length) {
-    //   await this.userService.setLastReadNotificationID(
-    //     userID,
-    //     dataReturn[0].id,
-    //   );
-    // }
+    if (skip === 0 && dataReturn.length) {
+      await this.userService.setLastReadNotificationID(
+        userID,
+        dataReturn[0].id,
+      );
+    }
 
     this.logger.log('Successfully getting notifications feed');
     return {
       count: feedNotificationsCount,
-      data: feedNotifications,
+      data: dataReturn,
     };
   }
 
