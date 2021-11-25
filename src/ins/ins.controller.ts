@@ -300,8 +300,20 @@ export class InsController {
         this.logger.log(
           `Creating notification for joining ins ${theINS.id} by user ${user.id}`,
         );
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: theINS.id,
+            },
+          })
+        ).map((connection) => {
+          return { id: connection.userId };
+        });
         await this.notificationService.createNotification({
           source: NotificationSource.JOINED_INS,
+          targets: {
+            connect: targetIDs,
+          },
           author: {
             connect: {
               id: user.id,
@@ -334,10 +346,21 @@ export class InsController {
           ...theINS,
           invitedPhoneNumbers: [],
         };
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: insForPushNotification.id,
+              userId: {
+                not: user.id,
+              },
+            },
+          })
+        ).map((connection) => connection.userId);
         const data: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
           author: await this.userService.shallowUser({ id: user.id }),
           ins: insForPushNotification,
+          targets: targetIDs,
         };
         await this.notificationPushService.pushNotification(data);
 

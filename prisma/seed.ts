@@ -227,9 +227,21 @@ async function main() {
       },
     },
   });
+  const targetIDsAddFirstINSNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: firstINS.id,
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const addFirstINSSecondUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddFirstINSNotification,
+      },
       author: {
         connect: {
           id: secondUser.id,
@@ -245,6 +257,9 @@ async function main() {
   const addFirstINSThirdUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddFirstINSNotification,
+      },
       author: {
         connect: {
           id: thirdUser.id,
@@ -301,9 +316,21 @@ async function main() {
       },
     },
   });
+  const targetIDsAddSecondNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: secondINS.id,
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const addSecondINSThirdUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddSecondNotification,
+      },
       author: {
         connect: {
           id: thirdUser.id,
@@ -353,20 +380,31 @@ async function main() {
       pending: false,
       totalMediaContent: 5,
       inses: {
-        connect: [
-          {
-            id: firstINS.id,
-          },
-        ],
+        connect: { id: firstINS.id },
       },
     },
     include: {
       inses: true,
     },
   });
+  const targetIDsFirstPostNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: firstINS.id,
+        userId: {
+          not: firstUser.id,
+        },
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const firstPostNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.POST,
+      targets: {
+        connect: targetIDsFirstPostNotification,
+      },
       author: {
         connect: {
           id: firstUser.id,
@@ -440,9 +478,26 @@ async function main() {
       inses: true,
     },
   });
+  const targetIDsSecondPostNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: {
+          in: [firstINS.id, secondINS.id],
+        },
+        userId: {
+          not: secondUser.id,
+        },
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const secondPostNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.POST,
+      targets: {
+        connect: targetIDsSecondPostNotification,
+      },
       author: {
         connect: {
           id: secondUser.id,

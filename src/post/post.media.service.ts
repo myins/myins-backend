@@ -16,6 +16,7 @@ import {
   PostWithInsesAndCountMediaInclude,
 } from 'src/prisma-queries-helper/post-include-inses-and-count-media';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import * as uuid from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostService } from './post.service';
@@ -31,6 +32,7 @@ export class PostMediaService {
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   private readonly logger = new Logger(PostMediaService.name);
@@ -181,9 +183,27 @@ export class PostMediaService {
         updatedPost.authorId &&
         (<PostWithInsesAndCountMedia>updatedPost).inses.length
       ) {
+        const inses = (<PostWithInsesAndCountMedia>updatedPost).inses;
         this.logger.log(`Creating notification for adding post ${toRet.id}`);
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: {
+                in: inses.map((ins) => ins.id),
+              },
+              userId: {
+                not: updatedPost.authorId,
+              },
+            },
+          })
+        ).map((connection) => {
+          return { id: connection.userId };
+        });
         await this.notificationService.createNotification({
           source: NotificationSource.POST,
+          targets: {
+            connect: targetIDs,
+          },
           author: {
             connect: {
               id: updatedPost.authorId,
@@ -198,14 +218,12 @@ export class PostMediaService {
 
         this.logger.log(
           `Send message by user ${updatedPost.authorId} in inses 
-          ${(<PostWithInsesAndCountMedia>updatedPost).inses.map(
-            (ins: { id: string }) => ins.id,
-          )} with new posts ${updatedPost.id}`,
+          ${inses.map((ins: { id: string }) => ins.id)} with new posts ${
+            updatedPost.id
+          }`,
         );
         await this.chatService.sendMessageWhenPost(
-          (<PostWithInsesAndCountMedia>updatedPost).inses.map(
-            (ins: { id: string }) => ins.id,
-          ),
+          inses.map((ins: { id: string }) => ins.id),
           updatedPost.authorId,
           updatedPost.id,
         );

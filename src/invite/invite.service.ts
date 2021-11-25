@@ -192,7 +192,7 @@ export class InviteService {
           source: PushNotificationSource.REQUEST_FOR_ME,
           author: await this.userService.shallowUser({ id: userID }),
           ins: theINS[0],
-          targetID: dataCreate.userId,
+          targets: [dataCreate.userId],
         };
         await this.notificationPushService.pushNotification(dataPush);
       }),
