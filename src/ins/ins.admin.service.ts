@@ -35,12 +35,14 @@ export class InsAdminService {
   }
 
   async isAdmin(userId: string, insId: string): Promise<boolean> {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: userId,
-        insId: insId,
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: userId,
+          insId: insId,
+        },
       },
-    });
+    );
     if (!connection) {
       this.logger.error("You're not a member of this ins!");
       throw new BadRequestException("You're not a member of this ins!");

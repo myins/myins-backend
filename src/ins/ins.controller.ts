@@ -88,19 +88,30 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseInterceptors(NotFoundInterceptor)
-  //@UseGuards(JwtAuthGuard)
-  async getInsByCode(@Param('code') insCode: string) {
+  @UseGuards(JwtAuthGuard)
+  async getInsByCode(
+    @PrismaUser('id') userID: string,
+    @Param('code') insCode: string,
+  ) {
     if (insCode.length <= 0) {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log(`Getting ins by code ${insCode}`);
-    let ins = await this.insService.ins(
-      {
+    this.logger.log(`Getting ins by code ${insCode} by user ${userID}`);
+    const inses = await this.insService.inses({
+      where: {
         shareCode: insCode,
+        members: {
+          some: {
+            userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
       },
-      {
+      include: {
         members: {
           where: {
             role: {
@@ -112,7 +123,8 @@ export class InsController {
           },
         },
       },
-    );
+    });
+    let ins = inses[0];
     if (ins) {
       (<InsWithCountMembers>ins)._count = {
         members: (<InsWithMembersID>ins).members.length,
@@ -153,6 +165,9 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
@@ -185,6 +200,9 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
@@ -222,9 +240,17 @@ export class InsController {
       where: {
         insId: insWithoutInvitedPhoneNumbers.id,
         userId: userID,
+        role: {
+          not: UserRole.PENDING,
+        },
       },
       include: ConnectionIncludeMembersInclude,
     });
+
+    if (!connections.length) {
+      this.logger.error("You're not a member!");
+      throw new BadRequestException("You're not a member!");
+    }
 
     const connection = <ConnectionIncludeMembers>connections[0];
     const toRet = {
