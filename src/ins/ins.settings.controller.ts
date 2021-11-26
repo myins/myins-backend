@@ -13,6 +13,7 @@ import { Cron } from '@nestjs/schedule';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { LeaveINSAPI, MuteINSAPI } from './ins-api.entity';
@@ -28,6 +29,7 @@ export class InsSettingsController {
     private readonly insCleanMediaService: InsCleanMediaService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Cron('*/10 * * * *')
@@ -131,6 +133,10 @@ export class InsSettingsController {
           userId: userId,
         },
       });
+
+      this.logger.log(`Removing target ${userId} from notifications`);
+      await this.notificationService.removeTargetFromNotifications(userId);
+
       message = 'User successfully removed from ins';
       this.logger.log(message);
     }
