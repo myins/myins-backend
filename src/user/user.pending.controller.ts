@@ -1,4 +1,4 @@
-import { UserRole } from '.prisma/client';
+import { Prisma, UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -16,11 +16,8 @@ import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
-import {
-  PendingUsersInclude,
-  pendingUsersIncludeQueryType,
-  pendingUsersWhereQuery,
-} from 'src/prisma-queries-helper/pending-users';
+import { PendingUser } from 'src/prisma-queries-helper/pending-user-interface';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { ApproveDenyUserAPI } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
@@ -31,6 +28,7 @@ export class UserPendingController {
   private readonly logger = new Logger(UserPendingController.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly chatService: ChatService,
@@ -46,6 +44,10 @@ export class UserPendingController {
     @Query('take') take: number,
     all?: boolean,
   ) {
+    if (isNaN(skip) || isNaN(take)) {
+      this.logger.error('Skip and take must be number!');
+      throw new BadRequestException('Skip and take must be number!');
+    }
     this.logger.log(
       `Getting pending users for inses where user ${id} is a member`,
     );
@@ -57,29 +59,97 @@ export class UserPendingController {
         },
       },
     });
-    const countPendingUsers = await this.userConnectionService.count({
-      where: pendingUsersWhereQuery(id, userConnections),
-    });
-    const pendingConenctions = await this.userConnectionService.getConnections({
-      where: pendingUsersWhereQuery(id, userConnections),
-      include: pendingUsersIncludeQueryType,
-      skip: skip,
-      take: all ? countPendingUsers : take,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const insIDs = userConnections.map((connection) => connection.insId);
+    const countPendingUsers = await this.prisma.$queryRaw<
+      { count: number }[]
+    >(Prisma.sql`SELECT count(*) FROM "public"."UserInsConnection" as uic
+    INNER JOIN "User" as u on u.id=uic."userId"
+    WHERE 
+      uic."role"=${UserRole.PENDING} AND 
+      u."isDeleted"=false AND 
+      (
+        (
+          uic."userId"=${id} AND 
+          uic."invitedBy" IS NOT NULL
+        ) OR 
+        (
+          uic."insId" IN (${Prisma.join(insIDs)}) AND 
+          uic."invitedBy" IS NULL AND
+          (
+            uic."deniedByUsers" IS NULL OR
+            NOT uic."deniedByUsers" && '{${Prisma.raw(id)}}'::text[]
+          )
+        )
+      ) AND
+      uic."createdAt" >= 
+        (SELECT "createdAt" FROM "UserInsConnection" as myuic 
+        WHERE myuic."userId"=${id} AND myuic."insId"=uic."insId");`);
+
+    const pendingConenctions = await this.prisma.$queryRaw<
+      PendingUser[]
+    >(Prisma.sql`SELECT 
+      uic."invitedBy",
+      uic."createdAt",
+      u.id as "userId",
+      u."firstName" as "userFirstName",
+      u."lastName" as "userLastName",
+      u."profilePicture" as "userProfilePicture",
+      u."isDeleted" as "userIsDeleted",
+      i."id" as "insId",
+      i."name" as "insName",
+      i."cover" as "insCover",
+      i."shareCode" as "insShareCode",
+      i."createdAt" as "insCreatedAt"
+    FROM "public"."UserInsConnection" as uic
+    INNER JOIN "User" as u on u.id=uic."userId"
+    INNER JOIN "INS" as i on i.id=uic."insId"
+    WHERE 
+      uic."role"=${UserRole.PENDING} AND 
+      u."isDeleted"=false AND 
+      (
+        (
+          uic."userId"=${id} AND 
+          uic."invitedBy" IS NOT NULL
+        ) OR 
+        (
+          uic."insId" IN (${Prisma.join(insIDs)}) AND 
+          uic."invitedBy" IS NULL AND
+          (
+            uic."deniedByUsers" IS NULL OR
+            NOT uic."deniedByUsers" && '{${Prisma.raw(id)}}'::text[]
+          )
+        )
+      ) AND
+      uic."createdAt" >= 
+        (SELECT "createdAt" FROM "UserInsConnection" as myuic 
+        WHERE myuic."userId"=${id} AND myuic."insId"=uic."insId")
+    ORDER BY uic."createdAt" DESC
+    OFFSET     ${skip} ROWS
+    FETCH NEXT ${all ? countPendingUsers[0].count : take} ROWS ONLY;`);
 
     const dataPendingUsers = await Promise.all(
       pendingConenctions.map(async (connection) => {
-        const conn = <PendingUsersInclude>connection;
+        const user = {
+          firstName: connection.userFirstName,
+          lastName: connection.userLastName,
+          profilePicture: connection.userProfilePicture,
+          id: connection.userId,
+          isDeleted: connection.userIsDeleted,
+        };
+        const ins = {
+          id: connection.insId,
+          name: connection.insName,
+          cover: connection.insCover,
+          shareCode: connection.insShareCode,
+          createdAt: connection.insCreatedAt,
+        };
         return {
-          authorId: conn.invitedBy ?? conn.user.id,
-          author: conn.invitedBy
-            ? await this.userService.shallowUser({ id: conn.invitedBy })
-            : conn.user,
-          ins: conn.ins,
-          createdAt: conn.createdAt,
+          authorId: connection.invitedBy ?? connection.userId,
+          author: connection.invitedBy
+            ? await this.userService.shallowUser({ id: connection.invitedBy })
+            : user,
+          ins: ins,
+          createdAt: connection.createdAt,
           isInvitation: connection.userId === id,
         };
       }),
@@ -100,7 +170,7 @@ export class UserPendingController {
     }
 
     return {
-      count: countPendingUsers,
+      count: countPendingUsers[0].count,
       data: dataPendingUsers,
     };
   }

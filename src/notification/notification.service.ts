@@ -17,7 +17,6 @@ import {
 } from 'src/prisma-queries-helper/notification-feed';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { pendingUsersWhereQuery } from 'src/prisma-queries-helper/pending-users';
 
 @Injectable()
 export class NotificationService {
@@ -139,23 +138,35 @@ export class NotificationService {
         },
       },
     });
+    const insIDs = userConnections.map((connection) => connection.insId);
+    const unreadRequests = await this.prisma.$queryRaw<
+      { count: number }[]
+    >(Prisma.sql`SELECT count(*) FROM "public"."UserInsConnection" as uic
+    INNER JOIN "User" as u on u.id=uic."userId"
+    WHERE 
+      uic."role"=${UserRole.PENDING} AND 
+      u."isDeleted"=false AND 
+      (
+        (
+          uic."userId"=${id} AND 
+          uic."invitedBy" IS NOT NULL
+        ) OR 
+        (
+          uic."insId" IN (${Prisma.join(insIDs)}) AND 
+          uic."invitedBy" IS NULL AND
+          (
+            uic."deniedByUsers" IS NULL OR
+            NOT uic."deniedByUsers" && '{${Prisma.raw(id)}}'::text[]
+          )
+        )
+      ) AND
+      uic."createdAt" >= 
+        (SELECT "createdAt" FROM "UserInsConnection" as myuic 
+        WHERE myuic."userId"=${id} AND myuic."insId"=uic."insId") AND
+      uic."createdAt" > ${
+        lastReadRequest ?? new Date(new Date().setFullYear(2000))
+      }`);
 
-    const dataPendingQuery: Prisma.UserInsConnectionCountArgs = {
-      where: pendingUsersWhereQuery(id, userConnections),
-    };
-    if (lastReadRequest) {
-      this.logger.log(`Counting requests newer than ${lastReadRequest}`);
-      dataPendingQuery.where = {
-        ...dataPendingQuery.where,
-        createdAt: {
-          gt: lastReadRequest,
-        },
-      };
-    }
-    const unreadRequests = await this.userConnectionService.count(
-      dataPendingQuery,
-    );
-
-    return unreadNotif + unreadRequests;
+    return unreadNotif + unreadRequests[0].count;
   }
 }
