@@ -15,6 +15,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { UserService } from 'src/user/user.service';
 import { UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
@@ -26,6 +27,7 @@ export class InsAdminController {
   constructor(
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
+    private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -97,12 +99,19 @@ export class InsAdminController {
     }
 
     this.logger.log(`Removing member ${data.memberID} from ins ${data.insID}`);
-    return this.userConnectionService.removeMember({
+    const toRet = await this.userConnectionService.removeMember({
       userId_insId: {
         userId: data.memberID,
         insId: data.insID,
       },
     });
+
+    this.logger.log(`Removing target ${data.memberID} from notifications`);
+    await this.notificationService.removeTargetsFromNotifications(
+      data.memberID,
+    );
+
+    return toRet;
   }
 
   @Delete(':id')
