@@ -176,7 +176,7 @@ export class NotificationService {
     return unreadNotif + unreadRequests[0].count;
   }
 
-  async removeTargetsFromNotifications(targetID: string) {
+  async removeTargetFromNotifications(targetID: string) {
     const sources = [
       NotificationSource.JOINED_INS,
       NotificationSource.POST,

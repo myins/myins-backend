@@ -135,7 +135,7 @@ export class InsSettingsController {
       });
 
       this.logger.log(`Removing target ${userId} from notifications`);
-      await this.notificationService.removeTargetsFromNotifications(userId);
+      await this.notificationService.removeTargetFromNotifications(userId);
 
       message = 'User successfully removed from ins';
       this.logger.log(message);

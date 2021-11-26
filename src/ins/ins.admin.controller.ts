@@ -107,9 +107,7 @@ export class InsAdminController {
     });
 
     this.logger.log(`Removing target ${data.memberID} from notifications`);
-    await this.notificationService.removeTargetsFromNotifications(
-      data.memberID,
-    );
+    await this.notificationService.removeTargetFromNotifications(data.memberID);
 
     return toRet;
   }
