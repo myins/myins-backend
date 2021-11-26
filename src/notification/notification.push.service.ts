@@ -22,8 +22,8 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
 
 export enum PushNotificationSource {
-  REQUEST_FOR_OTHER_USER,
-  REQUEST_FOR_ME,
+  REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
+  REQUEST_FOR_ME = 'REQUEST_FOR_ME',
 }
 
 export interface PushExtraNotification {
