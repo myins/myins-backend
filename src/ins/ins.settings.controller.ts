@@ -116,7 +116,7 @@ export class InsSettingsController {
 
     this.logger.log(`Checking if user ${userId} is admin for ins ${insId}`);
     const isAdmin = await this.insAdminService.isAdmin(userId, insId);
-    let message = 'User cannot be deleted because is admin!';
+    let message = 'User cannot be removed from this INS because is admin!';
 
     if (!isAdmin) {
       if (!data.keepData) {

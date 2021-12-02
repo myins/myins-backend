@@ -212,50 +212,18 @@ export class InsCleanMediaService {
       },
     });
 
-    this.logger.log(
-      'Removing inses from every post and checking if any post should be remove',
-    );
-    const deletePostIDs: string[] = [];
-    myPosts.map(async (post) => {
-      await this.postService.updatePost({
-        where: {
-          id: post.id,
+    this.logger.log(`Removing ins ${insId} from every post`);
+    this.insService.update({
+      where: {
+        id: insId,
+      },
+      data: {
+        posts: {
+          disconnect: myPosts.map((myPost) => ({ id: myPost.id })),
         },
-        data: {
-          inses: {
-            disconnect: {
-              id: insId,
-            },
-          },
-        },
-      });
-      const inses = await this.insService.inses({
-        where: {
-          posts: {
-            some: {
-              id: post.id,
-            },
-          },
-        },
-      });
-      if (!inses.length) {
-        deletePostIDs.push(post.id);
-      }
+      },
     });
 
-    this.logger.log(`Removing posts ${deletePostIDs}`);
-    if (deletePostIDs.length) {
-      await this.postService.deleteManyPosts({
-        where: {
-          id: {
-            in: deletePostIDs,
-          },
-        },
-      });
-    }
-
-    this.logger.log(
-      `Successfully removed posts from ins ${insId} and cleaned ${deletePostIDs.length} posts`,
-    );
+    this.logger.log(`Successfully removed posts from ins ${insId}`);
   }
 }
