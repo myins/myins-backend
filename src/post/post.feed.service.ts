@@ -26,18 +26,20 @@ export class PostFeedService {
         createdAt: 'desc',
       },
       where: {
-        inses: {
-          some: {
-            members: {
+        inses: !onlyMine
+          ? {
               some: {
-                userId: userID,
-                role: {
-                  not: UserRole.PENDING,
+                members: {
+                  some: {
+                    userId: userID,
+                    role: {
+                      not: UserRole.PENDING,
+                    },
+                  },
                 },
               },
-            },
-          },
-        },
+            }
+          : undefined,
         pending: false,
         authorId: onlyMine ? userID : undefined,
       },

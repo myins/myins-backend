@@ -197,6 +197,7 @@ enum NotificationSource {
   MESSAGE
   CHANGE_ADMIN
   DELETED_INS
+  PENDING_INS
 }
 
 enum UserRole {
