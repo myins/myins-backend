@@ -368,16 +368,41 @@ export class InsController {
             },
           },
         });
-        const insForPushNotification: INS = {
+        const insNotification: INS = {
           ...theINS,
           invitedPhoneNumbers: [],
         };
+
+        this.logger.log(
+          `Creating notification for pending ins ${insNotification.id} for user ${user.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.PENDING_INS,
+          targets: {
+            connect: { id: user.id },
+          },
+          author: {
+            connect: { id: user.id },
+          },
+          ins: {
+            connect: {
+              id: insNotification.id,
+            },
+          },
+        });
+
+        this.logger.log(
+          `Creating push notification for requesting access in ins ${insNotification.id}`,
+        );
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
-              insId: insForPushNotification.id,
+              insId: insNotification.id,
               userId: {
                 not: user.id,
+              },
+              role: {
+                not: UserRole.PENDING,
               },
             },
           })
@@ -385,7 +410,7 @@ export class InsController {
         const data: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
           author: await this.userService.shallowUser({ id: user.id }),
-          ins: insForPushNotification,
+          ins: insNotification,
           targets: targetIDs,
         };
         await this.notificationPushService.pushNotification(data);

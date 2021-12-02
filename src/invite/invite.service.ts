@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, UserRole } from '@prisma/client';
+import { NotificationSource, Prisma, UserRole } from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
@@ -22,6 +22,7 @@ import {
   PushExtraNotification,
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class InviteService {
@@ -32,6 +33,7 @@ export class InviteService {
     private readonly userService: UserService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
     private readonly notificationPushService: NotificationPushService,
   ) {}
 
@@ -188,6 +190,27 @@ export class InviteService {
 
     await Promise.all(
       data.map(async (dataCreate) => {
+        this.logger.log(
+          `Creating notification for pending ins ${theINS[0].id} for user ${dataCreate.userId}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.PENDING_INS,
+          targets: {
+            connect: { id: dataCreate.userId },
+          },
+          author: {
+            connect: { id: dataCreate.userId },
+          },
+          ins: {
+            connect: {
+              id: theINS[0].id,
+            },
+          },
+        });
+
+        this.logger.log(
+          `Creating push notification for requesting access in ins ${theINS[0].id}`,
+        );
         const dataPush: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_ME,
           author: await this.userService.shallowUser({ id: userID }),

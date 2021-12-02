@@ -142,6 +142,7 @@ export class NotificationPushService {
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
+      case NotificationSource.PENDING_INS:
         const id = (<Prisma.UserWhereUniqueInput>normalNotif.targets?.connect)
           .id;
         usersIDs = id !== undefined ? [id] : [];
@@ -199,6 +200,7 @@ export class NotificationPushService {
       case NotificationSource.JOINED_INS:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
+      case NotificationSource.PENDING_INS:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -376,6 +378,12 @@ export class NotificationPushService {
         });
         const metadata = normalNotif.metadata as Prisma.JsonObject;
         body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${metadata?.deletedInsName} ins!`;
+        break;
+      case NotificationSource.PENDING_INS:
+        const insPendingIns = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `You are now a pending user for ${insPendingIns?.name} ins!`;
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
