@@ -102,14 +102,6 @@ export class InsController {
     const inses = await this.insService.inses({
       where: {
         shareCode: insCode,
-        members: {
-          some: {
-            userId: userID,
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        },
       },
       include: {
         members: {
@@ -130,6 +122,8 @@ export class InsController {
         members: (<InsWithMembersID>ins).members.length,
       };
       ins = omit(<InsWithMembersID>ins, 'members');
+
+      this.logger.log('Successfully returned ins');
       return ins;
     }
     this.logger.error(`Could not find ins with code ${insCode}!`);
