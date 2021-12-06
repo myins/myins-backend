@@ -110,10 +110,13 @@ export class NotificationPushService {
         if (target?.pushToken && isNotDisableNotification && !isMute) {
           this.logger.log(`Adding push notification for user ${target.id}`);
           const notifBody = await this.constructNotificationBody(target, notif);
-          await this.pushData(
+          const result = await this.pushData(
             target.pushToken,
             target?.sandboxToken ?? false,
             notifBody,
+          );
+          this.logger.log(
+            `Push notification result = ${JSON.stringify(result)}`,
           );
         } else {
           this.logger.log(
