@@ -14,9 +14,11 @@ export const userMock: User = {
   lastAcceptedTermsAndConditionsVersion: null,
   lastAcceptedPrivacyPolicyVersion: null,
   lastReadNotificationID: null,
+  lastReadRequest: null,
   disabledNotifications: [],
   disabledBiometryINSIds: [],
   disabledAllBiometry: false,
+  isDeleted: false,
 };
 
 export const userMockPhoneNumberUnverified: User = {
