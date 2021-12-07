@@ -1,4 +1,4 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { CommentController } from 'src/comment/comment.controller';
 import { prismaMock } from 'tests/prisma-mock';
@@ -25,14 +25,14 @@ describe('[CommentController] DELETE /:id', () => {
     }
   });
 
-  test("[deleteComment] return UnauthorizedException(You're not allowed to delete this comment!)", async () => {
+  test("[deleteComment] return BadRequestException(You're not allowed to delete this comment!)", async () => {
     prismaMock.comment.findUnique.mockResolvedValue(commentMock);
 
     expect.assertions(2);
     try {
       await commentController.deleteComment(commentMock.id, 'userID');
     } catch (e) {
-      expect(e).toBeInstanceOf(UnauthorizedException);
+      expect(e).toBeInstanceOf(BadRequestException);
       expect(e).toHaveProperty(
         'message',
         "You're not allowed to delete this comment!",

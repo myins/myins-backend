@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { CommentController } from 'src/comment/comment.controller';
 import { prismaMock } from 'tests/prisma-mock';
@@ -41,7 +41,7 @@ describe('[CommentController] POST /', () => {
     }
   });
 
-  test('[createComment] return BadRequestException(Could not find that post!)', async () => {
+  test('[createComment] return NotFoundException(Could not find that post!)', async () => {
     prismaMock.post.findUnique.mockResolvedValue(null);
 
     expect.assertions(2);
@@ -54,12 +54,12 @@ describe('[CommentController] POST /', () => {
         userMockPhoneNumberVerified,
       );
     } catch (e) {
-      expect(e).toBeInstanceOf(BadRequestException);
+      expect(e).toBeInstanceOf(NotFoundException);
       expect(e).toHaveProperty('message', 'Could not find that post!');
     }
   });
 
-  test('[createComment] return BadRequestException(Could not find that author!)', async () => {
+  test('[createComment] return NotFoundException(Could not find that author!)', async () => {
     prismaMock.post.findUnique.mockResolvedValue(postMock);
     prismaMock.user.findUnique.mockResolvedValue(null);
 
@@ -73,7 +73,7 @@ describe('[CommentController] POST /', () => {
         userMockPhoneNumberVerified,
       );
     } catch (e) {
-      expect(e).toBeInstanceOf(BadRequestException);
+      expect(e).toBeInstanceOf(NotFoundException);
       expect(e).toHaveProperty('message', 'Could not find that author!');
     }
   });

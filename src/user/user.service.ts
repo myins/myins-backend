@@ -26,7 +26,6 @@ import {
   EnableDisableNotificationAPI,
 } from './user-api.entity';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationPushService } from 'src/notification/notification.push.service';
 
 @Injectable()
 export class UserService {
@@ -34,6 +33,7 @@ export class UserService {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => SjwtService))
     private readonly jwtService: SjwtService,
     private readonly smsService: SmsService,
     @Inject(forwardRef(() => ChatService))
@@ -42,8 +42,6 @@ export class UserService {
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
-    @Inject(forwardRef(() => NotificationPushService))
-    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   async user(
