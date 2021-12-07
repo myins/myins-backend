@@ -38,6 +38,7 @@ export class UserService {
     private readonly smsService: SmsService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
+    @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))

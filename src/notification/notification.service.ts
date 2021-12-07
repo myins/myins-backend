@@ -29,6 +29,7 @@ export class NotificationService {
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly pushService: NotificationPushService,
+    @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
   ) {}
 

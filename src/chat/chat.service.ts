@@ -14,6 +14,7 @@ export class ChatService {
   constructor(
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+    @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
   ) {
     this.streamChat = StreamChat.getInstance(

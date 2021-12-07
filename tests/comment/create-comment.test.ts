@@ -99,7 +99,7 @@ describe('[CommentController] POST /', () => {
     }
   });
 
-  test('[createComment] return BadRequestException(Could not find that author!)', async () => {
+  test('[createComment] return created comment', async () => {
     prismaMock.post.findUnique.mockResolvedValue(postMock);
     prismaMock.user.findUnique.mockResolvedValue(userMock);
     prismaMock.comment.create.mockResolvedValue(commentMock);

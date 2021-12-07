@@ -74,6 +74,7 @@ export class NotificationPushService {
     private readonly messagingService: FirebaseMessagingService,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+    @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
