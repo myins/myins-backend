@@ -25,13 +25,13 @@ export class ChatService {
   @Cron('0 1 * * *')
   async cleanUpStreamChat() {
     try {
-      this.logger.log('Clean up stream chat users');
+      this.logger.log('[Cron] Clean up stream chat users');
 
-      this.logger.log('Getting users from db');
+      this.logger.log('[Cron] Getting users from db');
       const users = await this.userService.users({});
       const usersIDs = users.map((user) => user.id);
 
-      this.logger.log('Getting stream chat users');
+      this.logger.log('[Cron] Getting stream chat users');
       const limit = 100;
       let offset = 0;
       let streamUsers;
@@ -59,16 +59,16 @@ export class ChatService {
       );
 
       this.logger.log(
-        `Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
+        `[Cron] Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
       );
 
-      this.logger.log('Clean up channels');
+      this.logger.log('[Cron] Clean up channels');
 
-      this.logger.log('Getting inses from db');
+      this.logger.log('[Cron] Getting inses from db');
       const inses = await this.insService.inses({});
       const insesIDs = inses.map((ins) => ins.id);
 
-      this.logger.log('Getting channels');
+      this.logger.log('[Cron] Getting channels');
       offset = 0;
       let channels;
       const allChannels: Channel[] = [];
@@ -92,11 +92,11 @@ export class ChatService {
       );
 
       this.logger.log(
-        `Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
+        `[Cron] Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
       );
     } catch (e) {
       const stringErr: string = <string>e;
-      this.logger.error(`Error cleaned up stream chat! + ${stringErr}`);
+      this.logger.error(`[Cron] Error cleaned up stream chat! + ${stringErr}`);
     }
   }
 
@@ -138,6 +138,57 @@ export class ChatService {
     }
   }
 
+  async updateDeviceToken(
+    userID: string,
+    oldDeviceToken: string | null,
+    deviceToken: string | null,
+  ) {
+    if (oldDeviceToken) {
+      try {
+        this.logger.log(
+          `Removing device token ${oldDeviceToken} for user stream ${userID}`,
+        );
+        await this.streamChat.removeDevice(oldDeviceToken, userID);
+      } catch (e) {
+        const stringErr: string = <string>e;
+        this.logger.error(
+          `Error removing device token for stream chat user! + ${stringErr}`,
+        );
+      }
+    }
+    if (deviceToken) {
+      try {
+        this.logger.log(
+          `Adding device token ${deviceToken} for user stream ${userID}`,
+        );
+        await this.streamChat.addDevice(deviceToken, 'apn', userID);
+      } catch (e) {
+        const stringErr: string = <string>e;
+        this.logger.error(
+          `Error adding device token for stream chat user! + ${stringErr}`,
+        );
+      }
+    }
+  }
+
+  async removeAllDevices(userID: string) {
+    try {
+      const devices = await this.streamChat.getDevices(userID);
+      if (devices.devices) {
+        await Promise.all(
+          devices.devices?.map(async (device) => {
+            await this.streamChat.removeDevice(device.id, userID);
+          }),
+        );
+      }
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(
+        `Error removing all devices tokens for stream chat user! + ${stringErr}`,
+      );
+    }
+  }
+
   async createChannelINS(ins: INS, userID: string) {
     try {
       const channel = this.streamChat.channel('messaging', ins.id, {
@@ -158,16 +209,22 @@ export class ChatService {
     try {
       const channels = await this.getChannelsINS({ id: ins.id });
       if (!channels.length) {
+        this.logger.log(
+          `Channel ${ins.id} not exist. Create channel and add all members`,
+        );
         await this.createChannelINS(ins, userID);
 
         const members = await this.insService.membersForIns(ins.id);
         if (members.length) {
-          this.addMembersToChannel(
+          await this.addMembersToChannel(
             members.map((member) => member.id),
             ins.id,
           );
         }
       } else {
+        this.logger.log(
+          `Channel ${ins.id} exist. Add members that are not in channel`,
+        );
         await this.addMembersIfNotInChannel(channels[0]);
       }
     } catch (e) {

@@ -45,11 +45,13 @@ export class ChatController {
     };
   }
 
-  @Post('create-all-channels')
+  @Post('migration')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
-  async createAllChannels() {
-    this.logger.log('Create channels for all inses');
+  async migration() {
+    this.logger.log(
+      'Create channel for all inses and stream user for all users',
+    );
     const allINses = await this.insService.insesWithAdmin();
     await Promise.all(
       allINses.map(async (ins) => {
@@ -64,8 +66,10 @@ export class ChatController {
         }
       }),
     );
+
+    this.logger.log('Successfully migrated data');
     return {
-      message: 'All channels created',
+      message: 'Successfully migrated data',
     };
   }
 
@@ -77,18 +81,19 @@ export class ChatController {
     @Body() data: SearchMessgesAPI,
   ) {
     if (data.channelId) {
-      const connection = this.userConnectionService.getNotPendingConnection({
-        userId_insId: {
-          insId: data.channelId,
-          userId: userID,
-        },
-      });
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            insId: data.channelId,
+            userId: userID,
+          },
+        });
       if (!connection) {
         this.logger.error(
-          "You're not allowed to search message in this channel!",
+          "You're not allowed to search messages in this channel!",
         );
         throw new BadRequestException(
-          "You're not allowed to search message in this channel!",
+          "You're not allowed to search messages in this channel!",
         );
       }
     }

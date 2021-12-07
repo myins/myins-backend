@@ -1,3 +1,4 @@
+import { NotificationSource, Prisma, UserRole } from '.prisma/client';
 import {
   Body,
   Controller,
@@ -12,7 +13,9 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { UserService } from 'src/user/user.service';
 import { UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
@@ -24,7 +27,9 @@ export class InsAdminController {
   constructor(
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
+    private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @Post('/change')
@@ -44,7 +49,34 @@ export class InsAdminController {
     this.logger.log(
       `Removing all admins for ins ${data.insID} and changing user ${data.memberID} as admin`,
     );
-    return this.insAdminService.changeAdmin(data.insID, data.memberID);
+    const changedAdmin = await this.insAdminService.changeAdmin(
+      data.insID,
+      data.memberID,
+    );
+
+    this.logger.log(
+      `Creating notification for changing admin user ${data.memberID} from ins ${data.insID} by current admin user ${userID}`,
+    );
+    await this.notificationService.createNotification({
+      source: NotificationSource.CHANGE_ADMIN,
+      targets: {
+        connect: {
+          id: data.memberID,
+        },
+      },
+      author: {
+        connect: {
+          id: userID,
+        },
+      },
+      ins: {
+        connect: {
+          id: data.insID,
+        },
+      },
+    });
+
+    return changedAdmin;
   }
 
   @Delete('/remove-member')
@@ -67,12 +99,17 @@ export class InsAdminController {
     }
 
     this.logger.log(`Removing member ${data.memberID} from ins ${data.insID}`);
-    return this.userConnectionService.removeMember({
+    const toRet = await this.userConnectionService.removeMember({
       userId_insId: {
         userId: data.memberID,
         insId: data.insID,
       },
     });
+
+    this.logger.log(`Removing target ${data.memberID} from notifications`);
+    await this.notificationService.removeTargetFromNotifications(data.memberID);
+
+    return toRet;
   }
 
   @Delete(':id')
@@ -96,6 +133,36 @@ export class InsAdminController {
       this.logger.error(`You're not allowed to delete INS ${insID}!`);
       throw new BadRequestException("You're not allowed to delete this INS!");
     }
+
+    this.logger.log(
+      `Creating notification for deleting ins ${insID} by user ${userID}`,
+    );
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: insID,
+        role: {
+          not: UserRole.PENDING,
+        },
+        userId: {
+          not: userID,
+        },
+      },
+    });
+    const notifMetadata = {
+      deletedInsName: ins.name,
+    } as Prisma.JsonObject;
+    await this.notificationService.createNotification({
+      source: NotificationSource.DELETED_INS,
+      targets: {
+        connect: connections.map((connection) => ({ id: connection.userId })),
+      },
+      author: {
+        connect: {
+          id: userID,
+        },
+      },
+      metadata: notifMetadata,
+    });
 
     this.logger.log(`Deleting ins ${insID}`);
     return this.insAdminService.deleteINS({ id: insID });

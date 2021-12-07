@@ -19,20 +19,18 @@ import {
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { NotificationService } from './notification.service';
 
-export const PushNotificationSource = {
-  REQUEST_FOR_OTHER_USER: 'REQUEST_FOR_OTHER_USER',
-  REQUEST_FOR_ME: 'REQUEST_FOR_ME',
-};
-
-export type PushNotificationSource =
-  typeof PushNotificationSource[keyof typeof PushNotificationSource];
+export enum PushNotificationSource {
+  REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
+  REQUEST_FOR_ME = 'REQUEST_FOR_ME',
+}
 
 export interface PushExtraNotification {
   source: PushNotificationSource;
   author: User | null;
   ins: INS | null;
-  targetID?: string | null;
+  targets: string[];
 }
 
 const sandboxSettings = {
@@ -78,6 +76,8 @@ export class NotificationPushService {
     private readonly userService: UserService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
   ) {}
 
   async pushNotification(
@@ -87,25 +87,36 @@ export class NotificationPushService {
 
     await Promise.all(
       usersIDs.map(async (userID) => {
-        const target = await this.userService.user({ id: userID });
-        const pushNotifications: PushNotificationSource[] = Object.keys(
-          PushNotificationSource,
+        this.logger.log(
+          `Preparing push notification of type ${notif.source} for user ${userID}`,
         );
-        let realSource: NotificationSource | string = notif.source;
-        if (pushNotifications.includes(notif.source)) {
+        const target = await this.userService.user({ id: userID });
+
+        const pushNotifications: PushNotificationSource[] = <
+          PushNotificationSource[]
+        >(<unknown>Object.keys(PushNotificationSource));
+        let realSource: NotificationSource | PushNotificationSource =
+          notif.source;
+        if (pushNotifications.includes(<PushNotificationSource>notif.source)) {
           realSource = NotificationSource.JOINED_INS;
         }
         const isNotDisableNotification =
           !target?.disabledNotifications.includes(
             <NotificationSource>realSource,
           );
-        if (target?.pushToken && isNotDisableNotification) {
+
+        const isMute = await this.checkIfInsIsMuteForUser(target, notif);
+
+        if (target?.pushToken && isNotDisableNotification && !isMute) {
           this.logger.log(`Adding push notification for user ${target.id}`);
           const notifBody = await this.constructNotificationBody(target, notif);
-          await this.pushData(
+          const result = await this.pushData(
             target.pushToken,
             target?.sandboxToken ?? false,
             notifBody,
+          );
+          this.logger.log(
+            `Push notification result = ${JSON.stringify(result)}`,
           );
         } else {
           this.logger.log(
@@ -118,7 +129,7 @@ export class NotificationPushService {
 
   async getUsersIDsBySource(
     notif: Prisma.NotificationCreateInput | PushExtraNotification,
-  ) {
+  ): Promise<string[]> {
     const normalNotif = <Prisma.NotificationCreateInput>notif;
     const pushNotif = <PushExtraNotification>notif;
     let usersIDs: string[] = [];
@@ -133,35 +144,21 @@ export class NotificationPushService {
       case NotificationSource.LIKE_COMMENT:
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
-        usersIDs = normalNotif.target?.connect?.id
-          ? [normalNotif.target?.connect?.id]
-          : [];
+      case NotificationSource.CHANGE_ADMIN:
+      case NotificationSource.PENDING_INS:
+        const id = (<Prisma.UserWhereUniqueInput>normalNotif.targets?.connect)
+          .id;
+        usersIDs = id !== undefined ? [id] : [];
         break;
+      case NotificationSource.DELETED_INS:
       case NotificationSource.POST:
-        const inses = await this.insService.inses({
-          where: {
-            posts: {
-              some: {
-                id: normalNotif.post?.connect?.id,
-              },
-            },
-          },
-        });
-        const members = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: inses.map((ins) => ins.id),
-            },
-            role: {
-              not: UserRole.PENDING,
-            },
-            userId: {
-              not: normalNotif.author.connect?.id,
-            },
-          },
-        });
-        usersIDs = members.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
+      case NotificationSource.JOINED_INS:
+        const ids = (<Array<Prisma.UserWhereUniqueInput>>(
+          normalNotif.targets?.connect
+        ))
+          .map((connect) => connect.id)
+          .filter((id) => id !== undefined);
+        usersIDs = <Array<string>>ids;
         break;
       case NotificationSource.ADDED_PHOTOS:
         this.logger.error(
@@ -170,94 +167,116 @@ export class NotificationPushService {
         throw new BadRequestException(
           `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
         );
-      case NotificationSource.JOINED_INS:
-        const membersIns = await this.userConnectionService.getConnections({
-          where: {
-            insId: {
-              in: normalNotif.ins?.connect?.id,
-            },
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        });
-        usersIDs = membersIns.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
-        break;
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
-        const membersRequestIns =
-          await this.userConnectionService.getConnections({
-            where: {
-              insId: {
-                in: pushNotif.ins?.id,
-              },
-              role: {
-                not: UserRole.PENDING,
-              },
-            },
-          });
-        usersIDs = membersRequestIns.map((member) => member.userId);
-        usersIDs = [...new Set(usersIDs)];
-        break;
       case PushNotificationSource.REQUEST_FOR_ME:
-        usersIDs = pushNotif.targetID ? [pushNotif.targetID] : [];
+        usersIDs = pushNotif.targets;
         break;
       default:
-        unreachable(<never>notif.source);
+        unreachable(notif);
         break;
     }
 
     return usersIDs;
   }
 
-  async pushData(
-    token: string,
-    sandbox: boolean,
-    data: PushNotifications.Data,
-  ) {
-    if (token.toLowerCase() !== token) {
-      // Android token
-      const x = data.custom;
+  async checkIfInsIsMuteForUser(
+    user: User | null,
+    notif: Prisma.NotificationCreateInput | PushExtraNotification,
+  ): Promise<boolean> {
+    const normalNotif = <Prisma.NotificationCreateInput>notif;
+    const pushNotif = <PushExtraNotification>notif;
+    let isMute = false;
 
-      let couldUnwrapAndSend = false;
-      if (x !== undefined) {
-        if (typeof x !== 'string') {
-          const copy: { [key: string]: string } = {};
-          Object.keys(x).forEach((each) => {
-            copy[each] = JSON.stringify(x[each]);
-          });
+    const unreachable = (x: never) => {
+      this.logger.error(`This shouldn't be possible! ${x}`);
+      throw new Error(`This shouldn't be possible! ${x}`);
+    };
 
-          await this.messagingService.sendToDevice(token, {
-            notification: {
-              title: data.title,
-              body: data.body,
-            },
-            data: copy,
-          });
-          couldUnwrapAndSend = true;
+    switch (notif.source) {
+      case NotificationSource.JOINED_INS:
+      case NotificationSource.JOIN_INS_REJECTED:
+      case NotificationSource.CHANGE_ADMIN:
+      case NotificationSource.PENDING_INS:
+        if (normalNotif.ins?.connect?.id && user?.id) {
+          const connectionNormalNotif =
+            await this.userConnectionService.getConnection({
+              userId_insId: {
+                insId: normalNotif.ins?.connect?.id,
+                userId: user.id,
+              },
+            });
+          isMute = !!connectionNormalNotif?.muteUntil;
         }
-      }
-
-      if (!couldUnwrapAndSend) {
-        // No data, send it without
-
-        await this.messagingService.sendToDevice(token, {
-          notification: {
-            title: data.title,
-            body: data.body,
-            target: token,
-            author: '',
-          },
-        });
-      }
-    } else {
-      this.logger.log(`Send push notification with sandbox ${sandbox}`);
-      if (sandbox) {
-        return sandboxPush.send(token, data);
-      } else {
-        return prodPush.send(token, data);
-      }
+        break;
+      case PushNotificationSource.REQUEST_FOR_ME:
+      case PushNotificationSource.REQUEST_FOR_OTHER_USER:
+        if (pushNotif.ins?.id && user?.id) {
+          const connectionPushNotif =
+            await this.userConnectionService.getConnection({
+              userId_insId: {
+                insId: pushNotif.ins?.id,
+                userId: user.id,
+              },
+            });
+          isMute = !!connectionPushNotif?.muteUntil;
+        }
+        break;
+      case NotificationSource.LIKE_POST:
+      case NotificationSource.LIKE_COMMENT:
+      case NotificationSource.COMMENT:
+      case NotificationSource.POST:
+        if (normalNotif.post?.connect?.id && user?.id) {
+          const connections = await this.userConnectionService.getConnections({
+            where: {
+              ins: {
+                posts: {
+                  some: {
+                    id: normalNotif.post?.connect?.id,
+                  },
+                },
+                members: {
+                  some: {
+                    userId: user?.id,
+                  },
+                },
+              },
+              muteUntil: null,
+            },
+          });
+          if (connections.length) {
+            isMute = false;
+          }
+        }
+        break;
+      case NotificationSource.ADDED_PHOTOS:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
+        );
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+      case NotificationSource.DELETED_INS:
+        break;
+      default:
+        unreachable(notif);
+        break;
     }
+
+    return isMute;
   }
 
   async constructNotificationBody(
@@ -347,6 +366,35 @@ export class NotificationPushService {
         });
         body = `Your request to access ${insJoinRejected?.name} ins has been declined!`;
         break;
+      case NotificationSource.CHANGE_ADMIN:
+        const authorChangeAdmin = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        const insChangeAdmin = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `You have been assigned as Admin in ${insChangeAdmin?.name} ins by ${authorChangeAdmin?.firstName} ${authorChangeAdmin?.lastName}!`;
+        break;
+      case NotificationSource.DELETED_INS:
+        const authorDeletedIns = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        const metadata = normalNotif.metadata as Prisma.JsonObject;
+        body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${metadata?.deletedInsName} ins!`;
+        break;
+      case NotificationSource.PENDING_INS:
+        const insPendingIns = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `You are now a pending user for ${insPendingIns?.name} ins!`;
+        break;
+      case NotificationSource.MESSAGE:
+        this.logger.error(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
+        throw new BadRequestException(
+          `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
+        );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins?.name} ins!`;
         break;
@@ -354,16 +402,21 @@ export class NotificationPushService {
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} Ins!`;
         break;
       default:
-        unreachable(<never>source.source);
+        unreachable(source);
         break;
     }
 
     this.logger.log(`Body: ${body}`);
+    const unreadNotif = await this.notificationService.countUnreadNotifications(
+      target,
+    );
 
     return {
       title: 'MyINS',
       body: body,
-      badge: 1,
+      badge: unreadNotif ? unreadNotif + 1 : 1,
+      contentAvailable: true,
+      mutableContent: 1,
       topic: target.sandboxToken
         ? 'com.squid40.dev.myins'
         : 'com.squid40.dev.myins',
@@ -371,6 +424,56 @@ export class NotificationPushService {
         ...clean(source),
       },
     };
+  }
+
+  async pushData(
+    token: string,
+    sandbox: boolean,
+    data: PushNotifications.Data,
+  ) {
+    if (token.toLowerCase() !== token) {
+      // Android token
+      const x = data.custom;
+
+      let couldUnwrapAndSend = false;
+      if (x !== undefined) {
+        if (typeof x !== 'string') {
+          const copy: { [key: string]: string } = {};
+          Object.keys(x).forEach((each) => {
+            copy[each] = JSON.stringify(x[each]);
+          });
+
+          await this.messagingService.sendToDevice(token, {
+            notification: {
+              title: data.title,
+              body: data.body,
+            },
+            data: copy,
+          });
+          couldUnwrapAndSend = true;
+        }
+      }
+
+      if (!couldUnwrapAndSend) {
+        // No data, send it without
+
+        await this.messagingService.sendToDevice(token, {
+          notification: {
+            title: data.title,
+            body: data.body,
+            target: token,
+            author: '',
+          },
+        });
+      }
+    } else {
+      this.logger.log(`Send push notification with sandbox ${sandbox}`);
+      if (sandbox) {
+        return sandboxPush.send(token, data);
+      } else {
+        return prodPush.send(token, data);
+      }
+    }
   }
 }
 

@@ -153,7 +153,7 @@ export class CommentController {
       );
       await this.notificationService.createNotification({
         source: NotificationSource.COMMENT,
-        target: {
+        targets: {
           connect: {
             id: post.authorId,
           },

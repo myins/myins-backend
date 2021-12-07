@@ -3,7 +3,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
   Logger,
   NotFoundException,
@@ -25,6 +24,10 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
+import {
+  ConnectionIncludeMembers,
+  ConnectionIncludeMembersInclude,
+} from 'src/prisma-queries-helper/connection-include-members';
 import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
 import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -32,7 +35,6 @@ import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
 import { omit } from 'src/util/omit';
 import { CreateINSAPI } from './ins-api.entity';
-import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
 @Controller('ins')
@@ -41,7 +43,6 @@ export class InsController {
 
   constructor(
     private readonly insService: InsService,
-    private readonly insAdminService: InsAdminService,
     private readonly chatService: ChatService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
@@ -87,33 +88,42 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseInterceptors(NotFoundInterceptor)
-  //@UseGuards(JwtAuthGuard)
-  async getInsByCode(@Param('code') insCode: string) {
+  @UseGuards(JwtAuthGuard)
+  async getInsByCode(
+    @PrismaUser('id') userID: string,
+    @Param('code') insCode: string,
+  ) {
     if (insCode.length <= 0) {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log(`Getting ins by code ${insCode}`);
-    let ins = await this.insService.ins(
-      {
+    this.logger.log(`Getting ins by code ${insCode} by user ${userID}`);
+    const inses = await this.insService.inses({
+      where: {
         shareCode: insCode,
       },
-      {
+      include: {
         members: {
           where: {
             role: {
               not: UserRole.PENDING,
             },
+            user: {
+              isDeleted: false,
+            },
           },
         },
       },
-    );
+    });
+    let ins = inses[0];
     if (ins) {
       (<InsWithCountMembers>ins)._count = {
         members: (<InsWithMembersID>ins).members.length,
       };
       ins = omit(<InsWithMembersID>ins, 'members');
+
+      this.logger.log('Successfully returned ins');
       return ins;
     }
     this.logger.error(`Could not find ins with code ${insCode}!`);
@@ -141,6 +151,7 @@ export class InsController {
     @PrismaUser('id') userID: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    @Query('onlyMine') onlyMine: boolean,
   ) {
     const inses = await this.insService.inses({
       where: {
@@ -148,6 +159,9 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
@@ -157,8 +171,10 @@ export class InsController {
       throw new NotFoundException('Could not find that INS!');
     }
 
-    this.logger.log(`Getting posts with all media for ins ${id}`);
-    return this.insService.mediaForIns(userID, id, skip, take);
+    this.logger.log(
+      `Getting posts with all media for ins ${id} by user ${userID}`,
+    );
+    return this.insService.mediaForIns(userID, id, skip, take, onlyMine);
   }
 
   @Get(':id/members')
@@ -178,6 +194,9 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
@@ -187,7 +206,7 @@ export class InsController {
       throw new NotFoundException('Could not find that INS!');
     }
 
-    this.logger.log(`Getting members for ins ${id}`);
+    this.logger.log(`Getting members for ins ${id} by user ${userID}`);
     return this.insService.membersForIns(
       id,
       userID,
@@ -202,43 +221,42 @@ export class InsController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
   async getByID(@Param('id') id: string, @PrismaUser('id') userID: string) {
-    this.logger.log(`Getting ins by id ${id}`);
-    const inses = await this.insService.inses({
-      where: {
-        id: id,
-        members: {
-          some: {
-            userId: userID,
-          },
-        },
-      },
-      include: {
-        members: {
-          where: {
-            role: {
-              not: UserRole.PENDING,
-            },
-          },
-        },
-      },
+    const ins = await this.insService.ins({
+      id: id,
     });
-    if (!inses || inses.length !== 1) {
+    if (!ins) {
       this.logger.error(`Could not find INS ${id}!`);
       throw new NotFoundException('Could not find that INS!');
     }
 
-    let ins = inses[0];
-    (<InsWithCountMembers>ins)._count = {
-      members: (<InsWithMembersID>ins).members.length,
+    const insWithoutInvitedPhoneNumbers = omit(ins, 'invitedPhoneNumbers');
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: insWithoutInvitedPhoneNumbers.id,
+        userId: userID,
+        role: {
+          not: UserRole.PENDING,
+        },
+      },
+      include: ConnectionIncludeMembersInclude,
+    });
+
+    if (!connections.length) {
+      this.logger.error("You're not a member!");
+      throw new BadRequestException("You're not a member!");
+    }
+
+    const connection = <ConnectionIncludeMembers>connections[0];
+    const toRet = {
+      ...insWithoutInvitedPhoneNumbers,
+      _count: {
+        members: connection.ins.members.length,
+      },
+      userRole: connection.role,
+      isMute: !!connection.muteUntil,
     };
-    ins = omit(<InsWithMembersID>ins, 'members');
 
-    this.logger.log(
-      `Create channel for ins ${id} by user stream ${userID} if not exists`,
-    );
-    await this.chatService.createChannelINSWithMembersIfNotExists(ins, userID);
-
-    return ins;
+    return toRet;
   }
 
   @Post('join/:code')
@@ -276,6 +294,13 @@ export class InsController {
       },
     });
     if (connection) {
+      if (connection.role === UserRole.PENDING) {
+        return {
+          statusCode: 585858,
+          message:
+            'You already requested access to this INS. Please wait for approval!',
+        };
+      }
       return {
         statusCode: 585858,
         message: 'Already in INS!',
@@ -295,8 +320,20 @@ export class InsController {
         this.logger.log(
           `Creating notification for joining ins ${theINS.id} by user ${user.id}`,
         );
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: theINS.id,
+            },
+          })
+        ).map((connection) => {
+          return { id: connection.userId };
+        });
         await this.notificationService.createNotification({
           source: NotificationSource.JOINED_INS,
+          targets: {
+            connect: targetIDs,
+          },
           author: {
             connect: {
               id: user.id,
@@ -325,14 +362,50 @@ export class InsController {
             },
           },
         });
-        const insForPushNotification: INS = {
+        const insNotification: INS = {
           ...theINS,
           invitedPhoneNumbers: [],
         };
+
+        this.logger.log(
+          `Creating notification for pending ins ${insNotification.id} for user ${user.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.PENDING_INS,
+          targets: {
+            connect: { id: user.id },
+          },
+          author: {
+            connect: { id: user.id },
+          },
+          ins: {
+            connect: {
+              id: insNotification.id,
+            },
+          },
+        });
+
+        this.logger.log(
+          `Creating push notification for requesting access in ins ${insNotification.id}`,
+        );
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: insNotification.id,
+              userId: {
+                not: user.id,
+              },
+              role: {
+                not: UserRole.PENDING,
+              },
+            },
+          })
+        ).map((connection) => connection.userId);
         const data: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
           author: await this.userService.shallowUser({ id: user.id }),
-          ins: insForPushNotification,
+          ins: insNotification,
+          targets: targetIDs,
         };
         await this.notificationPushService.pushNotification(data);
 
@@ -365,6 +438,7 @@ export class InsController {
         members: {
           some: {
             userId: userID,
+            role: UserRole.ADMIN,
           },
         },
       },
@@ -377,42 +451,24 @@ export class InsController {
     const theINS = validINS[0];
 
     this.logger.log(`Attach cover with name '${file.originalname}'`);
-    return this.insService.attachCoverToPost(file, theINS.id);
-  }
+    const updatedIns = await this.insService.attachCoverToPost(file, theINS.id);
 
-  @Delete('/:id/leave')
-  @ApiTags('ins')
-  @UseGuards(JwtAuthGuard)
-  async leaveINS(@PrismaUser('id') userId: string, @Param('id') insId: string) {
-    const user = await this.userService.user({
-      id: userId,
+    const connections = await this.userConnectionService.getConnections({
+      where: {
+        insId: updatedIns.id,
+        userId: userID,
+      },
+      include: ConnectionIncludeMembersInclude,
     });
-    if (!user) {
-      this.logger.error(`Could not find user ${userId}!`);
-      throw new NotFoundException('Could not find this user!');
-    }
 
-    this.logger.log(`Checking if user ${userId} is admin for ins ${insId}`);
-    const isAdmin = await this.insAdminService.isAdmin(userId, insId);
-    let message = 'User cannot be deleted because is admin!';
-
-    if (!isAdmin) {
-      this.logger.log(
-        `User ${userId} is not an admin for ins ${insId}. Removing from ins`,
-      );
-      await this.userConnectionService.removeMember({
-        userId_insId: {
-          insId: insId,
-          userId: userId,
-        },
-      });
-      message = 'User successfully removed from ins';
-      this.logger.log(message);
-    }
-
-    return {
-      isAdmin: isAdmin,
-      message: message,
+    const connection = <ConnectionIncludeMembers>connections[0];
+    const toRet = {
+      ...updatedIns,
+      _count: {
+        members: connection.ins.members.length,
+      },
     };
+
+    return toRet;
   }
 }

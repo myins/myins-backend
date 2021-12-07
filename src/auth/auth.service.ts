@@ -246,10 +246,17 @@ export class AuthService {
         id: user.id,
       },
       data: {
-        pushToken: tokenData.pushToken,
+        pushToken: tokenData.pushToken ?? null,
         sandboxToken: tokenData.isSandbox,
       },
     });
+
+    this.logger.log(`Updating device token for user stream ${user.id}`);
+    await this.chatService.updateDeviceToken(
+      user.id,
+      user.pushToken,
+      tokenData.pushToken,
+    );
 
     this.logger.log(`Getting profile for user ${updatedUser.id}`);
     const userProfile = await this.usersService.getUserProfile(updatedUser.id);
@@ -284,6 +291,6 @@ export class AuthService {
   }
 
   async logout(user: User) {
-    return this.usersService.logoutUser(user.id);
+    return this.usersService.logoutUser(user);
   }
 }

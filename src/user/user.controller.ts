@@ -35,6 +35,7 @@ import {
 } from './user-api.entity';
 import { UserConnectionService } from './user.connection.service';
 import * as uuid from 'uuid';
+import { ChatService } from 'src/chat/chat.service';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -48,6 +49,7 @@ export class UserController {
     private readonly smsService: SmsService,
     private readonly insService: InsService,
     private readonly notificationService: NotificationService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Get('cloudfront-token')
@@ -205,8 +207,20 @@ export class UserController {
           this.logger.log(
             `Creating notification for joining ins ${ins.id} by user ${createdUser.id}`,
           );
+          const targetIDs = (
+            await this.userConnectionService.getConnections({
+              where: {
+                insId: ins.id,
+              },
+            })
+          ).map((connection) => {
+            return { id: connection.userId };
+          });
           await this.notificationService.createNotification({
             source: NotificationSource.JOINED_INS,
+            targets: {
+              connect: targetIDs,
+            },
             author: {
               connect: {
                 id: createdUser.id,
@@ -236,20 +250,27 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateToken(
     @Body() dataModel: UpdatePushTokenAPI,
-    @PrismaUser('id') userID: string,
+    @PrismaUser() user: User,
   ) {
     this.logger.log(
-      `Updating user ${userID}. Change pushToken and sandboxToken`,
+      `Updating user ${user.id}. Change pushToken and sandboxToken`,
     );
     await this.userService.updateUser({
       where: {
-        id: userID,
+        id: user.id,
       },
       data: {
-        pushToken: dataModel.pushToken,
+        pushToken: dataModel.pushToken ?? null,
         sandboxToken: dataModel.isSandbox,
       },
     });
+
+    this.logger.log(`Updating device token for user stream ${user.id}`);
+    await this.chatService.updateDeviceToken(
+      user.id,
+      user.pushToken,
+      dataModel.pushToken,
+    );
 
     this.logger.log('Updated token successfully');
     return {
@@ -277,10 +298,12 @@ export class UserController {
       },
     });
 
+    const hasIns = true;
     if (inses.length) {
       this.logger.log(`User ${userId} is an admin for some inses`);
       return {
         inses: inses,
+        hasIns: hasIns,
       };
     } else {
       this.logger.log(`Getting inses for user ${userId}`);
@@ -304,11 +327,13 @@ export class UserController {
         return {
           inses: [],
           nameIns: userInses[0].name,
+          hasIns: hasIns,
         };
       }
 
       return {
         inses: [],
+        hasIns: userInses.length > 0,
       };
     }
   }
@@ -363,10 +388,16 @@ export class UserController {
       },
     });
 
+    this.logger.log(
+      `Removing all pending members that are invited by user ${user.id}`,
+    );
     await this.userConnectionService.removeManyMembers({
       invitedBy: user.id,
       role: UserRole.PENDING,
     });
+
+    this.logger.log(`Removing user stream ${user.id}`);
+    await this.chatService.deleteStreamUser(user.id);
 
     this.logger.log('Successfully updated user as a MyINS user');
     return {

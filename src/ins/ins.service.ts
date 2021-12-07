@@ -7,7 +7,10 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import {
+  ShallowUserSelectWithRole,
+  ShallowUserSelectWithRoleInclude,
+} from 'src/prisma-queries-helper/shallow-user-select';
 import {
   InsWithCountMembers,
   InsWithCountMembersInclude,
@@ -15,6 +18,7 @@ import {
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 
 @Injectable()
 export class InsService {
@@ -42,21 +46,19 @@ export class InsService {
 
   async insList(userID: string, filter: string) {
     // First we get all the user's ins connections, ordered by his interaction count
-    const whereQuery: Prisma.UserInsConnectionWhereInput = {
-      userId: userID,
-      ins:
-        filter && filter.length > 0
-          ? {
-              name: {
-                contains: filter,
-                mode: 'insensitive',
-              },
-            }
-          : undefined,
-    };
-
     const connectionQuery = await this.userConnectionService.getConnections({
-      where: whereQuery,
+      where: {
+        userId: userID,
+        ins:
+          filter && filter.length > 0
+            ? {
+                name: {
+                  contains: filter,
+                  mode: 'insensitive',
+                },
+              }
+            : undefined,
+      },
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
     const onlyIDs = connectionQuery.map((each) => each.insId);
@@ -82,7 +84,16 @@ export class InsService {
           insId: {
             in: onlyIDs,
           },
-          role: 'PENDING',
+          OR: [
+            {
+              role: 'PENDING',
+            },
+            {
+              user: {
+                isDeleted: true,
+              },
+            },
+          ],
         },
       })
     ).forEach((cur) => {
@@ -101,16 +112,12 @@ export class InsService {
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {
-        let theRightINS = toRet.find((each2) => each2.id == each.insId);
-        if (theRightINS?.invitedPhoneNumbers) {
-          theRightINS = <InsWithCountMembers>(
-            omit(theRightINS, 'invitedPhoneNumbers')
-          );
-        }
+        const theRightINS = toRet.find((each2) => each2.id == each.insId);
         return {
           ...theRightINS,
           userRole: each.role,
           pinned: each.pinned,
+          isMute: !!each.muteUntil,
         };
       })
       .filter((each) => {
@@ -128,6 +135,7 @@ export class InsService {
     insID: string,
     skip: number,
     take: number,
+    onlyMine: boolean,
   ): Promise<Post[]> {
     return this.postService.posts({
       skip: skip,
@@ -143,6 +151,7 @@ export class InsService {
           },
         },
         pending: false,
+        authorId: onlyMine ? userID : undefined,
       },
     });
   }
@@ -155,12 +164,20 @@ export class InsService {
     filter?: string,
     without?: boolean,
   ) {
-    let whereQuery: Prisma.UserWhereInput = {
+    const whereQuery: Prisma.UserWhereInput = {
+      id: without
+        ? {
+            not: userID,
+          }
+        : undefined,
       inses: {
         some: {
           insId: insID,
           role: {
             not: UserRole.PENDING,
+          },
+          user: {
+            isDeleted: false,
           },
         },
       },
@@ -183,24 +200,26 @@ export class InsService {
           : undefined,
     };
 
-    if (without) {
-      whereQuery = {
-        ...whereQuery,
-        id: {
-          not: userID,
-        },
-      };
-    }
-
-    return this.userService.users({
+    const users = await this.userService.users({
       where: whereQuery,
       skip: skip,
       take: take,
       orderBy: {
         firstName: 'desc',
       },
-      select: ShallowUserSelect,
+      select: ShallowUserSelectWithRoleInclude(insID),
     });
+
+    const usersWithRole = users.map((user) => {
+      const role = (<ShallowUserSelectWithRole>(<unknown>user)).inses[0].role;
+      const newUser = omit(<ShallowUserSelectWithRole>(<unknown>user), 'inses');
+      return {
+        ...newUser,
+        userRole: role,
+      };
+    });
+
+    return usersWithRole;
   }
 
   async addAsInvitedPhoneNumbers(
@@ -323,6 +342,7 @@ export class InsService {
       data: {
         cover: dataURL,
       },
+      select: ShallowINSSelect,
     });
   }
 

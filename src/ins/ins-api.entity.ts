@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateINSAPI {
   @IsString()
@@ -14,4 +20,20 @@ export class UpdateINSAdminAPI {
   @IsString()
   @IsNotEmpty()
   memberID: string;
+}
+
+export class LeaveINSAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  keepData: boolean;
+}
+
+export class MuteINSAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  isMute: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  minutes: number;
 }

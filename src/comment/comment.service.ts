@@ -47,6 +47,10 @@ export class CommentService {
     });
   }
 
+  async deleteManyComments(params: Prisma.CommentDeleteManyArgs) {
+    return this.prismaService.comment.deleteMany(params);
+  }
+
   async commentsForPost(
     postID: string,
     skip: number,

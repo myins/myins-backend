@@ -63,7 +63,7 @@ export class PostLikeController {
       },
     });
 
-    if (!postIfValid || postIfValid.length == 0) {
+    if (!postIfValid || !postIfValid.length) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find post!');
     }
@@ -134,7 +134,7 @@ export class PostLikeController {
       );
       await this.notificationService.createNotification({
         source: NotificationSource.LIKE_POST,
-        target: {
+        targets: {
           connect: {
             id: post.authorId,
           },

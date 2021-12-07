@@ -11,4 +11,8 @@ export class PostLikeService {
   ): Promise<UserPostLikeConnection[]> {
     return this.prisma.userPostLikeConnection.findMany(params);
   }
+
+  async deleteLike(where: Prisma.UserPostLikeConnectionWhereUniqueInput) {
+    return this.prisma.userPostLikeConnection.delete({ where });
+  }
 }

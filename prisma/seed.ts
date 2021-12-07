@@ -54,14 +54,21 @@ async function main() {
     `User ${firstUser.id} with phone number ${firstUser.phoneNumber} successfully created`,
   );
 
-  logger.log('Creating first user stream');
-  await streamChat.upsertUser({
-    id: firstUser.id,
-    name: `${firstUser.firstName} ${firstUser.lastName}`,
-    phoneNumber: firstUser.phoneNumber,
-    image: firstUser.profilePicture,
-  });
-  logger.log(`User stream ${firstUser.id} successfully created`);
+  try {
+    logger.log('Creating first user stream');
+    await streamChat.upsertUser({
+      id: firstUser.id,
+      name: `${firstUser.firstName} ${firstUser.lastName}`,
+      phoneNumber: firstUser.phoneNumber,
+      image: firstUser.profilePicture,
+    });
+    logger.log(`User stream ${firstUser.id} successfully created`);
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(
+      `Error creating/updating stream chat user! Chat will not work! + ${stringErr}`,
+    );
+  }
 
   logger.log('Creating second user');
   const secondUserPassword = await bcrypt.hash('second', 10);
@@ -78,14 +85,21 @@ async function main() {
     `User ${secondUser.id} with phone number ${secondUser.phoneNumber} successfully created`,
   );
 
-  logger.log('Creating second user stream');
-  await streamChat.upsertUser({
-    id: secondUser.id,
-    name: `${secondUser.firstName} ${secondUser.lastName}`,
-    phoneNumber: secondUser.phoneNumber,
-    image: secondUser.profilePicture,
-  });
-  logger.log(`User stream ${secondUser.id} successfully created`);
+  try {
+    logger.log('Creating second user stream');
+    await streamChat.upsertUser({
+      id: secondUser.id,
+      name: `${secondUser.firstName} ${secondUser.lastName}`,
+      phoneNumber: secondUser.phoneNumber,
+      image: secondUser.profilePicture,
+    });
+    logger.log(`User stream ${secondUser.id} successfully created`);
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(
+      `Error creating/updating stream chat user! Chat will not work! + ${stringErr}`,
+    );
+  }
 
   logger.log('Creating third user');
   const thirdUserPassword = await bcrypt.hash('third', 10);
@@ -102,14 +116,21 @@ async function main() {
     `User ${thirdUser.id} with phone number ${thirdUser.phoneNumber} successfully created`,
   );
 
-  logger.log('Creating third user stream');
-  await streamChat.upsertUser({
-    id: thirdUser.id,
-    name: `${thirdUser.firstName} ${thirdUser.lastName}`,
-    phoneNumber: thirdUser.phoneNumber,
-    image: thirdUser.profilePicture,
-  });
-  logger.log(`User stream ${thirdUser.id} successfully created`);
+  try {
+    logger.log('Creating third user stream');
+    await streamChat.upsertUser({
+      id: thirdUser.id,
+      name: `${thirdUser.firstName} ${thirdUser.lastName}`,
+      phoneNumber: thirdUser.phoneNumber,
+      image: thirdUser.profilePicture,
+    });
+    logger.log(`User stream ${thirdUser.id} successfully created`);
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(
+      `Error creating/updating stream chat user! Chat will not work! + ${stringErr}`,
+    );
+  }
 
   logger.log(`Creating first INS`);
   const firstINS = await prisma.iNS.create({
@@ -128,18 +149,24 @@ async function main() {
     `INS ${firstINS.id} with admin user ${firstUser.id} successfully created`,
   );
 
-  logger.log('Creating first channel');
-  const firstChannel = streamChat.channel('messaging', firstINS.id, {
-    name: firstINS.name,
-    members: [firstUser.id],
-    created_by_id: firstUser.id,
-    image: firstINS.cover,
-    insChannel: true,
-  });
-  await firstChannel.create();
-  logger.log(
-    `Channel ${firstINS.id} with owner ${firstUser.id} successfully created`,
-  );
+  let firstChannel = null;
+  try {
+    logger.log('Creating first channel');
+    firstChannel = streamChat.channel('messaging', firstINS.id, {
+      name: firstINS.name,
+      members: [firstUser.id],
+      created_by_id: firstUser.id,
+      image: firstINS.cover,
+      insChannel: true,
+    });
+    await firstChannel.create();
+    logger.log(
+      `Channel ${firstINS.id} with owner ${firstUser.id} successfully created`,
+    );
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(`Error creating stream channel! + ${stringErr}`);
+  }
 
   logger.log(`Creating second INS`);
   const secondINS = await prisma.iNS.create({
@@ -158,18 +185,24 @@ async function main() {
     `INS ${secondINS.id} with admin user ${secondUser.id} successfully created`,
   );
 
-  logger.log('Creating second channel');
-  const secondChannel = streamChat.channel('messaging', secondINS.id, {
-    name: secondINS.name,
-    members: [secondUser.id],
-    created_by_id: secondUser.id,
-    image: secondINS.cover,
-    insChannel: true,
-  });
-  await secondChannel.create();
-  logger.log(
-    `Channel ${secondINS.id} with owner ${secondUser.id} successfully created`,
-  );
+  let secondChannel = null;
+  try {
+    logger.log('Creating second channel');
+    secondChannel = streamChat.channel('messaging', secondINS.id, {
+      name: secondINS.name,
+      members: [secondUser.id],
+      created_by_id: secondUser.id,
+      image: secondINS.cover,
+      insChannel: true,
+    });
+    await secondChannel.create();
+    logger.log(
+      `Channel ${secondINS.id} with owner ${secondUser.id} successfully created`,
+    );
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(`Error creating stream channel! + ${stringErr}`);
+  }
 
   logger.log('Adding users to first INS');
   const dataAddFirstINS = [
@@ -194,9 +227,21 @@ async function main() {
       },
     },
   });
+  const targetIDsAddFirstINSNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: firstINS.id,
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const addFirstINSSecondUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddFirstINSNotification,
+      },
       author: {
         connect: {
           id: secondUser.id,
@@ -212,6 +257,9 @@ async function main() {
   const addFirstINSThirdUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddFirstINSNotification,
+      },
       author: {
         connect: {
           id: thirdUser.id,
@@ -232,15 +280,22 @@ async function main() {
     } and ${addFirstINSThirdUserNotification.id}`,
   );
 
-  logger.log('Adding stream users to first channel');
-  await firstChannel.addMembers(
-    dataAddFirstINS.map((connection) => connection.userId),
-  );
-  logger.log(
-    `Stream users ${dataAddFirstINS.map(
-      (connection) => connection.userId,
-    )} successfully added to channel ${firstINS.id}`,
-  );
+  if (firstChannel) {
+    try {
+      logger.log('Adding stream users to first channel');
+      await firstChannel.addMembers(
+        dataAddFirstINS.map((connection) => connection.userId),
+      );
+      logger.log(
+        `Stream users ${dataAddFirstINS.map(
+          (connection) => connection.userId,
+        )} successfully added to channel ${firstINS.id}`,
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      logger.error(`Error adding members to stream channel! + ${stringErr}`);
+    }
+  }
 
   logger.log('Adding users to second INS');
   const dataAddSecondINS = [
@@ -261,9 +316,21 @@ async function main() {
       },
     },
   });
+  const targetIDsAddSecondNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: secondINS.id,
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const addSecondINSThirdUserNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.JOINED_INS,
+      targets: {
+        connect: targetIDsAddSecondNotification,
+      },
       author: {
         connect: {
           id: thirdUser.id,
@@ -284,15 +351,22 @@ async function main() {
     }`,
   );
 
-  logger.log('Adding stream users to second channel');
-  await secondChannel.addMembers(
-    dataAddSecondINS.map((connection) => connection.userId),
-  );
-  logger.log(
-    `Stream users ${dataAddSecondINS.map(
-      (connection) => connection.userId,
-    )} successfully added to channel ${secondINS.id}`,
-  );
+  if (secondChannel) {
+    try {
+      logger.log('Adding stream users to second channel');
+      await secondChannel.addMembers(
+        dataAddSecondINS.map((connection) => connection.userId),
+      );
+      logger.log(
+        `Stream users ${dataAddSecondINS.map(
+          (connection) => connection.userId,
+        )} successfully added to channel ${secondINS.id}`,
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      logger.error(`Error adding members to stream channel! + ${stringErr}`);
+    }
+  }
 
   logger.log('Creating first post');
   const firstPost = await prisma.post.create({
@@ -306,20 +380,31 @@ async function main() {
       pending: false,
       totalMediaContent: 5,
       inses: {
-        connect: [
-          {
-            id: firstINS.id,
-          },
-        ],
+        connect: { id: firstINS.id },
       },
     },
     include: {
       inses: true,
     },
   });
+  const targetIDsFirstPostNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: firstINS.id,
+        userId: {
+          not: firstUser.id,
+        },
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const firstPostNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.POST,
+      targets: {
+        connect: targetIDsFirstPostNotification,
+      },
       author: {
         connect: {
           id: firstUser.id,
@@ -340,27 +425,32 @@ async function main() {
     }`,
   );
 
-  logger.log('Sending a message in channels with first post');
-  const firstPostChannels = await streamChat.queryChannels({
-    id: { $in: [firstINS.id] },
-  });
-  await Promise.all(
-    firstPostChannels.map(async (channel) => {
-      await channel.sendMessage({
-        user_id: firstUser.id,
-        text: '',
-        data: {
-          custom_type: 'new_post',
-          post_id: firstPost.id,
-        },
-      });
-    }),
-  );
-  logger.log(
-    `Successfully sent a message in channels ${[firstINS.id]} with post ${
-      firstPost.id
-    } created by user ${firstUser.id}`,
-  );
+  try {
+    logger.log('Sending a message in channels with first post');
+    const firstPostChannels = await streamChat.queryChannels({
+      id: { $in: [firstINS.id] },
+    });
+    await Promise.all(
+      firstPostChannels.map(async (channel) => {
+        await channel.sendMessage({
+          user_id: firstUser.id,
+          text: '',
+          data: {
+            custom_type: 'new_post',
+            post_id: firstPost.id,
+          },
+        });
+      }),
+    );
+    logger.log(
+      `Successfully sent a message in channels ${[firstINS.id]} with post ${
+        firstPost.id
+      } created by user ${firstUser.id}`,
+    );
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(`Error sending message to stream channel! + ${stringErr}`);
+  }
 
   logger.log('Creating second post');
   const secondPost = await prisma.post.create({
@@ -388,9 +478,26 @@ async function main() {
       inses: true,
     },
   });
+  const targetIDsSecondPostNotification = (
+    await prisma.userInsConnection.findMany({
+      where: {
+        insId: {
+          in: [firstINS.id, secondINS.id],
+        },
+        userId: {
+          not: secondUser.id,
+        },
+      },
+    })
+  ).map((connection) => {
+    return { id: connection.userId };
+  });
   const secondPostNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.POST,
+      targets: {
+        connect: targetIDsSecondPostNotification,
+      },
       author: {
         connect: {
           id: secondUser.id,
@@ -412,27 +519,32 @@ async function main() {
     }`,
   );
 
-  logger.log('Sending a message in channels with second post');
-  const secondPostChannels = await streamChat.queryChannels({
-    id: { $in: [firstINS.id, secondINS.id] },
-  });
-  await Promise.all(
-    secondPostChannels.map(async (channel) => {
-      await channel.sendMessage({
-        user_id: secondUser.id,
-        text: '',
-        data: {
-          custom_type: 'new_post',
-          post_id: secondPost.id,
-        },
-      });
-    }),
-  );
-  logger.log(
-    `Successfully sent a message in channels ${[secondINS.id]} with post ${
-      (firstINS.id, secondPost.id)
-    } created by user ${secondUser.id}`,
-  );
+  try {
+    logger.log('Sending a message in channels with second post');
+    const secondPostChannels = await streamChat.queryChannels({
+      id: { $in: [firstINS.id, secondINS.id] },
+    });
+    await Promise.all(
+      secondPostChannels.map(async (channel) => {
+        await channel.sendMessage({
+          user_id: secondUser.id,
+          text: '',
+          data: {
+            custom_type: 'new_post',
+            post_id: secondPost.id,
+          },
+        });
+      }),
+    );
+    logger.log(
+      `Successfully sent a message in channels ${[secondINS.id]} with post ${
+        (firstINS.id, secondPost.id)
+      } created by user ${secondUser.id}`,
+    );
+  } catch (e) {
+    const stringErr: string = <string>e;
+    logger.error(`Error sending message to stream channel! + ${stringErr}`);
+  }
 
   logger.log('Creating first comment');
   const firstComment = await prisma.comment.create({
@@ -445,19 +557,19 @@ async function main() {
       },
       post: {
         connect: {
-          id: firstPost.id,
+          id: secondPost.id,
         },
       },
     },
   });
   let firstCommentNotification: Notification;
-  if (firstPost.authorId) {
+  if (secondPost.authorId) {
     firstCommentNotification = await prisma.notification.create({
       data: {
         source: NotificationSource.COMMENT,
-        target: {
+        targets: {
           connect: {
-            id: firstPost.authorId,
+            id: secondPost.authorId,
           },
         },
         author: {
@@ -472,13 +584,13 @@ async function main() {
         },
         post: {
           connect: {
-            id: firstPost.id,
+            id: secondPost.id,
           },
         },
       },
     });
     logger.log(
-      `Comment ${firstComment.id} successfully created for post ${firstPost.id} by user ${firstUser.id}. Created notification ${firstCommentNotification.id}`,
+      `Comment ${firstComment.id} successfully created for post ${secondPost.id} by user ${firstUser.id}. Created notification ${firstCommentNotification.id}`,
     );
   }
 
@@ -493,7 +605,7 @@ async function main() {
       },
       post: {
         connect: {
-          id: secondPost.id,
+          id: firstPost.id,
         },
       },
     },
@@ -506,13 +618,13 @@ async function main() {
     },
   });
   let secondCommentNotification: Notification;
-  if (secondPost.authorId) {
+  if (firstPost.authorId) {
     secondCommentNotification = await prisma.notification.create({
       data: {
         source: NotificationSource.COMMENT,
-        target: {
+        targets: {
           connect: {
-            id: secondPost.authorId,
+            id: firstPost.authorId,
           },
         },
         author: {
@@ -527,13 +639,13 @@ async function main() {
         },
         post: {
           connect: {
-            id: secondPost.id,
+            id: firstPost.id,
           },
         },
       },
     });
     logger.log(
-      `Comment ${secondComment.id} successfully created for post ${secondPost.id} by user ${secondUser.id}. Created notification ${secondCommentNotification.id}`,
+      `Comment ${secondComment.id} successfully created for post ${firstPost.id} by user ${secondUser.id}. Created notification ${secondCommentNotification.id}`,
     );
   }
 
@@ -565,7 +677,7 @@ async function main() {
     thirdCommentNotification = await prisma.notification.create({
       data: {
         source: NotificationSource.COMMENT,
-        target: {
+        targets: {
           connect: {
             id: secondPost.authorId,
           },
@@ -621,7 +733,7 @@ async function main() {
     firstLikePostNotification = await prisma.notification.create({
       data: {
         source: NotificationSource.LIKE_POST,
-        target: {
+        targets: {
           connect: {
             id: secondPost.authorId,
           },
@@ -672,7 +784,7 @@ async function main() {
     secondLikePostNotification = await prisma.notification.create({
       data: {
         source: NotificationSource.LIKE_POST,
-        target: {
+        targets: {
           connect: {
             id: firstPost.authorId,
           },
@@ -700,7 +812,7 @@ async function main() {
     data: {
       likes: {
         create: {
-          userId: firstUser.id,
+          userId: secondUser.id,
         },
       },
     },
@@ -710,7 +822,7 @@ async function main() {
       insId: {
         in: secondComment.post.inses.map((ins) => ins.id),
       },
-      userId: firstUser.id,
+      userId: secondUser.id,
     },
     data: {
       interactions: {
@@ -721,14 +833,14 @@ async function main() {
   const firstLikeCommentNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.LIKE_COMMENT,
-      target: {
+      targets: {
         connect: {
           id: secondComment.authorId,
         },
       },
       author: {
         connect: {
-          id: firstUser.id,
+          id: secondUser.id,
         },
       },
       post: {
@@ -744,7 +856,7 @@ async function main() {
     },
   });
   logger.log(
-    `User ${firstUser.id} liked comment ${secondComment.id}. Created notification ${firstLikeCommentNotification.id}`,
+    `User ${secondUser.id} liked comment ${secondComment.id}. Created notification ${firstLikeCommentNotification.id}`,
   );
 
   logger.log('Second like comment');
@@ -753,7 +865,7 @@ async function main() {
     data: {
       likes: {
         create: {
-          userId: secondUser.id,
+          userId: firstUser.id,
         },
       },
     },
@@ -763,7 +875,7 @@ async function main() {
       insId: {
         in: thirdComment.post.inses.map((ins) => ins.id),
       },
-      userId: secondUser.id,
+      userId: firstUser.id,
     },
     data: {
       interactions: {
@@ -774,14 +886,14 @@ async function main() {
   const secondLikeCommentNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.LIKE_COMMENT,
-      target: {
+      targets: {
         connect: {
           id: thirdComment.authorId,
         },
       },
       author: {
         connect: {
-          id: secondUser.id,
+          id: firstUser.id,
         },
       },
       post: {
@@ -797,7 +909,7 @@ async function main() {
     },
   });
   logger.log(
-    `User ${secondUser.id} liked comment ${thirdComment.id}. Created notification ${secondLikeCommentNotification.id}`,
+    `User ${firstUser.id} liked comment ${thirdComment.id}. Created notification ${secondLikeCommentNotification.id}`,
   );
 
   logger.log('Third like comment');
@@ -827,7 +939,7 @@ async function main() {
   const thirdLikeCommentNotification = await prisma.notification.create({
     data: {
       source: NotificationSource.LIKE_COMMENT,
-      target: {
+      targets: {
         connect: {
           id: thirdComment.authorId,
         },

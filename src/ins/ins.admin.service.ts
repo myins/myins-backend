@@ -1,5 +1,6 @@
-import { INS, Prisma, UserRole } from '.prisma/client';
+import { Prisma, UserRole } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 
@@ -26,19 +27,26 @@ export class InsAdminService {
     return this.userConnectionService.changeAdmin(insId, newAdminId);
   }
 
-  async deleteINS(where: Prisma.INSWhereUniqueInput): Promise<INS> {
+  async deleteINS(where: Prisma.INSWhereUniqueInput) {
     return this.prismaService.iNS.delete({
       where,
+      select: ShallowINSSelect,
     });
   }
 
   async isAdmin(userId: string, insId: string): Promise<boolean> {
-    const connection = await this.userConnectionService.getConnection({
-      userId_insId: {
-        userId: userId,
-        insId: insId,
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: userId,
+          insId: insId,
+        },
       },
-    });
+    );
+    if (!connection) {
+      this.logger.error("You're not a member of this ins!");
+      throw new BadRequestException("You're not a member of this ins!");
+    }
     return connection?.role === UserRole.ADMIN;
   }
 }
