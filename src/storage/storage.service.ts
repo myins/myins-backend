@@ -6,6 +6,7 @@ export enum StorageContainer {
   profilepictures = 'profilepictures',
   inscovers = 'inscovers',
   posts = 'posts',
+  stories = 'stories',
 }
 
 @Injectable()

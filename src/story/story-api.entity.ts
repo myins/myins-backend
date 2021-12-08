@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsBoolean } from 'class-validator';
+import { ArrayNotEmpty, IsBoolean, IsNumber, Max, Min } from 'class-validator';
 
 export class CreateStoryAPI {
   @ArrayNotEmpty()
@@ -6,4 +6,9 @@ export class CreateStoryAPI {
 
   @IsBoolean()
   isHighlight: boolean;
+
+  @IsNumber()
+  @Min(1)
+  @Max(20)
+  totalMediaContent: number;
 }

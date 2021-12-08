@@ -1,3 +1,4 @@
+import { Post as PostModel, Story } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -15,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { PostService } from 'src/post/post.service';
+import { StoryService } from 'src/story/story.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import { AttachMediaAPI } from './media-api.entity';
 import { MediaService } from './media.service';
@@ -26,9 +28,10 @@ export class MediaController {
   constructor(
     private readonly mediaService: MediaService,
     private readonly postService: PostService,
+    private readonly storyService: StoryService,
   ) {}
 
-  @Post(':id')
+  @Post()
   @UseGuards(JwtAuthGuard)
   @ApiTags('medias')
   @UseInterceptors(photoOrVideoInterceptor)
@@ -38,11 +41,15 @@ export class MediaController {
       file?: Express.Multer.File[];
       thumbnail?: Express.Multer.File[];
     },
-    @Param('id') postID2: string,
     @PrismaUser('id') userID: string,
     @Body() body: AttachMediaAPI,
   ) {
-    this.logger.log(`Attach media to post ${postID2} by user ${userID}`);
+    const isStoryEntity = body.isStoryEntity === 'true';
+    this.logger.log(
+      `Attach media to ${isStoryEntity ? 'story' : 'post'} ${
+        body.entityID
+      } by user ${userID}`,
+    );
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -74,7 +81,8 @@ export class MediaController {
       return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        postID2,
+        body.entityID,
+        isStoryEntity,
         userID,
         {
           width,
@@ -104,44 +112,68 @@ export class MediaController {
     const media = await this.mediaService.getMediaById({
       id: mediaID,
     });
-    if (!media?.postId) {
-      this.logger.error(`Could not find post media ${mediaID}!`);
-      throw new NotFoundException('Could not find this post media!');
+    if (!media || (!media.postId && !media.storyId)) {
+      this.logger.error(`Could not find media ${mediaID}!`);
+      throw new NotFoundException('Could not find this media!');
     }
-    const post = await this.postService.post({
-      id: media.postId,
-    });
-    if (!post) {
-      this.logger.error(`Could not find post ${media.postId}!`);
-      throw new NotFoundException('Could not find this post!');
+
+    let entityPossibleNull: PostModel | Story | null = null;
+    if (media.storyId) {
+      entityPossibleNull = await this.storyService.story({
+        id: media.storyId,
+      });
+    } else if (media.postId) {
+      entityPossibleNull = await this.postService.post({
+        id: media.postId,
+      });
     }
-    if (post.authorId !== userID) {
-      this.logger.error(`You're not allowed to delete post media ${mediaID}!`);
+    const entity = entityPossibleNull;
+    if (!entity) {
+      this.logger.error(
+        `Could not find ${media.storyId ? 'story' : 'post'} ${
+          media.storyId ?? media.postId
+        }!`,
+      );
+      throw new NotFoundException(
+        `Could not find ${media.storyId ? 'story' : 'post'}!`,
+      );
+    }
+    if (userID && entity.authorId && entity.authorId !== userID) {
+      this.logger.error(`That's not your ${media.storyId ? 'story' : 'post'}!`);
       throw new BadRequestException(
-        "You're not allowed to delete this post media!",
+        `That's not your ${media.storyId ? 'story' : 'post'}!`,
       );
     }
 
     this.logger.log(
-      `Deleting post media ${mediaID} from post ${post.id} by user ${userID}`,
+      `Deleting media ${mediaID} from ${media.storyId ? 'story' : 'post'} ${
+        entity.id
+      } by user ${userID}`,
     );
     await this.mediaService.deleteMedia({ id: mediaID });
 
     const remainingMedia = await this.mediaService.getMedias({
       where: {
-        postId: post.id,
+        postId: media.postId ? entity.id : undefined,
+        storyId: media.storyId ? entity.id : undefined,
       },
     });
     if (!remainingMedia.length) {
       this.logger.log(
-        `No media remaining for post ${post.id}. Deleting post by user ${userID}`,
+        `No media remaining for ${media.storyId ? 'story' : 'post'} ${
+          entity.id
+        }. Deleting ${media.storyId ? 'story' : 'post'} by user ${userID}`,
       );
-      await this.postService.deletePost({ id: post.id });
+      if (media.postId) {
+        await this.postService.deletePost({ id: entity.id });
+      } else {
+        await this.storyService.deleteStory({ id: entity.id });
+      }
     }
 
-    this.logger.log('Post media deleted');
+    this.logger.log('Media deleted');
     return {
-      message: 'Post media deleted!',
+      message: 'Media deleted!',
     };
   }
 }

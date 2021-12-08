@@ -80,6 +80,7 @@ export class StoryController {
         connect: mappedINSIDs,
       },
       isHighlight: storyData.isHighlight,
+      totalMediaContent: storyData.totalMediaContent,
     });
   }
 }

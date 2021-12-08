@@ -3,9 +3,7 @@ import {
   Body,
   Controller,
   Logger,
-  Param,
   Post,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,9 +13,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { AttachMediaAPI } from 'src/media/media-api.entity';
-import { MediaController } from 'src/media/media.controller';
-import { photoOrVideoInterceptor } from 'src/util/multer';
 import { CreatePostAPI } from './post-api.entity';
 import { PostService } from './post.service';
 
@@ -28,32 +23,14 @@ export class PostCreateController {
 
   constructor(
     private readonly postService: PostService,
-    private readonly mediaController: MediaController,
     private readonly insService: InsService,
   ) {}
-
-  @Post('media/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  @UseInterceptors(photoOrVideoInterceptor)
-  async attachMediaToPost(
-    @UploadedFiles()
-    files: {
-      file?: Express.Multer.File[];
-      thumbnail?: Express.Multer.File[];
-    },
-    @Param('id') postID2: string,
-    @PrismaUser('id') userID: string,
-    @Body() body: AttachMediaAPI,
-  ) {
-    return this.mediaController.attachMedia(files, postID2, userID, body);
-  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async createPost(@Body() postData: CreatePostAPI, @PrismaUser() user: User) {
-    if (postData.content === null || postData.content === undefined) {
+    if (!postData.content) {
       this.logger.error('Content must be empty, not missing!');
       throw new BadRequestException('Content must be empty, not missing!');
     }

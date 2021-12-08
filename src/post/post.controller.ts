@@ -23,7 +23,6 @@ import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { MediaController } from 'src/media/media.controller';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -34,7 +33,6 @@ export class PostController {
     private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly chatService: ChatService,
-    private readonly mediaController: MediaController,
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
@@ -162,16 +160,6 @@ export class PostController {
     return {
       message: 'Posts successfully deleted',
     };
-  }
-
-  @Delete('media/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  async deletePostMedia(
-    @Param('id') mediaID: string,
-    @PrismaUser('id') userID: string,
-  ) {
-    return this.mediaController.deleteMedia(mediaID, userID);
   }
 
   @Patch(':id/share')

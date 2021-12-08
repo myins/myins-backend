@@ -102,8 +102,9 @@ model Story {
   author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId     String
 
-  pending     Boolean @default(true)
-  isHighlight Boolean @default(false)
+  pending           Boolean @default(true)
+  isHighlight       Boolean @default(false)
+  totalMediaContent Int
 
   likes User[] @relation(name: "LikesStoryToUser")
   views User[] @relation(name: "ViewsStoryToUser")

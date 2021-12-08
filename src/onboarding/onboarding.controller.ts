@@ -121,7 +121,7 @@ export class OnboardingController {
     },
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
-    this.logger.log(`Attach media with claim token to post ${body.postID}`);
+    this.logger.log(`Attach media with claim token to post ${body.entityID}`);
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -171,7 +171,7 @@ export class OnboardingController {
             id: insID,
           },
         },
-        id: body.postID,
+        id: body.entityID,
       },
     });
 
@@ -184,7 +184,8 @@ export class OnboardingController {
       return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        body.postID,
+        body.entityID,
+        false,
         null,
         {
           width,
