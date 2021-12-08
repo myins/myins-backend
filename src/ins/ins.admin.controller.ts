@@ -32,7 +32,7 @@ export class InsAdminController {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Post('/change')
+  @Post('change')
   @ApiTags('ins-admin')
   @UseGuards(JwtAuthGuard)
   async changeINSAdmin(
@@ -79,7 +79,7 @@ export class InsAdminController {
     return changedAdmin;
   }
 
-  @Delete('/remove-member')
+  @Delete('remove-member')
   @ApiTags('ins-admin')
   @UseGuards(JwtAuthGuard)
   async removeMemberFromINS(

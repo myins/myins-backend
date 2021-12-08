@@ -21,6 +21,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ChatModule } from './chat/chat.module';
 import { MiddlewareModule } from './middleware/middleware.module';
 import { InteractionModule } from './interaction/interaction.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { InteractionModule } from './interaction/interaction.module';
     ChatModule,
     MiddlewareModule,
     InteractionModule,
+    MediaModule,
   ],
   providers: [
     {

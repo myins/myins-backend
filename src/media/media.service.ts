@@ -11,6 +11,7 @@ import * as path from 'path';
 import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { NotificationService } from 'src/notification/notification.service';
+import { PostService } from 'src/post/post.service';
 import {
   PostWithInsesAndCountMedia,
   PostWithInsesAndCountMediaInclude,
@@ -19,10 +20,11 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import * as uuid from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
-import { PostService } from './post.service';
 
 @Injectable()
-export class PostMediaService {
+export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly storageService: StorageService, // private readonly ffmpegService: FfmpegService,
@@ -35,9 +37,7 @@ export class PostMediaService {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  private readonly logger = new Logger(PostMediaService.name);
-
-  async getPostMediaById(
+  async getMediaById(
     where: Prisma.PostContentWhereUniqueInput,
   ): Promise<PostContent | null> {
     return this.prismaService.postContent.findUnique({
@@ -57,7 +57,7 @@ export class PostMediaService {
     });
   }
 
-  async attachMediaToPost(
+  async attachMedia(
     file: Express.Multer.File,
     thumbnail: Express.Multer.File | undefined,
     postID: string,
@@ -250,7 +250,7 @@ export class PostMediaService {
     return toRet;
   }
 
-  async deletePostMedia(
+  async deleteMedia(
     where: Prisma.PostContentWhereUniqueInput,
   ): Promise<PostContent> {
     return this.prismaService.postContent.delete({
@@ -258,6 +258,7 @@ export class PostMediaService {
     });
   }
 }
+
 interface PostInformation {
   width: number;
   height: number;

@@ -15,20 +15,22 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
-import { AttachMediaAPI, CreatePostAPI } from './post-api.entity';
-import { PostMediaService } from './post.media.service';
+import { AttachMediaAPI } from 'src/media/media-api.entity';
+import { MediaController } from 'src/media/media.controller';
+import { photoOrVideoInterceptor } from 'src/util/multer';
+import { CreatePostAPI } from './post-api.entity';
 import { PostService } from './post.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
 export class PostCreateController {
+  private readonly logger = new Logger(PostCreateController.name);
+
   constructor(
     private readonly postService: PostService,
-    private readonly postMediaService: PostMediaService,
+    private readonly mediaController: MediaController,
     private readonly insService: InsService,
   ) {}
-  private readonly logger = new Logger(PostCreateController.name);
 
   @Post('media/:id')
   @UseGuards(JwtAuthGuard)
@@ -44,56 +46,7 @@ export class PostCreateController {
     @PrismaUser('id') userID: string,
     @Body() body: AttachMediaAPI,
   ) {
-    this.logger.log(`Attach media to post ${postID2} by user ${userID}`);
-    const firstFiles = files.file;
-    const thumbnailFiles = files.thumbnail;
-    if (!firstFiles) {
-      this.logger.error('No file!');
-      throw new BadRequestException('No file!');
-    }
-    const file = firstFiles[0];
-    const isVideoPost = isVideo(file.originalname);
-    if (!file.buffer) {
-      this.logger.error('No buffer!');
-      throw new BadRequestException('No buffer!');
-    }
-    if (
-      isVideoPost &&
-      (!thumbnailFiles || !thumbnailFiles.length || !thumbnailFiles[0].buffer)
-    ) {
-      this.logger.error('No thumbnail!');
-      throw new BadRequestException('No thumbnail!');
-    }
-
-    const width = parseInt(body.width);
-    const height = parseInt(body.height);
-    if (!width || !height) {
-      this.logger.error('Invalid width / height!');
-      throw new BadRequestException('Invalid width / height!');
-    }
-
-    try {
-      return this.postMediaService.attachMediaToPost(
-        file,
-        thumbnailFiles ? thumbnailFiles[0] : undefined,
-        postID2,
-        userID,
-        {
-          width,
-          height,
-          isVideo: isVideoPost,
-          setCover: false,
-        },
-      );
-    } catch (err) {
-      this.logger.error('Error attaching media to post!');
-      this.logger.error(err);
-      if (err instanceof BadRequestException) {
-        throw err; // If it's a bad request, just forward it
-      } else {
-        throw new BadRequestException(`Error creating post! ${err}`);
-      }
-    }
+    return this.mediaController.attachMedia(files, postID2, userID, body);
   }
 
   @Post()

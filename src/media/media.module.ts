@@ -1,0 +1,26 @@
+import { forwardRef, Module } from '@nestjs/common';
+import { ChatModule } from 'src/chat/chat.module';
+import { InsModule } from 'src/ins/ins.module';
+import { NotificationModule } from 'src/notification/notification.module';
+import { PostModule } from 'src/post/post.module';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { StorageModule } from 'src/storage/storage.module';
+import { UserModule } from 'src/user/user.module';
+import { MediaController } from './media.controller';
+import { MediaService } from './media.service';
+
+@Module({
+  imports: [
+    PrismaModule,
+    StorageModule,
+    forwardRef(() => InsModule),
+    forwardRef(() => PostModule),
+    forwardRef(() => ChatModule),
+    NotificationModule,
+    forwardRef(() => UserModule),
+  ],
+  controllers: [MediaController],
+  providers: [MediaService, MediaController],
+  exports: [MediaService, MediaController],
+})
+export class MediaModule {}

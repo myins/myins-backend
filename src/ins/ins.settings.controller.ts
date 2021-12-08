@@ -50,7 +50,7 @@ export class InsSettingsController {
     );
   }
 
-  @Patch('/:id/mute')
+  @Patch(':id/mute')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
   async toggleMute(
@@ -98,7 +98,7 @@ export class InsSettingsController {
     };
   }
 
-  @Delete('/:id/leave')
+  @Delete(':id/leave')
   @ApiTags('ins')
   @UseGuards(JwtAuthGuard)
   async leaveINS(

@@ -16,7 +16,6 @@ import { NotificationSource, Post as PostModel } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
-import { PostMediaService } from 'src/post/post.media.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { DeletePostsAPI, SharePostAPI } from './post-api.entity';
@@ -24,6 +23,7 @@ import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { MediaController } from 'src/media/media.controller';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -34,7 +34,7 @@ export class PostController {
     private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly chatService: ChatService,
-    private readonly postMediaService: PostMediaService,
+    private readonly mediaController: MediaController,
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
@@ -164,57 +164,14 @@ export class PostController {
     };
   }
 
-  @Delete('/media/:id')
+  @Delete('media/:id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async deletePostMedia(
-    @Param('id') postMediaID: string,
+    @Param('id') mediaID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const postMedia = await this.postMediaService.getPostMediaById({
-      id: postMediaID,
-    });
-    if (!postMedia) {
-      this.logger.error(`Could not find post media ${postMediaID}!`);
-      throw new NotFoundException('Could not find this post media!');
-    }
-    const post = await this.postService.post({
-      id: postMedia.postId,
-    });
-    if (!post) {
-      this.logger.error(`Could not find post ${postMedia.postId}!`);
-      throw new NotFoundException('Could not find this post!');
-    }
-    if (post.authorId !== userID) {
-      this.logger.error(
-        `You're not allowed to delete post media ${postMediaID}!`,
-      );
-      throw new BadRequestException(
-        "You're not allowed to delete this post media!",
-      );
-    }
-
-    this.logger.log(
-      `Deleting post media ${postMediaID} from post ${post.id} by user ${userID}`,
-    );
-    await this.postMediaService.deletePostMedia({ id: postMediaID });
-
-    const remainingMedia = await this.postMediaService.getMedias({
-      where: {
-        postId: post.id,
-      },
-    });
-    if (!remainingMedia.length) {
-      this.logger.log(
-        `No media remaining for post ${post.id}. Deleting post by user ${userID}`,
-      );
-      await this.postService.deletePost({ id: post.id });
-    }
-
-    this.logger.log('Post media deleted');
-    return {
-      message: 'Post media deleted!',
-    };
+    return this.mediaController.deleteMedia(mediaID, userID);
   }
 
   @Patch(':id/share')
