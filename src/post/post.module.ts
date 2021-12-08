@@ -4,6 +4,7 @@ import { CommentModule } from 'src/comment/comment.module';
 import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
 import { InsModule } from 'src/ins/ins.module';
 import { InteractionModule } from 'src/interaction/interaction.module';
+import { MediaModule } from 'src/media/media.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
@@ -15,7 +16,6 @@ import { PostFeedController } from './post.feed.controller';
 import { PostFeedService } from './post.feed.service';
 import { PostLikeController } from './post.like.controller';
 import { PostLikeService } from './post.like.service';
-import { PostMediaService } from './post.media.service';
 import { PostService } from './post.service';
 
 @Module({
@@ -29,6 +29,7 @@ import { PostService } from './post.service';
     forwardRef(() => InsModule),
     forwardRef(() => ChatModule),
     InteractionModule,
+    MediaModule,
   ],
   controllers: [
     PostFeedController,
@@ -37,7 +38,7 @@ import { PostService } from './post.service';
     PostController,
     PostCreateController,
   ],
-  providers: [PostMediaService, PostService, PostFeedService, PostLikeService],
-  exports: [PostService, PostMediaService, PostLikeService],
+  providers: [PostService, PostFeedService, PostLikeService],
+  exports: [PostService, PostLikeService],
 })
 export class PostModule {}

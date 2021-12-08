@@ -2,7 +2,6 @@ import {
   ArrayNotEmpty,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
   Max,
   Min,
@@ -19,30 +18,6 @@ export class CreatePostAPI {
 
   @ArrayNotEmpty()
   ins: string[];
-}
-
-export class AttachMediaAPI {
-  @IsString()
-  @IsNotEmpty()
-  width: string;
-
-  @IsString()
-  @IsNotEmpty()
-  height: string;
-}
-
-export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
-  @IsString()
-  @IsNotEmpty()
-  postID: string;
-
-  @IsString()
-  @IsNotEmpty()
-  claimToken: string;
-
-  @IsString()
-  @IsOptional()
-  setCover: string;
 }
 
 export class AttachCoverAPI {

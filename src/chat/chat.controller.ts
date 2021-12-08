@@ -30,7 +30,7 @@ export class ChatController {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  @Get('/token')
+  @Get('token')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
   async getStreamChatToken(@PrismaUser('id') userID: string) {
@@ -73,7 +73,7 @@ export class ChatController {
     };
   }
 
-  @Post('/search')
+  @Post('search')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
   async searchMessages(
