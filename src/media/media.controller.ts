@@ -104,7 +104,7 @@ export class MediaController {
     const media = await this.mediaService.getMediaById({
       id: mediaID,
     });
-    if (!media) {
+    if (!media?.postId) {
       this.logger.error(`Could not find post media ${mediaID}!`);
       throw new NotFoundException('Could not find this post media!');
     }

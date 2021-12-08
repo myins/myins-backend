@@ -22,6 +22,7 @@ import { ChatModule } from './chat/chat.module';
 import { MiddlewareModule } from './middleware/middleware.module';
 import { InteractionModule } from './interaction/interaction.module';
 import { MediaModule } from './media/media.module';
+import { StoryModule } from './story/story.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { MediaModule } from './media/media.module';
     MiddlewareModule,
     InteractionModule,
     MediaModule,
+    StoryModule,
   ],
   providers: [
     {

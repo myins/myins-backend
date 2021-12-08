@@ -53,13 +53,9 @@ export class PostCreateController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async createPost(@Body() postData: CreatePostAPI, @PrismaUser() user: User) {
-    if (postData.content == null || postData.content == undefined) {
+    if (postData.content === null || postData.content === undefined) {
       this.logger.error('Content must be empty, not missing!');
       throw new BadRequestException('Content must be empty, not missing!');
-    }
-    if (postData.ins.length == 0) {
-      this.logger.error('Inses missing!');
-      throw new BadRequestException('Inses missing!');
     }
     if (!user.phoneNumberVerified) {
       this.logger.error(
