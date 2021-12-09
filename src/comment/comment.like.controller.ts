@@ -30,7 +30,7 @@ export class CommentLikeController {
     const comment = await this.commentService.comment({
       id: commentID,
     });
-    if (comment == null) {
+    if (!comment) {
       this.logger.error(`Could not find comment ${commentID}!`);
       throw new NotFoundException('Could not find this comment!');
     }
@@ -57,7 +57,7 @@ export class CommentLikeController {
     const comment = await this.commentService.comment({
       id: commentID,
     });
-    if (comment == null) {
+    if (!comment) {
       this.logger.error(`Could not find comment ${commentID}!`);
       throw new NotFoundException('Could not find this comment!');
     }
