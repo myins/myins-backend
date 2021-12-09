@@ -2,6 +2,14 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class AttachMediaAPI {
   @IsString()
+  @IsOptional()
+  entityID: string;
+
+  @IsString()
+  @IsOptional()
+  isStoryEntity: string;
+
+  @IsString()
   @IsNotEmpty()
   width: string;
 
@@ -11,10 +19,6 @@ export class AttachMediaAPI {
 }
 
 export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
-  @IsString()
-  @IsNotEmpty()
-  postID: string;
-
   @IsString()
   @IsNotEmpty()
   claimToken: string;

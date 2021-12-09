@@ -1,3 +1,4 @@
+import { User, UserRole } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -5,45 +6,40 @@ import {
   Logger,
   Post,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { User, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
-import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { CreatePostAPI } from './post-api.entity';
-import { PostService } from './post.service';
+import { CreateStoryAPI } from './story-api.entity';
+import { StoryService } from './story.service';
 
-@Controller('post')
-@UseInterceptors(NotFoundInterceptor)
-export class PostCreateController {
-  private readonly logger = new Logger(PostCreateController.name);
+@Controller('story')
+export class StoryController {
+  private readonly logger = new Logger(StoryController.name);
 
   constructor(
-    private readonly postService: PostService,
+    private readonly storyService: StoryService,
     private readonly insService: InsService,
   ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  async createPost(@Body() postData: CreatePostAPI, @PrismaUser() user: User) {
-    if (!postData.content) {
-      this.logger.error('Content must be empty, not missing!');
-      throw new BadRequestException('Content must be empty, not missing!');
-    }
+  @ApiTags('story')
+  async createPost(
+    @Body() storyData: CreateStoryAPI,
+    @PrismaUser() user: User,
+  ) {
     if (!user.phoneNumberVerified) {
       this.logger.error(
-        `Please verify phone ${user.phoneNumber} before creating posts!`,
+        `Please verify phone ${user.phoneNumber} before creating stories!`,
       );
       throw new BadRequestException(
-        'Please verify your phone before creating posts!',
+        'Please verify your phone before creating stories!',
       );
     }
 
-    const mappedINSIDs = postData.ins.map((each) => {
+    const mappedINSIDs = storyData.ins.map((each) => {
       return { id: each };
     });
 
@@ -70,22 +66,21 @@ export class PostCreateController {
     }
 
     this.logger.log(
-      `Creating post by user ${user.id} in inses ${mappedINSIDs.map(
+      `Creating story by user ${user.id} in inses ${mappedINSIDs.map(
         (ins) => ins.id,
-      )} with content: '${postData.content}'`,
+      )}'`,
     );
-    return this.postService.createPost({
-      content: postData.content,
+    return this.storyService.createPost({
       author: {
         connect: {
           id: user.id,
         },
       },
-      pending: true,
-      totalMediaContent: postData.totalMediaContent,
       inses: {
         connect: mappedINSIDs,
       },
+      isHighlight: storyData.isHighlight,
+      totalMediaContent: storyData.totalMediaContent,
     });
   }
 }

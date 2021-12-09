@@ -1,6 +1,6 @@
 import { Prisma } from '.prisma/client';
 
-const postWithInsesAndCountMediaData = {
+const postStoryWithInsesAndCountMediaData = {
   inses: {
     select: {
       id: true,
@@ -12,12 +12,15 @@ const postWithInsesAndCountMediaData = {
     },
   },
 };
-export const PostWithInsesAndCountMediaInclude: Prisma.PostInclude =
-  postWithInsesAndCountMediaData;
+export const PostStoryWithInsesAndCountMediaInclude:
+  | Prisma.PostInclude
+  | Prisma.StoryInclude = postStoryWithInsesAndCountMediaData;
 
-const postWithInsesAndCountMedia = Prisma.validator<Prisma.PostArgs>()({
-  include: postWithInsesAndCountMediaData,
+const postStoryWithInsesAndCountMedia = Prisma.validator<
+  Prisma.PostArgs | Prisma.StoryArgs
+>()({
+  include: postStoryWithInsesAndCountMediaData,
 });
-export type PostWithInsesAndCountMedia = Prisma.PostGetPayload<
-  typeof postWithInsesAndCountMedia
->;
+export type PostStoryWithInsesAndCountMedia =
+  | Prisma.PostGetPayload<typeof postStoryWithInsesAndCountMedia>
+  | Prisma.StoryGetPayload<typeof postStoryWithInsesAndCountMedia>;

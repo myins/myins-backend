@@ -5,6 +5,7 @@ import { NotificationModule } from 'src/notification/notification.module';
 import { PostModule } from 'src/post/post.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { StoryModule } from 'src/story/story.module';
 import { UserModule } from 'src/user/user.module';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
@@ -18,9 +19,10 @@ import { MediaService } from './media.service';
     forwardRef(() => ChatModule),
     NotificationModule,
     forwardRef(() => UserModule),
+    StoryModule,
   ],
   controllers: [MediaController],
-  providers: [MediaService, MediaController],
-  exports: [MediaService, MediaController],
+  providers: [MediaService],
+  exports: [MediaService],
 })
 export class MediaModule {}
