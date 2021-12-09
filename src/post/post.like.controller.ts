@@ -96,7 +96,7 @@ export class PostLikeController {
     const post = await this.postService.post({
       id: postID,
     });
-    if (post == null || !post.authorId) {
+    if (!post || !post.authorId) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }
@@ -163,7 +163,7 @@ export class PostLikeController {
     const post = await this.postService.post({
       id: postID,
     });
-    if (post == null) {
+    if (!post) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }

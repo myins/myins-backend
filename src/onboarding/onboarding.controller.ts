@@ -47,7 +47,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
@@ -154,7 +154,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
@@ -231,7 +231,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }

@@ -57,8 +57,8 @@ export class CommentService {
     take: number,
     userID: string,
   ) {
-    const x = await this.postService.post({ id: postID });
-    if (x == null) {
+    const post = await this.postService.post({ id: postID });
+    if (!post) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find post!');
     }

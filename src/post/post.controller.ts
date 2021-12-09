@@ -70,7 +70,7 @@ export class PostController {
     @PrismaUser('id') userID: string,
   ) {
     const { content } = postData;
-    if (content == null || content == undefined) {
+    if (!content) {
       this.logger.error('Content must be empty, not missing!');
       throw new BadRequestException('Content must be empty, not missing!');
     }
@@ -78,7 +78,7 @@ export class PostController {
     const post = await this.postService.post({
       id: postID,
     });
-    if (post == null) {
+    if (!post) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
     }
