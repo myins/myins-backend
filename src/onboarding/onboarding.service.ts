@@ -1,3 +1,4 @@
+import { UserRole } from '.prisma/client';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ChatService } from 'src/chat/chat.service';
@@ -66,7 +67,7 @@ export class OnboardingService {
           members: {
             create: {
               userId: userID,
-              role: 'ADMIN',
+              role: UserRole.ADMIN,
             },
           },
         },

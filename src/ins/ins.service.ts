@@ -86,7 +86,7 @@ export class InsService {
           },
           OR: [
             {
-              role: 'PENDING',
+              role: UserRole.PENDING,
             },
             {
               user: {
