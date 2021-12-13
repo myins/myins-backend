@@ -115,7 +115,7 @@ export class StoryService {
     insID: string,
   ) {
     this.logger.log(`Getting all story connections for ins ${insID}`);
-    return this.stories({
+    const viewedStories = await this.stories({
       where: {
         inses: {
           some: {
@@ -123,13 +123,29 @@ export class StoryService {
           },
         },
         pending: false,
+        mediaContent: {
+          some: {
+            views: {
+              some: {
+                id: userID,
+              },
+            },
+          },
+        },
       },
       include: {
         mediaContent: {
+          where: {
+            views: {
+              some: {
+                id: userID,
+              },
+            },
+          },
           include: {
-            _count: {
+            likes: {
               select: {
-                likes: true,
+                id: true,
               },
             },
           },
@@ -147,5 +163,81 @@ export class StoryService {
       skip,
       take,
     });
+
+    const unviewedStories = await this.stories({
+      where: {
+        inses: {
+          some: {
+            id: insID,
+          },
+        },
+        pending: false,
+        mediaContent: {
+          some: {
+            views: {
+              none: {
+                id: userID,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        mediaContent: {
+          where: {
+            views: {
+              none: {
+                id: userID,
+              },
+            },
+          },
+          include: {
+            likes: {
+              select: {
+                id: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        author: {
+          select: ShallowUserSelect,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
+    });
+
+    const allStories = [...unviewedStories, ...viewedStories];
+    allStories.map((story) => {
+      const castedStory = <
+        Story & {
+          mediaContent: {
+            likes: Array<{ id: string }>;
+            _count: {
+              likes: number;
+            };
+          }[];
+        }
+      >story;
+      castedStory.mediaContent = castedStory.mediaContent.map((media) => {
+        const countLikes = media.likes.length;
+
+        return {
+          ...omit(media, 'likes'),
+          likes: media.likes.filter((like) => like.id === userID),
+          _count: {
+            likes: countLikes,
+          },
+        };
+      });
+    });
+
+    return allStories;
   }
 }
