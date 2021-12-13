@@ -298,10 +298,17 @@ export class ChatService {
   }
 
   async sendMessageWhenPost(insIds: string[], userID: string, postID: string) {
-    return this.sendMessageToChannels(insIds, userID, '', {
-      custom_type: 'new_post',
-      post_id: postID,
-    });
+    return this.sendMessageToChannels(
+      insIds,
+      userID,
+      '',
+      {
+        custom_type: 'new_post',
+        post_id: postID,
+      },
+      true,
+      true,
+    );
   }
 
   async sendMessageToChannels(
@@ -309,6 +316,8 @@ export class ChatService {
     userID: string,
     message: string,
     data: Record<string, unknown>,
+    silent?: boolean,
+    skip_push?: boolean,
   ) {
     try {
       const channels = await this.getChannelsINS({
@@ -320,6 +329,8 @@ export class ChatService {
           await channel.sendMessage({
             user_id: user.id,
             text: message,
+            silent: silent ?? false,
+            skip_push: skip_push ?? false,
             data,
           });
         }),
