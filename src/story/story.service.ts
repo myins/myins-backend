@@ -141,105 +141,16 @@ export class StoryService {
     userID: string,
     insID: string,
   ) {
-    this.logger.log(`Getting all story connections for ins ${insID}`);
-    const viewedStories = await this.stories({
-      where: {
-        inses: {
-          some: {
-            id: insID,
-          },
-        },
-        pending: false,
-        mediaContent: {
-          some: {
-            views: {
-              some: {
-                id: userID,
-              },
-            },
-          },
-        },
-      },
-      include: {
-        mediaContent: {
-          where: {
-            views: {
-              some: {
-                id: userID,
-              },
-            },
-          },
-          include: {
-            likes: {
-              select: {
-                id: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        author: {
-          select: ShallowUserSelect,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-    });
+    this.logger.log(`Getting all viewed stories connection to ins ${insID}`);
+    const viewedStories = await this.stories(
+      this.storyQueryForGetStoriesForINS(insID, userID, skip, take, true),
+    );
+    this.logger.log(`Getting all unviewed stories connection to ins ${insID}`);
+    const unviewedStories = await this.stories(
+      this.storyQueryForGetStoriesForINS(insID, userID, skip, take, false),
+    );
 
-    const unviewedStories = await this.stories({
-      where: {
-        inses: {
-          some: {
-            id: insID,
-          },
-        },
-        pending: false,
-        mediaContent: {
-          some: {
-            views: {
-              none: {
-                id: userID,
-              },
-            },
-          },
-        },
-      },
-      include: {
-        mediaContent: {
-          where: {
-            views: {
-              none: {
-                id: userID,
-              },
-            },
-          },
-          include: {
-            likes: {
-              select: {
-                id: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        author: {
-          select: ShallowUserSelect,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-    });
-
+    this.logger.log('Counting likes for every story media');
     const allStories = [...unviewedStories, ...viewedStories];
     allStories.map((story) => {
       const castedStory = <
@@ -266,5 +177,74 @@ export class StoryService {
     });
 
     return allStories;
+  }
+
+  storyQueryForGetStoriesForINS(
+    insID: string,
+    userID: string,
+    skip: number,
+    take: number,
+    viewed: boolean,
+  ): Prisma.StoryFindManyArgs {
+    return {
+      where: {
+        inses: {
+          some: {
+            id: insID,
+          },
+        },
+        pending: false,
+        mediaContent: {
+          some: {
+            views: viewed
+              ? {
+                  some: {
+                    id: userID,
+                  },
+                }
+              : {
+                  none: {
+                    id: userID,
+                  },
+                },
+          },
+        },
+      },
+      include: {
+        mediaContent: {
+          where: {
+            views: viewed
+              ? {
+                  some: {
+                    id: userID,
+                  },
+                }
+              : {
+                  none: {
+                    id: userID,
+                  },
+                },
+          },
+          include: {
+            likes: {
+              select: {
+                id: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        author: {
+          select: ShallowUserSelect,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
+    };
   }
 }
