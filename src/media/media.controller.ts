@@ -7,6 +7,7 @@ import {
   Logger,
   NotFoundException,
   Param,
+  Patch,
   Post,
   UploadedFiles,
   UseGuards,
@@ -18,7 +19,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { PostService } from 'src/post/post.service';
 import { StoryService } from 'src/story/story.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
-import { AttachMediaAPI } from './media-api.entity';
+import { AttachMediaAPI, SetHighlightAPI } from './media-api.entity';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -45,6 +46,7 @@ export class MediaController {
     @Body() body: AttachMediaAPI,
   ) {
     const isStoryEntity = body.isStoryEntity === 'true';
+    const isHighlight = body.isHighlight === 'true';
     this.logger.log(
       `Attach media to ${isStoryEntity ? 'story' : 'post'} ${
         body.entityID
@@ -83,6 +85,7 @@ export class MediaController {
         thumbnailFiles ? thumbnailFiles[0] : undefined,
         body.entityID,
         isStoryEntity,
+        isHighlight,
         userID,
         {
           width,
@@ -100,6 +103,43 @@ export class MediaController {
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }
+  }
+
+  @Patch(':id/set-highlight')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('media')
+  async setHighlight(
+    @PrismaUser('id') userID: string,
+    @Param('id') mediaID: string,
+    @Body() data: SetHighlightAPI,
+  ) {
+    this.logger.log(
+      `Set highlight for story media ${mediaID} by user ${userID}`,
+    );
+    const media = await this.mediaService.getMediaById({
+      id: mediaID,
+    });
+    if (!media || !media.storyId) {
+      this.logger.error(`Could not find story media ${mediaID}!`);
+      throw new NotFoundException('Could not find this story media!');
+    }
+    const story = await this.storyService.story({
+      id: media.storyId,
+    });
+    if (!story?.authorId || story.authorId !== userID) {
+      this.logger.error('Not your story!');
+      throw new NotFoundException('Not your story!');
+    }
+
+    this.logger.log(
+      `Updating story media ${media.id}. Set highlight to ${data.isHighlight}`,
+    );
+    return this.mediaService.updateMedia({
+      where: { id: media.id },
+      data: {
+        isHighlight: data.isHighlight,
+      },
+    });
   }
 
   @Delete(':id')

@@ -186,6 +186,7 @@ export class OnboardingController {
         thumbnailFiles ? thumbnailFiles[0] : undefined,
         body.entityID,
         false,
+        false,
         null,
         {
           width,

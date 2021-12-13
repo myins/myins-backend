@@ -3,14 +3,18 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Logger,
+  Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { CreateStoryAPI } from './story-api.entity';
 import { StoryService } from './story.service';
 
@@ -21,12 +25,13 @@ export class StoryController {
   constructor(
     private readonly storyService: StoryService,
     private readonly insService: InsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiTags('story')
-  async createPost(
+  async createStory(
     @Body() storyData: CreateStoryAPI,
     @PrismaUser() user: User,
   ) {
@@ -58,9 +63,9 @@ export class StoryController {
 
     for (const each of mappedINSIDs) {
       if (!inses.includes(each.id)) {
-        this.logger.error("You're not allowed to post to that INS!");
+        this.logger.error("You're not allowed to create story to that INS!");
         throw new BadRequestException(
-          "You're not allowed to post to that INS!",
+          "You're not allowed to create story to that INS!",
         );
       }
     }
@@ -70,7 +75,7 @@ export class StoryController {
         (ins) => ins.id,
       )}'`,
     );
-    return this.storyService.createPost({
+    return this.storyService.createStory({
       author: {
         connect: {
           id: user.id,
@@ -79,8 +84,55 @@ export class StoryController {
       inses: {
         connect: mappedINSIDs,
       },
-      isHighlight: storyData.isHighlight,
       totalMediaContent: storyData.totalMediaContent,
     });
+  }
+
+  @Get('feed')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('story')
+  async getFeed(
+    @PrismaUser('id') userID: string,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
+  ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
+
+    this.logger.log(`Getting stories feed for user ${userID}`);
+    return this.storyService.getFeed(skip, take, userID);
+  }
+
+  @Get('feed/ins/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('story')
+  async getStoriesForINS(
+    @PrismaUser('id') userID: string,
+    @Param('id') insID: string,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
+  ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
+
+    const connection = await this.userConnectionService.getNotPendingConnection(
+      {
+        userId_insId: {
+          userId: userID,
+          insId: insID,
+        },
+      },
+    );
+    if (!connection) {
+      this.logger.error(`You're not a member of ins ${insID}!`);
+      throw new BadRequestException("You're not a member of that ins!");
+    }
+
+    this.logger.log(`Getting stories feed for ins ${insID} by user ${userID}`);
+    return this.storyService.getStoriesForINS(skip, take, userID, insID);
   }
 }
