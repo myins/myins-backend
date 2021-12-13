@@ -1,4 +1,4 @@
-import { INS, Prisma, Story, UserRole } from '.prisma/client';
+import { INS, PostContent, Prisma, Story, UserRole } from '.prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
@@ -65,7 +65,19 @@ export class StoryService {
         },
       },
       include: {
-        stories: true,
+        stories: {
+          include: {
+            mediaContent: {
+              where: {
+                views: {
+                  none: {
+                    id: userID,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       skip,
       take,
@@ -78,7 +90,9 @@ export class StoryService {
       allMyINS.map(async (ins) => {
         const castedIns = <
           INS & {
-            stories: Story[];
+            stories: (Story & {
+              mediaContent: PostContent[];
+            })[];
           }
         >ins;
         const media = await this.mediaService.firstPostContent({
@@ -92,10 +106,16 @@ export class StoryService {
           },
         });
 
+        let unviewedStories = 0;
+        castedIns.stories.forEach(
+          (story) => (unviewedStories += story.mediaContent.length),
+        );
+
         if (media) {
           return {
             ...omit(castedIns, 'stories'),
             mediaContent: media,
+            unviewedStories,
           };
         }
         return null;
@@ -103,12 +123,16 @@ export class StoryService {
     );
 
     this.logger.log('Sort inses by created date of first media content');
-    const toRet = insWithMedia.sort((ins1, ins2) => {
+    const sortedInses = insWithMedia.sort((ins1, ins2) => {
       const time1 = ins1?.mediaContent.createdAt.getTime() ?? 1;
       const time2 = ins2?.mediaContent.createdAt.getTime() ?? 1;
       return time2 - time1;
     });
-    return toRet.filter((each) => each != null);
+    const notNullInses = sortedInses.filter((each) => each != null);
+    return [
+      ...notNullInses.filter((ins) => ins?.unviewedStories !== 0),
+      ...notNullInses.filter((ins) => ins?.unviewedStories === 0),
+    ];
   }
 
   async getStoriesForINS(
