@@ -1,11 +1,7 @@
-import { Prisma, Story, UserRole } from '.prisma/client';
+import { INS, Prisma, Story, UserRole } from '.prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
-import {
-  InsWithStoriesID,
-  InsWithStoriesIDInclude,
-} from 'src/prisma-queries-helper/ins-include-stories';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { omit } from 'src/util/omit';
@@ -68,7 +64,9 @@ export class StoryService {
           },
         },
       },
-      include: InsWithStoriesIDInclude,
+      include: {
+        stories: true,
+      },
       skip,
       take,
     });
@@ -78,10 +76,15 @@ export class StoryService {
     );
     const insWithMedia = await Promise.all(
       allMyINS.map(async (ins) => {
+        const castedIns = <
+          INS & {
+            stories: Story[];
+          }
+        >ins;
         const media = await this.mediaService.firstPostContent({
           where: {
             storyId: {
-              in: (<InsWithStoriesID>ins).stories.map((story) => story.id),
+              in: castedIns.stories.map((story) => story.id),
             },
           },
           orderBy: {
@@ -91,7 +94,7 @@ export class StoryService {
 
         if (media) {
           return {
-            ...omit(<InsWithStoriesID>ins, 'stories'),
+            ...omit(castedIns, 'stories'),
             mediaContent: media,
           };
         }
