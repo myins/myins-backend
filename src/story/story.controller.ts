@@ -135,4 +135,39 @@ export class StoryController {
     this.logger.log(`Getting stories feed for ins ${insID} by user ${userID}`);
     return this.storyService.getStoriesForINS(skip, take, userID, insID);
   }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('story')
+  async getMyStories(
+    @PrismaUser('id') userID: string,
+    @Query('insID') insID: string,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
+    @Query('highlight') highlight: boolean,
+  ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
+
+    if (insID) {
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            userId: userID,
+            insId: insID,
+          },
+        });
+      if (!connection) {
+        this.logger.error(`You're not a member of ins ${insID}!`);
+        throw new BadRequestException("You're not a member of that ins!");
+      }
+    }
+
+    this.logger.log(
+      `Getting stories ${insID && 'from ins ' + insID} for user ${userID}`,
+    );
+    return this.storyService.getMyStories(skip, take, userID, insID, highlight);
+  }
 }

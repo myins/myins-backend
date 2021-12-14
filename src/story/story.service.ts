@@ -46,6 +46,56 @@ export class StoryService {
     });
   }
 
+  async getMyStories(
+    skip: number,
+    take: number,
+    userID: string,
+    insID: string,
+    highlight: boolean,
+  ) {
+    return this.stories({
+      where: {
+        authorId: userID,
+        inses: insID
+          ? {
+              some: {
+                id: insID,
+              },
+            }
+          : undefined,
+        mediaContent: {
+          some: highlight
+            ? {
+                isHighlight: highlight,
+              }
+            : undefined,
+        },
+      },
+      include: {
+        mediaContent: {
+          include: {
+            views: {
+              select: ShallowUserSelect,
+            },
+            likes: {
+              select: ShallowUserSelect,
+            },
+          },
+          where: highlight
+            ? {
+                isHighlight: highlight,
+              }
+            : undefined,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
+    });
+  }
+
   async getFeed(skip: number, take: number, userID: string) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
     const allMyINS = await this.insService.inses({
