@@ -351,6 +351,10 @@ export class MediaService {
       where,
     });
   }
+
+  async deleteMany(params: Prisma.PostContentDeleteManyArgs) {
+    return this.prismaService.postContent.deleteMany(params);
+  }
 }
 
 interface PostInformation {

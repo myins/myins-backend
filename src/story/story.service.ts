@@ -1,5 +1,5 @@
 import { INS, PostContent, Prisma, Story, UserRole } from '.prisma/client';
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
@@ -13,6 +13,7 @@ export class StoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly insService: InsService,
+    @Inject(forwardRef(() => MediaService))
     private readonly mediaService: MediaService,
   ) {}
 
@@ -44,6 +45,10 @@ export class StoryService {
     return this.prisma.story.delete({
       where,
     });
+  }
+
+  async deleteMany(params: Prisma.StoryDeleteManyArgs) {
+    return this.prisma.story.deleteMany(params);
   }
 
   async getMyStories(
@@ -200,6 +205,8 @@ export class StoryService {
       this.storyQueryForGetStoriesForINS(insID, userID, skip, take, false),
     );
 
+    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
+    // Due to the line: the _count parameter Can be used inside a top-level include or select
     this.logger.log('Counting likes for every story media');
     const allStories = [...unviewedStories, ...viewedStories];
     const storiesWithCount = await Promise.all(
