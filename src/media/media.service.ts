@@ -48,9 +48,11 @@ export class MediaService {
 
   async getMediaById(
     where: Prisma.PostContentWhereUniqueInput,
+    include?: Prisma.PostContentInclude,
   ): Promise<PostContent | null> {
     return this.prismaService.postContent.findUnique({
       where,
+      include,
     });
   }
 

@@ -152,31 +152,48 @@ export class StoryService {
 
     this.logger.log('Counting likes for every story media');
     const allStories = [...unviewedStories, ...viewedStories];
-    allStories.map((story) => {
-      const castedStory = <
-        Story & {
-          mediaContent: {
-            likes: Array<{ id: string }>;
-            _count: {
-              likes: number;
+    const storiesWithCount = await Promise.all(
+      allStories.map(async (story) => {
+        const castedStory = <
+          Story & {
+            mediaContent: {
+              id: string;
+            }[];
+          }
+        >story;
+        castedStory.mediaContent = await Promise.all(
+          castedStory.mediaContent.map(async (media) => {
+            const countLikes = await this.mediaService.getMediaById(
+              {
+                id: media.id,
+              },
+              {
+                _count: {
+                  select: {
+                    likes: true,
+                  },
+                },
+              },
+            );
+
+            return {
+              ...media,
+              _count: (<
+                PostContent & {
+                  _count: {
+                    likes: number;
+                  };
+                }
+              >countLikes)._count,
             };
-          }[];
-        }
-      >story;
-      castedStory.mediaContent = castedStory.mediaContent.map((media) => {
-        const countLikes = media.likes.length;
+          }),
+        );
 
-        return {
-          ...omit(media, 'likes'),
-          likes: media.likes.filter((like) => like.id === userID),
-          _count: {
-            likes: countLikes,
-          },
-        };
-      });
-    });
+        return castedStory;
+      }),
+    );
 
-    return allStories;
+    return storiesWithCount;
   }
 
   storyQueryForGetStoriesForINS(
@@ -227,6 +244,9 @@ export class StoryService {
           },
           include: {
             likes: {
+              where: {
+                id: userID,
+              },
               select: {
                 id: true,
               },
