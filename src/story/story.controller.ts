@@ -32,7 +32,7 @@ export class StoryController {
   ) {}
 
   @Cron('*/10 * * * *')
-  async setUnmutedIns() {
+  async removeOldStories() {
     this.logger.log('[Cron] Removing story medias older than 24 hours');
     const currDate = new Date();
     const removedMedias = await this.mediaService.deleteMany({
@@ -43,7 +43,7 @@ export class StoryController {
         },
       },
     });
-    this.logger.log('[Cron] Removing stories remains without any media');
+    this.logger.log('[Cron] Removing stories with no media');
     await this.storyService.deleteMany({
       where: {
         mediaContent: {
