@@ -7,6 +7,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { StoryModule } from 'src/story/story.module';
 import { UserModule } from 'src/user/user.module';
+import { MediaConnectionsController } from './media.connections.controller';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 
@@ -21,7 +22,7 @@ import { MediaService } from './media.service';
     forwardRef(() => UserModule),
     StoryModule,
   ],
-  controllers: [MediaController],
+  controllers: [MediaController, MediaConnectionsController],
   providers: [MediaService],
   exports: [MediaService],
 })

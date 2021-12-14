@@ -30,8 +30,8 @@ model User {
 
   likedComments UserCommentLikeConnection[]
   likedPosts    UserPostLikeConnection[]
-  likedStories  Story[]                     @relation(name: "LikesStoryToUser")
-  viewedStories Story[]                     @relation(name: "ViewsStoryToUser")
+  likedStories  PostContent[]               @relation(name: "LikesStoryMediaToUser")
+  viewedStories PostContent[]               @relation(name: "ViewsStoryMediaToUser")
 
   inses UserInsConnection[]
 
@@ -64,6 +64,10 @@ model PostContent {
 
   width  Int
   height Int
+
+  isHighlight Boolean @default(false)
+  likes       User[]  @relation(name: "LikesStoryMediaToUser")
+  views       User[]  @relation(name: "ViewsStoryMediaToUser")
 }
 
 model Post {
@@ -103,11 +107,8 @@ model Story {
   authorId     String
 
   pending           Boolean @default(true)
-  isHighlight       Boolean @default(false)
   totalMediaContent Int
 
-  likes User[] @relation(name: "LikesStoryToUser")
-  views User[] @relation(name: "ViewsStoryToUser")
   inses INS[]
 }
 

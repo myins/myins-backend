@@ -1,11 +1,8 @@
-import { ArrayNotEmpty, IsBoolean, IsNumber, Max, Min } from 'class-validator';
+import { ArrayNotEmpty, IsNumber, Max, Min } from 'class-validator';
 
 export class CreateStoryAPI {
   @ArrayNotEmpty()
   ins: string[];
-
-  @IsBoolean()
-  isHighlight: boolean;
 
   @IsNumber()
   @Min(1)

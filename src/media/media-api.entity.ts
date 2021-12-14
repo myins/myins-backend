@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class AttachMediaAPI {
   @IsString()
@@ -8,6 +8,10 @@ export class AttachMediaAPI {
   @IsString()
   @IsOptional()
   isStoryEntity: string;
+
+  @IsString()
+  @IsOptional()
+  isHighlight: string;
 
   @IsString()
   @IsNotEmpty()
@@ -26,4 +30,10 @@ export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
   @IsString()
   @IsOptional()
   setCover: string;
+}
+
+export class SetHighlightAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  isHighlight: boolean;
 }

@@ -38,6 +38,7 @@ export class MediaService {
     @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
     private readonly postService: PostService,
+    @Inject(forwardRef(() => StoryService))
     private readonly storyService: StoryService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
@@ -47,10 +48,18 @@ export class MediaService {
 
   async getMediaById(
     where: Prisma.PostContentWhereUniqueInput,
+    include?: Prisma.PostContentInclude,
   ): Promise<PostContent | null> {
     return this.prismaService.postContent.findUnique({
       where,
+      include,
     });
+  }
+
+  async firstPostContent(
+    params: Prisma.PostContentFindFirstArgs,
+  ): Promise<PostContent | null> {
+    return this.prismaService.postContent.findFirst(params);
   }
 
   async getMedias(
@@ -65,11 +74,18 @@ export class MediaService {
     });
   }
 
+  async updateMedia(
+    params: Prisma.PostContentUpdateArgs,
+  ): Promise<PostContent> {
+    return this.prismaService.postContent.update(params);
+  }
+
   async attachMedia(
     file: Express.Multer.File,
     thumbnail: Express.Multer.File | undefined,
     entityID: string,
     isStoryEntity: boolean,
+    isHighlight: boolean,
     userID: string | null,
     postInfo: PostInformation,
   ) {
@@ -176,6 +192,7 @@ export class MediaService {
       width: postInfo.width,
       height: postInfo.height,
       isVideo: postInfo.isVideo,
+      isHighlight,
     });
 
     // Time to update the post's pending state. This is a transaction in case we add async loading
