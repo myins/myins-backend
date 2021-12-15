@@ -33,7 +33,7 @@ export class StoryController {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  @Cron('*/10 * * * *')
+  @Cron('* * * * *')
   async removeOldStories() {
     this.logger.log('[Cron] Removing story medias older than 24 hours');
     const currDate = new Date();
@@ -56,6 +56,7 @@ export class StoryController {
             },
           },
         },
+        pending: false,
       },
     });
     this.logger.log('[Cron] Removing posts with no media');
