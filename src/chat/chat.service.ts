@@ -325,19 +325,19 @@ export class ChatService {
       });
       const user = await this.getStreamUser(userID);
       await Promise.all(
-        channels.map(
-          async (channel) => {
-            await channel.sendMessage({
+        channels.map(async (channel) => {
+          await channel.sendMessage(
+            {
               user_id: user.id,
               text: message,
-              silent: true,
+              silent: silent ?? false,
               data,
-            });
-          },
-          {
-            skip_push: true,
-          },
-        ),
+            },
+            {
+              skip_push: skip_push ?? false,
+            },
+          );
+        }),
       );
     } catch (e) {
       const stringErr: string = <string>e;
