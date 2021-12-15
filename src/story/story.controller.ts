@@ -10,12 +10,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-// import { Cron } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
+import { PostService } from 'src/post/post.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { CreateStoryAPI } from './story-api.entity';
 import { StoryService } from './story.service';
@@ -27,38 +28,52 @@ export class StoryController {
   constructor(
     private readonly storyService: StoryService,
     private readonly mediaService: MediaService,
+    private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  // @Cron('*/10 * * * *')
-  // async removeOldStories() {
-  //   this.logger.log('[Cron] Removing story medias older than 24 hours');
-  //   const currDate = new Date();
-  //   const removedMedias = await this.mediaService.deleteMany({
-  //     where: {
-  //       isHighlight: false,
-  //       createdAt: {
-  //         lt: new Date(currDate.setDate(currDate.getDate() - 1)),
-  //       },
-  //     },
-  //   });
-  //   this.logger.log('[Cron] Removing stories with no media');
-  //   await this.storyService.deleteMany({
-  //     where: {
-  //       mediaContent: {
-  //         none: {
-  //           storyId: {
-  //             not: '',
-  //           },
-  //         },
-  //       },
-  //     },
-  //   });
-  //   this.logger.log(
-  //     `[Cron] Successfully removing ${removedMedias.count} old stories!`,
-  //   );
-  // }
+  @Cron('*/10 * * * *')
+  async removeOldStories() {
+    this.logger.log('[Cron] Removing story medias older than 24 hours');
+    const currDate = new Date();
+    const removedMedias = await this.mediaService.deleteMany({
+      where: {
+        isHighlight: false,
+        createdAt: {
+          lt: new Date(currDate.setDate(currDate.getDate() - 1)),
+        },
+        postId: null,
+      },
+    });
+    this.logger.log('[Cron] Removing stories with no media');
+    await this.storyService.deleteMany({
+      where: {
+        mediaContent: {
+          none: {
+            storyId: {
+              not: '',
+            },
+          },
+        },
+      },
+    });
+    this.logger.log('[Cron] Removing posts with no media');
+    await this.postService.deleteManyPosts({
+      where: {
+        mediaContent: {
+          none: {
+            postId: {
+              not: '',
+            },
+          },
+        },
+      },
+    });
+    this.logger.log(
+      `[Cron] Successfully removing ${removedMedias.count} old stories!`,
+    );
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
