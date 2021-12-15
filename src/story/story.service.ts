@@ -1,5 +1,5 @@
 import { INS, PostContent, Prisma, Story, UserRole } from '.prisma/client';
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
@@ -13,6 +13,7 @@ export class StoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly insService: InsService,
+    @Inject(forwardRef(() => MediaService))
     private readonly mediaService: MediaService,
   ) {}
 
@@ -43,6 +44,60 @@ export class StoryService {
   async deleteStory(where: Prisma.StoryWhereUniqueInput): Promise<Story> {
     return this.prisma.story.delete({
       where,
+    });
+  }
+
+  async deleteMany(params: Prisma.StoryDeleteManyArgs) {
+    return this.prisma.story.deleteMany(params);
+  }
+
+  async getMyStories(
+    skip: number,
+    take: number,
+    userID: string,
+    insID: string,
+    highlight: boolean,
+  ) {
+    return this.stories({
+      where: {
+        authorId: userID,
+        inses: insID
+          ? {
+              some: {
+                id: insID,
+              },
+            }
+          : undefined,
+        mediaContent: {
+          some: highlight
+            ? {
+                isHighlight: highlight,
+              }
+            : undefined,
+        },
+      },
+      include: {
+        mediaContent: {
+          include: {
+            views: {
+              select: ShallowUserSelect,
+            },
+            likes: {
+              select: ShallowUserSelect,
+            },
+          },
+          where: highlight
+            ? {
+                isHighlight: highlight,
+              }
+            : undefined,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
     });
   }
 
@@ -150,6 +205,8 @@ export class StoryService {
       this.storyQueryForGetStoriesForINS(insID, userID, skip, take, false),
     );
 
+    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
+    // Due to the line: the _count parameter Can be used inside a top-level include or select
     this.logger.log('Counting likes for every story media');
     const allStories = [...unviewedStories, ...viewedStories];
     const storiesWithCount = await Promise.all(

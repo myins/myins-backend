@@ -10,10 +10,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
+import { MediaService } from 'src/media/media.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { CreateStoryAPI } from './story-api.entity';
 import { StoryService } from './story.service';
@@ -24,9 +26,39 @@ export class StoryController {
 
   constructor(
     private readonly storyService: StoryService,
+    private readonly mediaService: MediaService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
+
+  @Cron('*/10 * * * *')
+  async removeOldStories() {
+    this.logger.log('[Cron] Removing story medias older than 24 hours');
+    const currDate = new Date();
+    const removedMedias = await this.mediaService.deleteMany({
+      where: {
+        isHighlight: false,
+        createdAt: {
+          lt: new Date(currDate.setDate(currDate.getDate() - 1)),
+        },
+      },
+    });
+    this.logger.log('[Cron] Removing stories with no media');
+    await this.storyService.deleteMany({
+      where: {
+        mediaContent: {
+          none: {
+            storyId: {
+              not: '',
+            },
+          },
+        },
+      },
+    });
+    this.logger.log(
+      `[Cron] Successfully removing ${removedMedias.count} old stories!`,
+    );
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -134,5 +166,40 @@ export class StoryController {
 
     this.logger.log(`Getting stories feed for ins ${insID} by user ${userID}`);
     return this.storyService.getStoriesForINS(skip, take, userID, insID);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('story')
+  async getMyStories(
+    @PrismaUser('id') userID: string,
+    @Query('insID') insID: string,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
+    @Query('highlight') highlight: boolean,
+  ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
+
+    if (insID) {
+      const connection =
+        await this.userConnectionService.getNotPendingConnection({
+          userId_insId: {
+            userId: userID,
+            insId: insID,
+          },
+        });
+      if (!connection) {
+        this.logger.error(`You're not a member of ins ${insID}!`);
+        throw new BadRequestException("You're not a member of that ins!");
+      }
+    }
+
+    this.logger.log(
+      `Getting stories ${insID && 'from ins ' + insID} for user ${userID}`,
+    );
+    return this.storyService.getMyStories(skip, take, userID, insID, highlight);
   }
 }
