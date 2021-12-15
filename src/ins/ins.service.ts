@@ -140,7 +140,7 @@ export class InsService {
     return this.postService.posts({
       skip: skip,
       take: take,
-      include: this.postService.richPostInclude(userID, true),
+      include: this.postService.richPostInclude(userID),
       orderBy: {
         createdAt: 'desc',
       },
