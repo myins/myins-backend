@@ -330,12 +330,12 @@ export class ChatService {
             await channel.sendMessage({
               user_id: user.id,
               text: message,
-              silent: silent ?? false,
+              silent: true,
               data,
             });
           },
           {
-            skip_push: skip_push ?? false,
+            skip_push: true,
           },
         ),
       );
