@@ -4,6 +4,7 @@ import { Channel, ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { Cron } from '@nestjs/schedule';
+import { MediaService } from 'src/media/media.service';
 
 @Injectable()
 export class ChatService {
@@ -15,6 +16,7 @@ export class ChatService {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly insService: InsService,
+    private readonly mediaService: MediaService,
   ) {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
@@ -305,6 +307,29 @@ export class ChatService {
       {
         custom_type: 'new_post',
         post_id: postID,
+      },
+      true,
+      true,
+    );
+  }
+
+  async sendMessageFromStory(
+    userID: string,
+    receiverID: string,
+    message: string,
+    mediaID: string,
+  ) {
+    const channelID = `channel_${userID}_${receiverID}`;
+    const media = await this.mediaService.getMediaById({
+      id: mediaID,
+    });
+    return this.sendMessageToChannels(
+      [channelID],
+      userID,
+      message,
+      {
+        custom_type: 'story_message',
+        mediaContent: media,
       },
       true,
       true,
