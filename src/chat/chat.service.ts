@@ -1,10 +1,18 @@
-import { INS, User } from '.prisma/client';
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { INS, PostContent, Story, User } from '.prisma/client';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Channel, ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { Cron } from '@nestjs/schedule';
 import { MediaService } from 'src/media/media.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 
 @Injectable()
 export class ChatService {
@@ -207,6 +215,20 @@ export class ChatService {
     }
   }
 
+  async createOneToOneChannel(userID: string, receiverID: string) {
+    try {
+      const channel = this.streamChat.channel('messaging', {
+        members: [userID, receiverID],
+        created_by_id: userID,
+        insChannel: false,
+      });
+      await channel.create();
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`Error creating stream channel! + ${stringErr}`);
+    }
+  }
+
   async createChannelINSWithMembersIfNotExists(ins: INS, userID: string) {
     try {
       const channels = await this.getChannelsINS({ id: ins.id });
@@ -313,27 +335,71 @@ export class ChatService {
     );
   }
 
-  async sendMessageFromStory(
-    userID: string,
-    receiverID: string,
-    message: string,
-    mediaID: string,
-  ) {
-    const channelID = `channel_${userID}_${receiverID}`;
-    const media = await this.mediaService.getMediaById({
-      id: mediaID,
-    });
-    return this.sendMessageToChannels(
-      [channelID],
-      userID,
-      message,
+  async sendMessageFromStory(userID: string, message: string, mediaID: string) {
+    this.logger.log(`Getting media ${mediaID}`);
+    const media = await this.mediaService.getMediaById(
       {
+        id: mediaID,
+      },
+      {
+        story: {
+          include: {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        },
+      },
+    );
+    if (!media) {
+      this.logger.error('Story media not found!');
+      throw new NotFoundException('Story media not found!');
+    }
+
+    const receiver: User = (<
+      PostContent & {
+        story: Story & {
+          author: User;
+        };
+      }
+    >media).story.author;
+    this.logger.log(
+      `Getting channel 1 to 1 between user ${userID} and user ${receiver.id}`,
+    );
+    let channel;
+    const channels = await this.getChannelsINS({
+      members: {
+        $eq: [userID, receiver.id],
+      },
+      insChannel: {
+        $eq: false,
+      },
+    });
+    channel = channels[0];
+    if (!channel) {
+      this.logger.log(
+        `Channel between user ${userID} and user ${receiver.id} does not exists. Creating channel`,
+      );
+      await this.createOneToOneChannel(userID, receiver.id);
+      const channelsOneToOne = await this.getChannelsINS({
+        members: {
+          $eq: [userID, receiver.id],
+        },
+        insChannel: {
+          $eq: false,
+        },
+      });
+      channel = channelsOneToOne[0];
+    }
+    if (channel.id) {
+      await this.sendMessageToChannels([channel.id], userID, message, {
         custom_type: 'story_message',
         mediaContent: media,
-      },
-      true,
-      true,
-    );
+      });
+    } else {
+      this.logger.error('Error sending messsage from story!');
+      throw new BadRequestException('Error sending messsage from story!');
+    }
   }
 
   async sendMessageToChannels(
