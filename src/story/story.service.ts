@@ -95,7 +95,14 @@ export class StoryService {
             ? {
                 isHighlight: highlight,
               }
-            : undefined,
+            : {
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+                },
+              },
+        },
+        author: {
+          select: ShallowUserSelect,
         },
       },
       orderBy: {
@@ -136,6 +143,11 @@ export class StoryService {
                 },
               },
             },
+            _count: {
+              select: {
+                mediaContent: true,
+              },
+            },
           },
         },
       },
@@ -152,6 +164,9 @@ export class StoryService {
           INS & {
             stories: (Story & {
               mediaContent: PostContent[];
+              _count: {
+                mediaContent: number;
+              };
             })[];
           }
         >ins;
@@ -167,15 +182,18 @@ export class StoryService {
         });
 
         let unviewedStories = 0;
-        castedIns.stories.forEach(
-          (story) => (unviewedStories += story.mediaContent.length),
-        );
+        let countStory = 0;
+        castedIns.stories.forEach((story) => {
+          unviewedStories += story.mediaContent.length;
+          countStory += story._count.mediaContent;
+        });
 
         if (media) {
           return {
             ...omit(castedIns, 'stories'),
             mediaContent: media,
             unviewedStories,
+            countStory,
           };
         }
         return null;
