@@ -115,6 +115,7 @@ export class StoryService {
 
   async getFeed(skip: number, take: number, userID: string) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
+    const currDate = new Date();
     const allMyINS = await this.insService.inses({
       where: {
         members: {
@@ -128,6 +129,13 @@ export class StoryService {
         stories: {
           some: {
             pending: false,
+            mediaContent: {
+              some: {
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+                },
+              },
+            },
           },
         },
       },
@@ -140,6 +148,9 @@ export class StoryService {
                   none: {
                     id: userID,
                   },
+                },
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
                 },
               },
             },
@@ -218,14 +229,29 @@ export class StoryService {
     take: number,
     userID: string,
     insID: string,
+    highlight: boolean,
   ) {
     this.logger.log(`Getting all viewed stories connection to ins ${insID}`);
     const viewedStories = await this.stories(
-      this.storyQueryForGetStoriesForINS(insID, userID, skip, take, true),
+      this.storyQueryForGetStoriesForINS(
+        insID,
+        userID,
+        skip,
+        take,
+        highlight,
+        true,
+      ),
     );
     this.logger.log(`Getting all unviewed stories connection to ins ${insID}`);
     const unviewedStories = await this.stories(
-      this.storyQueryForGetStoriesForINS(insID, userID, skip, take, false),
+      this.storyQueryForGetStoriesForINS(
+        insID,
+        userID,
+        skip,
+        take,
+        highlight,
+        false,
+      ),
     );
 
     // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
@@ -281,8 +307,10 @@ export class StoryService {
     userID: string,
     skip: number,
     take: number,
+    highlight: boolean,
     viewed: boolean,
   ): Prisma.StoryFindManyArgs {
+    const currDate = new Date();
     return {
       where: {
         inses: {
@@ -292,36 +320,72 @@ export class StoryService {
         },
         pending: false,
         mediaContent: {
-          some: {
-            views: viewed
-              ? {
-                  some: {
-                    id: userID,
-                  },
-                }
-              : {
-                  none: {
-                    id: userID,
-                  },
+          some: highlight
+            ? {
+                isHighlight: highlight,
+                views: viewed
+                  ? {
+                      some: {
+                        id: userID,
+                      },
+                    }
+                  : {
+                      none: {
+                        id: userID,
+                      },
+                    },
+              }
+            : {
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
                 },
-          },
+                views: viewed
+                  ? {
+                      some: {
+                        id: userID,
+                      },
+                    }
+                  : {
+                      none: {
+                        id: userID,
+                      },
+                    },
+              },
         },
       },
       include: {
         mediaContent: {
-          where: {
-            views: viewed
-              ? {
-                  some: {
-                    id: userID,
-                  },
-                }
-              : {
-                  none: {
-                    id: userID,
-                  },
+          where: highlight
+            ? {
+                isHighlight: highlight,
+                views: viewed
+                  ? {
+                      some: {
+                        id: userID,
+                      },
+                    }
+                  : {
+                      none: {
+                        id: userID,
+                      },
+                    },
+              }
+            : {
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
                 },
-          },
+                views: viewed
+                  ? {
+                      some: {
+                        id: userID,
+                      },
+                    }
+                  : {
+                      none: {
+                        id: userID,
+                      },
+                    },
+              },
           include: {
             likes: {
               where: {

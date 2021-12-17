@@ -161,6 +161,7 @@ export class StoryController {
     @Param('id') insID: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
+    @Query('highlight') highlight: boolean,
   ) {
     if (Number.isNaN(take) || Number.isNaN(skip)) {
       this.logger.error('Invalid skip / take!');
@@ -181,7 +182,13 @@ export class StoryController {
     }
 
     this.logger.log(`Getting stories feed for ins ${insID} by user ${userID}`);
-    return this.storyService.getStoriesForINS(skip, take, userID, insID);
+    return this.storyService.getStoriesForINS(
+      skip,
+      take,
+      userID,
+      insID,
+      highlight,
+    );
   }
 
   @Get()
