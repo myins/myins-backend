@@ -30,10 +30,6 @@ export class PostCreateController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async createPost(@Body() postData: CreatePostAPI, @PrismaUser() user: User) {
-    if (!postData.content) {
-      this.logger.error('Content must be empty, not missing!');
-      throw new BadRequestException('Content must be empty, not missing!');
-    }
     if (!user.phoneNumberVerified) {
       this.logger.error(
         `Please verify phone ${user.phoneNumber} before creating posts!`,

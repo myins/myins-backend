@@ -74,7 +74,7 @@ model Post {
   id           String        @id @default(uuid())
   createdAt    DateTime      @default(now())
   edited       Boolean       @default(false)
-  content      String
+  content      String?
   mediaContent PostContent[] @relation(name: "post")
   author       User?         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId     String? // Optional because of guest posts, see onboarding service

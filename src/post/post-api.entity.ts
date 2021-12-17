@@ -2,6 +2,7 @@ import {
   ArrayNotEmpty,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -9,6 +10,7 @@ import {
 
 export class CreatePostAPI {
   @IsString()
+  @IsOptional()
   content: string;
 
   @IsNumber()
