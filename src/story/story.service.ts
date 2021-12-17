@@ -58,6 +58,7 @@ export class StoryService {
     insID: string,
     highlight: boolean,
   ) {
+    const currDate = new Date();
     return this.stories({
       where: {
         authorId: userID,
@@ -73,7 +74,11 @@ export class StoryService {
             ? {
                 isHighlight: highlight,
               }
-            : undefined,
+            : {
+                createdAt: {
+                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+                },
+              },
         },
       },
       include: {
