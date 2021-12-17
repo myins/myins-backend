@@ -42,6 +42,7 @@ export class MediaService {
     private readonly storyService: StoryService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
+    @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
   ) {}
