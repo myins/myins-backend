@@ -111,15 +111,25 @@ export class StoryService {
       take,
     });
 
-    const storiesWithViewsAndLikes = await Promise.all(
+    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
+    // Due to the line: the _count parameter Can be used inside a top-level include or select
+    this.logger.log('Counting views and likes for every story media');
+    const returnedMediaContent: {
+      media: PostContent & {
+        _count: { likes: number; views: number };
+      };
+      author: User;
+    }[] = [];
+    await Promise.all(
       myStories.map(async (story) => {
         const castedStory = <
           Story & {
             mediaContent: PostContent[];
+            author: User;
           }
         >story;
 
-        castedStory.mediaContent = await Promise.all(
+        await Promise.all(
           castedStory.mediaContent.map(async (media) => {
             const countLikes = await this.mediaService.getMediaById(
               {
@@ -135,31 +145,27 @@ export class StoryService {
               },
             );
 
-            const castedMedia = <
-              PostContent & {
-                likes: User[];
-                views: User[];
-              }
-            >media;
-            return {
-              ...omit(castedMedia, 'likes', 'views'),
-              _count: (<
-                PostContent & {
-                  _count: {
-                    likes: number;
-                    views: number;
-                  };
-                }
-              >countLikes)._count,
+            const mediaContent = {
+              media: {
+                ...media,
+                _count: (<
+                  PostContent & {
+                    _count: {
+                      likes: number;
+                      views: number;
+                    };
+                  }
+                >countLikes)._count,
+              },
+              author: castedStory.author,
             };
+            returnedMediaContent.push(mediaContent);
           }),
         );
-
-        return castedStory;
       }),
     );
 
-    return storiesWithViewsAndLikes;
+    return returnedMediaContent;
   }
 
   async getFeed(skip: number, take: number, userID: string) {
@@ -307,16 +313,21 @@ export class StoryService {
     // Due to the line: the _count parameter Can be used inside a top-level include or select
     this.logger.log('Counting likes for every story media');
     const allStories = [...unviewedStories, ...viewedStories];
-    const storiesWithCount = await Promise.all(
+    const returnedMediaContent: {
+      media: { _count: { likes: number }; id: string };
+      author: User;
+    }[] = [];
+    await Promise.all(
       allStories.map(async (story) => {
         const castedStory = <
           Story & {
             mediaContent: {
               id: string;
             }[];
+            author: User;
           }
         >story;
-        castedStory.mediaContent = await Promise.all(
+        await Promise.all(
           castedStory.mediaContent.map(async (media) => {
             const countLikes = await this.mediaService.getMediaById(
               {
@@ -331,24 +342,26 @@ export class StoryService {
               },
             );
 
-            return {
-              ...media,
-              _count: (<
-                PostContent & {
-                  _count: {
-                    likes: number;
-                  };
-                }
-              >countLikes)._count,
+            const mediaContent = {
+              media: {
+                ...media,
+                _count: (<
+                  PostContent & {
+                    _count: {
+                      likes: number;
+                    };
+                  }
+                >countLikes)._count,
+              },
+              author: castedStory.author,
             };
+            returnedMediaContent.push(mediaContent);
           }),
         );
-
-        return castedStory;
       }),
     );
 
-    return storiesWithCount;
+    return returnedMediaContent;
   }
 
   storyQueryForGetStoriesForINS(
