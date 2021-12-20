@@ -1,4 +1,11 @@
-import { INS, PostContent, Prisma, Story, UserRole } from '.prisma/client';
+import {
+  INS,
+  PostContent,
+  Prisma,
+  Story,
+  User,
+  UserRole,
+} from '.prisma/client';
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
@@ -59,7 +66,7 @@ export class StoryService {
     highlight: boolean,
   ) {
     const currDate = new Date();
-    return this.stories({
+    const myStories = await this.stories({
       where: {
         authorId: userID,
         inses: insID
@@ -83,14 +90,6 @@ export class StoryService {
       },
       include: {
         mediaContent: {
-          include: {
-            views: {
-              select: ShallowUserSelect,
-            },
-            likes: {
-              select: ShallowUserSelect,
-            },
-          },
           where: highlight
             ? {
                 isHighlight: highlight,
@@ -111,6 +110,56 @@ export class StoryService {
       skip,
       take,
     });
+
+    const storiesWithViewsAndLikes = await Promise.all(
+      myStories.map(async (story) => {
+        const castedStory = <
+          Story & {
+            mediaContent: PostContent[];
+          }
+        >story;
+
+        castedStory.mediaContent = await Promise.all(
+          castedStory.mediaContent.map(async (media) => {
+            const countLikes = await this.mediaService.getMediaById(
+              {
+                id: media.id,
+              },
+              {
+                _count: {
+                  select: {
+                    likes: true,
+                    views: true,
+                  },
+                },
+              },
+            );
+
+            const castedMedia = <
+              PostContent & {
+                likes: User[];
+                views: User[];
+              }
+            >media;
+            return {
+              ...omit(castedMedia, 'likes', 'views'),
+              _count: (<
+                PostContent & {
+                  _count: {
+                    likes: number;
+                    views: number;
+                  };
+                }
+              >countLikes)._count,
+            };
+          }),
+        );
+
+        return castedStory;
+      }),
+    );
+
+    return storiesWithViewsAndLikes;
   }
 
   async getFeed(skip: number, take: number, userID: string) {
