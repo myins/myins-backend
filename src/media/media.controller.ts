@@ -1,4 +1,4 @@
-import { Post as PostModel, Story } from '.prisma/client';
+import { Post as PostModel, PostContent, Story } from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -19,7 +19,11 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { PostService } from 'src/post/post.service';
 import { StoryService } from 'src/story/story.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
-import { AttachMediaAPI, SetHighlightAPI } from './media-api.entity';
+import {
+  AttachMediaAPI,
+  DeleteStoryMediasAPI,
+  SetHighlightAPI,
+} from './media-api.entity';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -214,6 +218,78 @@ export class MediaController {
     this.logger.log('Media deleted');
     return {
       message: 'Media deleted!',
+    };
+  }
+
+  @Delete()
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('media')
+  async deleteStoryMedias(
+    @PrismaUser('id') userID: string,
+    @Body() data: DeleteStoryMediasAPI,
+  ) {
+    const storyMediaIDs = data.storyIDs;
+    const medias = await this.mediaService.getMedias({
+      where: {
+        id: {
+          in: storyMediaIDs,
+        },
+      },
+      include: {
+        story: true,
+      },
+    });
+    if (!medias.length) {
+      this.logger.error(`Could not find any media!`);
+      throw new NotFoundException('Could not find any media!');
+    }
+
+    const storyIDs: string[] = [];
+    medias.forEach((media) => {
+      const story = (<
+        PostContent & {
+          story: Story;
+        }
+      >media).story;
+      if (!story) {
+        this.logger.error(`Could not find story for media ${media.id}!`);
+        throw new NotFoundException(`Could not find story!`);
+      }
+      if (userID && story.authorId && story.authorId !== userID) {
+        this.logger.error(`That's not your story!`);
+        throw new BadRequestException(`That's not your story!`);
+      }
+      storyIDs.push(story.id);
+    });
+
+    this.logger.log(`Deleting story medias ${storyMediaIDs} by user ${userID}`);
+    await this.mediaService.deleteMany({
+      where: {
+        id: {
+          in: storyMediaIDs,
+        },
+      },
+    });
+
+    await Promise.all(
+      storyIDs.map(async (storyID) => {
+        const remainingMedia = await this.mediaService.getMedias({
+          where: {
+            storyId: storyID,
+          },
+        });
+        if (!remainingMedia.length) {
+          this.logger.log(
+            `No media remaining for story ${storyID}. Deleting story`,
+          );
+          await this.storyService.deleteStory({ id: storyID });
+        }
+      }),
+    );
+
+    this.logger.log('Story medias deleted');
+    return {
+      message: 'Story medias deleted!',
     };
   }
 }

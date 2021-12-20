@@ -1,4 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class AttachMediaAPI {
   @IsString()
@@ -36,4 +42,9 @@ export class SetHighlightAPI {
   @IsBoolean()
   @IsNotEmpty()
   isHighlight: boolean;
+}
+
+export class DeleteStoryMediasAPI {
+  @ArrayNotEmpty()
+  storyIDs: string[];
 }
