@@ -66,8 +66,8 @@ export class StoryService {
     highlight: boolean,
   ) {
     const currDate = new Date();
-    const myStories = await this.stories({
-      where: {
+    const whereQuery: Prisma.PostContentWhereInput = {
+      story: {
         authorId: userID,
         inses: insID
           ? {
@@ -76,32 +76,31 @@ export class StoryService {
               },
             }
           : undefined,
-        mediaContent: {
-          some: highlight
-            ? {
-                isHighlight: highlight,
-              }
-            : {
-                createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
-                },
-              },
-        },
       },
+    };
+    if (highlight) {
+      whereQuery.isHighlight = highlight;
+    } else {
+      whereQuery.createdAt = {
+        gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+      };
+    }
+
+    const myMedias = await this.mediaService.getMedias({
+      where: whereQuery,
       include: {
-        mediaContent: {
-          where: highlight
-            ? {
-                isHighlight: highlight,
-              }
-            : {
-                createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
-                },
-              },
+        story: {
+          include: {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
         },
-        author: {
-          select: ShallowUserSelect,
+        _count: {
+          select: {
+            likes: true,
+            views: true,
+          },
         },
       },
       orderBy: {
@@ -111,59 +110,22 @@ export class StoryService {
       take,
     });
 
-    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
-    // Due to the line: the _count parameter Can be used inside a top-level include or select
-    this.logger.log('Counting views and likes for every story media');
-    const returnedMediaContent: {
-      media: PostContent & {
-        _count: { likes: number; views: number };
-      };
-      author: User;
-    }[] = [];
-    await Promise.all(
-      myStories.map(async (story) => {
-        const castedStory = <
-          Story & {
-            mediaContent: PostContent[];
+    this.logger.log('Add author for every story media');
+    const returnedMediaContent: { media: PostContent; author: User }[] = [];
+    myMedias.forEach(async (media) => {
+      const castedMedia = <
+        PostContent & {
+          story: Story & {
             author: User;
-          }
-        >story;
-
-        await Promise.all(
-          castedStory.mediaContent.map(async (media) => {
-            const countLikes = await this.mediaService.getMediaById(
-              {
-                id: media.id,
-              },
-              {
-                _count: {
-                  select: {
-                    likes: true,
-                    views: true,
-                  },
-                },
-              },
-            );
-
-            const mediaContent = {
-              media: {
-                ...media,
-                _count: (<
-                  PostContent & {
-                    _count: {
-                      likes: number;
-                      views: number;
-                    };
-                  }
-                >countLikes)._count,
-              },
-              author: castedStory.author,
-            };
-            returnedMediaContent.push(mediaContent);
-          }),
-        );
-      }),
-    );
+          };
+        }
+      >media;
+      const mediaContent = {
+        media: omit(castedMedia, 'story'),
+        author: castedMedia.story.author,
+      };
+      returnedMediaContent.push(mediaContent);
+    });
 
     return returnedMediaContent;
   }
@@ -286,184 +248,105 @@ export class StoryService {
     insID: string,
     highlight: boolean,
   ) {
-    this.logger.log(`Getting all viewed stories connection to ins ${insID}`);
-    const viewedStories = await this.stories(
-      this.storyQueryForGetStoriesForINS(
-        insID,
-        userID,
-        skip,
-        take,
-        highlight,
-        true,
-      ),
+    this.logger.log(
+      `Getting all viewed story medias connection to ins ${insID}`,
     );
-    this.logger.log(`Getting all unviewed stories connection to ins ${insID}`);
-    const unviewedStories = await this.stories(
-      this.storyQueryForGetStoriesForINS(
-        insID,
-        userID,
-        skip,
-        take,
-        highlight,
-        false,
-      ),
+    const viewedStoryMedias = await this.mediaService.getMedias(
+      this.storyMediaQuery(insID, userID, skip, take, highlight, true),
+    );
+    this.logger.log(
+      `Getting all unviewed story medias  connection to ins ${insID}`,
+    );
+    const unviewedStoryMedias = await this.mediaService.getMedias(
+      this.storyMediaQuery(insID, userID, skip, take, highlight, false),
     );
 
-    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
-    // Due to the line: the _count parameter Can be used inside a top-level include or select
-    this.logger.log('Counting likes for every story media');
-    const allStories = [...unviewedStories, ...viewedStories];
+    this.logger.log('Add author for every story media');
+    const allStoryMedias = [...viewedStoryMedias, ...unviewedStoryMedias];
     const returnedMediaContent: {
-      media: { _count: { likes: number }; id: string };
+      media: PostContent;
       author: User;
     }[] = [];
-    await Promise.all(
-      allStories.map(async (story) => {
-        const castedStory = <
-          Story & {
-            mediaContent: {
-              id: string;
-            }[];
+    allStoryMedias.map(async (media) => {
+      const castedMedia = <
+        PostContent & {
+          story: Story & {
             author: User;
-          }
-        >story;
-        await Promise.all(
-          castedStory.mediaContent.map(async (media) => {
-            const countLikes = await this.mediaService.getMediaById(
-              {
-                id: media.id,
-              },
-              {
-                _count: {
-                  select: {
-                    likes: true,
-                  },
-                },
-              },
-            );
-
-            const mediaContent = {
-              media: {
-                ...media,
-                _count: (<
-                  PostContent & {
-                    _count: {
-                      likes: number;
-                    };
-                  }
-                >countLikes)._count,
-              },
-              author: castedStory.author,
-            };
-            returnedMediaContent.push(mediaContent);
-          }),
-        );
-      }),
-    );
+          };
+        }
+      >media;
+      const mediaContent = {
+        media: omit(castedMedia, 'story'),
+        author: castedMedia.story.author,
+      };
+      returnedMediaContent.push(mediaContent);
+    });
 
     return returnedMediaContent;
   }
 
-  storyQueryForGetStoriesForINS(
+  storyMediaQuery(
     insID: string,
     userID: string,
     skip: number,
     take: number,
     highlight: boolean,
     viewed: boolean,
-  ): Prisma.StoryFindManyArgs {
+  ): Prisma.PostContentFindManyArgs {
     const currDate = new Date();
-    return {
-      where: {
+    const whereQuery: Prisma.PostContentWhereInput = {
+      story: {
         inses: {
           some: {
             id: insID,
           },
         },
         pending: false,
-        mediaContent: {
-          some: highlight
-            ? {
-                isHighlight: highlight,
-                views: viewed
-                  ? {
-                      some: {
-                        id: userID,
-                      },
-                    }
-                  : {
-                      none: {
-                        id: userID,
-                      },
-                    },
-              }
-            : {
-                createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
-                },
-                views: viewed
-                  ? {
-                      some: {
-                        id: userID,
-                      },
-                    }
-                  : {
-                      none: {
-                        id: userID,
-                      },
-                    },
-              },
-        },
       },
+    };
+    if (highlight) {
+      whereQuery.isHighlight = highlight;
+    } else {
+      whereQuery.createdAt = {
+        gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+      };
+    }
+    if (viewed) {
+      whereQuery.views = {
+        some: {
+          id: userID,
+        },
+      };
+    } else {
+      whereQuery.views = {
+        none: {
+          id: userID,
+        },
+      };
+    }
+
+    return {
+      where: whereQuery,
       include: {
-        mediaContent: {
-          where: highlight
-            ? {
-                isHighlight: highlight,
-                views: viewed
-                  ? {
-                      some: {
-                        id: userID,
-                      },
-                    }
-                  : {
-                      none: {
-                        id: userID,
-                      },
-                    },
-              }
-            : {
-                createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
-                },
-                views: viewed
-                  ? {
-                      some: {
-                        id: userID,
-                      },
-                    }
-                  : {
-                      none: {
-                        id: userID,
-                      },
-                    },
-              },
+        likes: {
+          where: {
+            id: userID,
+          },
+          select: {
+            id: true,
+          },
+        },
+        story: {
           include: {
-            likes: {
-              where: {
-                id: userID,
-              },
-              select: {
-                id: true,
-              },
+            author: {
+              select: ShallowUserSelect,
             },
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
         },
-        author: {
-          select: ShallowUserSelect,
+        _count: {
+          select: {
+            likes: true,
+          },
         },
       },
       orderBy: {

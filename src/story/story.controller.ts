@@ -221,7 +221,7 @@ export class StoryController {
     }
 
     this.logger.log(
-      `Getting stories ${insID && 'from ins ' + insID} for user ${userID}`,
+      `Getting stories ${insID ? 'from ins ' + insID : ''} for user ${userID}`,
     );
     return this.storyService.getMyStories(skip, take, userID, insID, highlight);
   }
