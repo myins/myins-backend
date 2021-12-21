@@ -158,24 +158,8 @@ export class StoryService {
       },
       include: {
         stories: {
-          include: {
-            mediaContent: {
-              where: {
-                views: {
-                  none: {
-                    id: userID,
-                  },
-                },
-                createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
-                },
-              },
-            },
-            _count: {
-              select: {
-                mediaContent: true,
-              },
-            },
+          select: {
+            id: true,
           },
         },
       },
@@ -190,18 +174,25 @@ export class StoryService {
       allMyINS.map(async (ins) => {
         const castedIns = <
           INS & {
-            stories: (Story & {
-              mediaContent: PostContent[];
-              _count: {
-                mediaContent: number;
-              };
-            })[];
+            stories: {
+              id: string;
+            }[];
           }
         >ins;
-        const media = await this.mediaService.firstPostContent({
+        const medias = await this.mediaService.getMedias({
           where: {
             storyId: {
               in: castedIns.stories.map((story) => story.id),
+            },
+            createdAt: {
+              gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+            },
+          },
+          include: {
+            views: {
+              where: {
+                id: userID,
+              },
             },
           },
           orderBy: {
@@ -209,19 +200,27 @@ export class StoryService {
           },
         });
 
-        let unviewedStories = 0;
-        let countStory = 0;
-        castedIns.stories.forEach((story) => {
-          unviewedStories += story.mediaContent.length;
-          countStory += story._count.mediaContent;
+        const castedMedias = <
+          (PostContent & {
+            views: User[];
+          })[]
+        >medias;
+        const sortedMedias = castedMedias.sort((media1, media2) => {
+          const views1 = media1?.views.length ?? 0;
+          const views2 = media2?.views.length ?? 0;
+          return views1 - views2;
         });
 
-        if (media) {
+        const unviewedStories = castedMedias.filter(
+          (media) => !media.views.length,
+        ).length;
+
+        if (medias.length) {
           return {
             ...omit(castedIns, 'stories'),
-            mediaContent: media,
+            mediaContent: omit(sortedMedias[0], 'views'),
             unviewedStories,
-            countStory,
+            countStory: medias.length,
           };
         }
         return null;

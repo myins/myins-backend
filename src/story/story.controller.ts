@@ -59,18 +59,6 @@ export class StoryController {
         pending: false,
       },
     });
-    this.logger.log('[Cron] Removing posts with no media');
-    await this.postService.deleteManyPosts({
-      where: {
-        mediaContent: {
-          none: {
-            postId: {
-              not: '',
-            },
-          },
-        },
-      },
-    });
     this.logger.log(
       `[Cron] Successfully removing ${removedMedias.count} old stories!`,
     );
