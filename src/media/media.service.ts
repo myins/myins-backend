@@ -69,6 +69,10 @@ export class MediaService {
     return this.prismaService.postContent.findMany(params);
   }
 
+  async count(where: Prisma.PostContentWhereInput): Promise<number> {
+    return this.prismaService.postContent.count({ where });
+  }
+
   async create(data: Prisma.PostContentCreateInput): Promise<PostContent> {
     return this.prismaService.postContent.create({
       data,

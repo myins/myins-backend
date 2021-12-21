@@ -130,7 +130,7 @@ export class StoryService {
     return returnedMediaContent;
   }
 
-  async getFeed(skip: number, take: number, userID: string) {
+  async getFeed(userID: string) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
     const currDate = new Date();
     const allMyINS = await this.insService.inses({
@@ -163,8 +163,6 @@ export class StoryService {
           },
         },
       },
-      skip,
-      take,
     });
 
     this.logger.log(
@@ -183,6 +181,9 @@ export class StoryService {
           where: {
             storyId: {
               in: castedIns.stories.map((story) => story.id),
+            },
+            story: {
+              pending: false,
             },
             createdAt: {
               gt: new Date(currDate.setDate(currDate.getDate() - 1)),
@@ -250,18 +251,30 @@ export class StoryService {
     this.logger.log(
       `Getting all viewed story medias connection to ins ${insID}`,
     );
-    const viewedStoryMedias = await this.mediaService.getMedias(
-      this.storyMediaQuery(insID, userID, skip, take, highlight, true),
+    const unviewedStoryMedias = await this.mediaService.getMedias(
+      this.storyMediaQuery(insID, userID, skip, take, highlight, false),
     );
     this.logger.log(
       `Getting all unviewed story medias  connection to ins ${insID}`,
     );
-    const unviewedStoryMedias = await this.mediaService.getMedias(
-      this.storyMediaQuery(insID, userID, skip, take, highlight, false),
-    );
+    let viewedStoryMedias: PostContent[] = [];
+    if (unviewedStoryMedias.length < take) {
+      const whereQuery = this.storyMediaWhereQuery(
+        insID,
+        userID,
+        highlight,
+        false,
+      );
+      const countViewed = await this.mediaService.count(whereQuery);
+      const newSkip = skip > countViewed ? skip - countViewed : 0;
+      const newTake = take - unviewedStoryMedias.length;
+      viewedStoryMedias = await this.mediaService.getMedias(
+        this.storyMediaQuery(insID, userID, newSkip, newTake, highlight, true),
+      );
+    }
 
     this.logger.log('Add author for every story media');
-    const allStoryMedias = [...viewedStoryMedias, ...unviewedStoryMedias];
+    const allStoryMedias = [...unviewedStoryMedias, ...viewedStoryMedias];
     const returnedMediaContent: {
       media: PostContent;
       author: User;
@@ -292,6 +305,58 @@ export class StoryService {
     highlight: boolean,
     viewed: boolean,
   ): Prisma.PostContentFindManyArgs {
+    const whereQuery = this.storyMediaWhereQuery(
+      insID,
+      userID,
+      highlight,
+      viewed,
+    );
+    return {
+      where: whereQuery,
+      include: {
+        views: {
+          where: {
+            id: userID,
+          },
+          select: {
+            id: true,
+          },
+        },
+        likes: {
+          where: {
+            id: userID,
+          },
+          select: {
+            id: true,
+          },
+        },
+        story: {
+          include: {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
+    };
+  }
+
+  storyMediaWhereQuery(
+    insID: string,
+    userID: string,
+    highlight: boolean,
+    viewed: boolean,
+  ): Prisma.PostContentWhereInput {
     const currDate = new Date();
     const whereQuery: Prisma.PostContentWhereInput = {
       story: {
@@ -324,35 +389,6 @@ export class StoryService {
       };
     }
 
-    return {
-      where: whereQuery,
-      include: {
-        likes: {
-          where: {
-            id: userID,
-          },
-          select: {
-            id: true,
-          },
-        },
-        story: {
-          include: {
-            author: {
-              select: ShallowUserSelect,
-            },
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-    };
+    return whereQuery;
   }
 }

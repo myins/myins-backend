@@ -84,7 +84,7 @@ export class ChatService {
       const allChannels: Channel[] = [];
       do {
         channels = await this.streamChat.queryChannels(
-          {},
+          { insChannel: true },
           { created_at: 1 },
           { limit, offset },
         );
