@@ -968,7 +968,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error(`Error processing seed ${e}`);
     process.exit(1);
   })
   .finally(async () => {

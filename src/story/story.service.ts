@@ -170,7 +170,6 @@ export class StoryService {
     this.logger.log(
       `Getting first media content for every ins from ins connections for user ${userID}`,
     );
-    console.log('date', date);
     const insWithMedia = await Promise.all(
       allMyINS.map(async (ins) => {
         const castedIns = <

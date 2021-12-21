@@ -89,13 +89,10 @@ export class InsAdminController {
     this.logger.log(`Removing member for ins ${data.insID} by user ${userID}`);
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
-      console.log(
-        `Allowing random user to remove member cuz he's such a nice guy! But also for testing.`,
+      this.logger.error("You're not allowed to remove members from INS!");
+      throw new BadRequestException(
+        "You're not allowed to remove members from INS!",
       );
-      // this.logger.error("You're not allowed to remove members from INS!");
-      // throw new BadRequestException(
-      //   "You're not allowed to remove members from INS!",
-      // );
     }
 
     this.logger.log(`Removing member ${data.memberID} from ins ${data.insID}`);
