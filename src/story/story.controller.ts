@@ -37,11 +37,12 @@ export class StoryController {
   async removeOldStories() {
     this.logger.log('[Cron] Removing story medias older than 24 hours');
     const currDate = new Date();
+    const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
     const removedMedias = await this.mediaService.deleteMany({
       where: {
         isHighlight: false,
         createdAt: {
-          lt: new Date(currDate.setDate(currDate.getDate() - 1)),
+          lt: date,
         },
         postId: null,
       },

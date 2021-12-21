@@ -66,6 +66,7 @@ export class StoryService {
     highlight: boolean,
   ) {
     const currDate = new Date();
+    const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
     const whereQuery: Prisma.PostContentWhereInput = {
       story: {
         authorId: userID,
@@ -82,7 +83,7 @@ export class StoryService {
       whereQuery.isHighlight = highlight;
     } else {
       whereQuery.createdAt = {
-        gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+        gt: date,
       };
     }
 
@@ -133,6 +134,7 @@ export class StoryService {
   async getFeed(userID: string) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
     const currDate = new Date();
+    const date = new Date(currDate.setDate(currDate.getDate() - 1));
     const allMyINS = await this.insService.inses({
       where: {
         members: {
@@ -149,7 +151,7 @@ export class StoryService {
             mediaContent: {
               some: {
                 createdAt: {
-                  gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+                  gt: date,
                 },
               },
             },
@@ -168,6 +170,7 @@ export class StoryService {
     this.logger.log(
       `Getting first media content for every ins from ins connections for user ${userID}`,
     );
+    console.log('date', date);
     const insWithMedia = await Promise.all(
       allMyINS.map(async (ins) => {
         const castedIns = <
@@ -186,7 +189,7 @@ export class StoryService {
               pending: false,
             },
             createdAt: {
-              gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+              gt: date,
             },
           },
           include: {
@@ -358,6 +361,7 @@ export class StoryService {
     viewed: boolean,
   ): Prisma.PostContentWhereInput {
     const currDate = new Date();
+    const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
     const whereQuery: Prisma.PostContentWhereInput = {
       story: {
         inses: {
@@ -372,7 +376,7 @@ export class StoryService {
       whereQuery.isHighlight = highlight;
     } else {
       whereQuery.createdAt = {
-        gt: new Date(currDate.setDate(currDate.getDate() - 1)),
+        gt: date,
       };
     }
     if (viewed) {
