@@ -38,6 +38,10 @@ export class StoryService {
     return this.prisma.story.findMany(params);
   }
 
+  async count(where: Prisma.StoryWhereInput): Promise<number> {
+    return this.prisma.story.count({ where });
+  }
+
   async createStory(data: Prisma.StoryCreateInput): Promise<Story> {
     return this.prisma.story.create({
       data,
@@ -67,41 +71,51 @@ export class StoryService {
   ) {
     const currDate = new Date();
     const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
-    const whereQuery: Prisma.PostContentWhereInput = {
-      story: {
-        authorId: userID,
-        inses: insID
-          ? {
-              some: {
-                id: insID,
-              },
-            }
-          : undefined,
-      },
+    const whereQuery: Prisma.StoryWhereInput = {
+      authorId: userID,
+      inses: insID
+        ? {
+            some: {
+              id: insID,
+            },
+          }
+        : undefined,
     };
     if (highlight) {
-      whereQuery.isHighlight = highlight;
+      whereQuery.mediaContent = {
+        some: {
+          isHighlight: highlight,
+        },
+      };
     } else {
-      whereQuery.createdAt = {
-        gt: date,
+      whereQuery.mediaContent = {
+        some: {
+          createdAt: {
+            gt: date,
+          },
+        },
       };
     }
 
-    const myMedias = await this.mediaService.getMedias({
+    const myStories = await this.stories({
       where: whereQuery,
       include: {
-        story: {
-          include: {
-            author: {
-              select: ShallowUserSelect,
-            },
+        mediaContent: {
+          where: highlight
+            ? {
+                isHighlight: highlight,
+              }
+            : {
+                createdAt: {
+                  gt: date,
+                },
+              },
+          orderBy: {
+            createdAt: 'asc',
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            views: true,
-          },
+        author: {
+          select: ShallowUserSelect,
         },
       },
       orderBy: {
@@ -111,22 +125,51 @@ export class StoryService {
       take,
     });
 
-    this.logger.log('Add author for every story media');
+    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
+    // Due to the line: the _count parameter Can be used inside a top-level include or select
+    this.logger.log('Counting views and likes for every story media');
     const returnedMediaContent: { media: PostContent; author: User }[] = [];
-    myMedias.forEach(async (media) => {
-      const castedMedia = <
-        PostContent & {
-          story: Story & {
+    await Promise.all(
+      myStories.map(async (story) => {
+        const castedStory = <
+          Story & {
+            mediaContent: PostContent[];
             author: User;
-          };
-        }
-      >media;
-      const mediaContent = {
-        media: omit(castedMedia, 'story'),
-        author: castedMedia.story.author,
-      };
-      returnedMediaContent.push(mediaContent);
-    });
+          }
+        >story;
+        await Promise.all(
+          castedStory.mediaContent.map(async (media) => {
+            const count = await this.mediaService.getMediaById(
+              {
+                id: media.id,
+              },
+              {
+                _count: {
+                  select: {
+                    likes: true,
+                    views: true,
+                  },
+                },
+              },
+            );
+            const mediaContent = {
+              media: {
+                ...media,
+                _count: (<
+                  PostContent & {
+                    _count: {
+                      likes: number;
+                    };
+                  }
+                >count)._count,
+              },
+              author: castedStory.author,
+            };
+            returnedMediaContent.push(mediaContent);
+          }),
+        );
+      }),
+    );
 
     return returnedMediaContent;
   }
@@ -209,10 +252,26 @@ export class StoryService {
           })[]
         >medias;
         const sortedMedias = castedMedias.sort((media1, media2) => {
-          const views1 = media1?.views.length ?? 0;
-          const views2 = media2?.views.length ?? 0;
+          const views1 = media1.views.length;
+          const views2 = media2.views.length;
           return views1 - views2;
         });
+
+        let mediaContent = sortedMedias[0];
+        const allMediasFromStory = sortedMedias.filter(
+          (media) =>
+            media.storyId === mediaContent.storyId && !media.views.length,
+        );
+        if (allMediasFromStory.length > 1) {
+          const sorteAllMediasFromStory = allMediasFromStory.sort(
+            (media1, media2) => {
+              const createdAt1 = media1.createdAt.getTime();
+              const createdAt2 = media2.createdAt.getTime();
+              return createdAt1 - createdAt2;
+            },
+          );
+          mediaContent = sorteAllMediasFromStory[0];
+        }
 
         const unviewedStories = castedMedias.filter(
           (media) => !media.views.length,
@@ -221,7 +280,7 @@ export class StoryService {
         if (medias.length) {
           return {
             ...omit(castedIns, 'stories'),
-            mediaContent: omit(sortedMedias[0], 'views'),
+            mediaContent: omit(mediaContent, 'views'),
             unviewedStories,
             countStory: medias.length,
           };
@@ -250,99 +309,113 @@ export class StoryService {
     insID: string,
     highlight: boolean,
   ) {
-    this.logger.log(
-      `Getting all viewed story medias connection to ins ${insID}`,
+    this.logger.log(`Getting all viewed story connection to ins ${insID}`);
+    const unviewedStory = await this.stories(
+      this.storyQuery(insID, userID, skip, take, highlight, false),
     );
-    const unviewedStoryMedias = await this.mediaService.getMedias(
-      this.storyMediaQuery(insID, userID, skip, take, highlight, false),
-    );
-    this.logger.log(
-      `Getting all unviewed story medias  connection to ins ${insID}`,
-    );
-    let viewedStoryMedias: PostContent[] = [];
-    if (unviewedStoryMedias.length < take) {
-      const whereQuery = this.storyMediaWhereQuery(
-        insID,
-        userID,
-        highlight,
-        false,
-      );
-      const countViewed = await this.mediaService.count(whereQuery);
+    this.logger.log(`Getting all unviewed story connection to ins ${insID}`);
+    let viewedStory: Story[] = [];
+    if (unviewedStory.length < take) {
+      const whereQuery = this.storyWhereQuery(insID, userID, highlight, false);
+      const countViewed = await this.count(whereQuery);
       const newSkip = skip > countViewed ? skip - countViewed : 0;
-      const newTake = take - unviewedStoryMedias.length;
-      viewedStoryMedias = await this.mediaService.getMedias(
-        this.storyMediaQuery(insID, userID, newSkip, newTake, highlight, true),
+      const newTake = take - unviewedStory.length;
+      viewedStory = await this.stories(
+        this.storyQuery(insID, userID, newSkip, newTake, highlight, true),
       );
     }
 
-    this.logger.log('Add author for every story media');
-    const allStoryMedias = [...unviewedStoryMedias, ...viewedStoryMedias];
+    // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
+    // Due to the line: the _count parameter Can be used inside a top-level include or select
+    this.logger.log('Counting likes for every story media');
+    const allStory = [...unviewedStory, ...viewedStory];
     const returnedMediaContent: {
       media: PostContent;
       author: User;
     }[] = [];
-    allStoryMedias.map(async (media) => {
-      const castedMedia = <
-        PostContent & {
-          story: Story & {
+    await Promise.all(
+      allStory.map(async (story) => {
+        const castedStory = <
+          Story & {
+            mediaContent: PostContent[];
             author: User;
-          };
-        }
-      >media;
-      const mediaContent = {
-        media: omit(castedMedia, 'story'),
-        author: castedMedia.story.author,
-      };
-      returnedMediaContent.push(mediaContent);
-    });
+          }
+        >story;
+        await Promise.all(
+          castedStory.mediaContent.map(async (media) => {
+            const countLikes = await this.mediaService.getMediaById(
+              {
+                id: media.id,
+              },
+              {
+                _count: {
+                  select: {
+                    likes: true,
+                  },
+                },
+              },
+            );
+            const mediaContent = {
+              media: {
+                ...media,
+                _count: (<
+                  PostContent & {
+                    _count: {
+                      likes: number;
+                    };
+                  }
+                >countLikes)._count,
+              },
+              author: castedStory.author,
+            };
+            returnedMediaContent.push(mediaContent);
+          }),
+        );
+      }),
+    );
 
     return returnedMediaContent;
   }
 
-  storyMediaQuery(
+  storyQuery(
     insID: string,
     userID: string,
     skip: number,
     take: number,
     highlight: boolean,
     viewed: boolean,
-  ): Prisma.PostContentFindManyArgs {
-    const whereQuery = this.storyMediaWhereQuery(
-      insID,
-      userID,
-      highlight,
-      viewed,
-    );
+  ): Prisma.StoryFindManyArgs {
+    const whereQuery = this.storyWhereQuery(insID, userID, highlight, viewed);
+
     return {
       where: whereQuery,
       include: {
-        views: {
-          where: {
-            id: userID,
-          },
-          select: {
-            id: true,
-          },
-        },
-        likes: {
-          where: {
-            id: userID,
-          },
-          select: {
-            id: true,
-          },
-        },
-        story: {
+        mediaContent: {
+          where: this.storyMediaWhereQuery(insID, userID, highlight, viewed),
           include: {
-            author: {
-              select: ShallowUserSelect,
+            views: {
+              where: {
+                id: userID,
+              },
+              select: {
+                id: true,
+              },
+            },
+            likes: {
+              where: {
+                id: userID,
+              },
+              select: {
+                id: true,
+              },
             },
           },
-        },
-        _count: {
-          select: {
-            likes: true,
+          orderBy: {
+            createdAt: 'asc',
           },
+        },
+        author: {
+          select: ShallowUserSelect,
         },
       },
       orderBy: {
@@ -351,6 +424,59 @@ export class StoryService {
       skip,
       take,
     };
+  }
+
+  storyWhereQuery(
+    insID: string,
+    userID: string,
+    highlight: boolean,
+    viewed: boolean,
+  ): Prisma.StoryWhereInput {
+    const currDate = new Date();
+    const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
+    const whereQuery: Prisma.StoryWhereInput = {
+      inses: {
+        some: {
+          id: insID,
+        },
+      },
+      pending: false,
+    };
+
+    if (highlight) {
+      whereQuery.mediaContent = {
+        some: {
+          isHighlight: highlight,
+        },
+      };
+    } else {
+      whereQuery.mediaContent = {
+        some: {
+          createdAt: {
+            gt: date,
+          },
+        },
+      };
+    }
+
+    whereQuery.mediaContent = {
+      ...whereQuery.mediaContent,
+      some: {
+        views: viewed
+          ? {
+              some: {
+                id: userID,
+              },
+            }
+          : {
+              none: {
+                id: userID,
+              },
+            },
+      },
+    };
+
+    return whereQuery;
   }
 
   storyMediaWhereQuery(
