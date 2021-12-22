@@ -257,11 +257,20 @@ export class StoryService {
           return views1 - views2;
         });
 
+        let allMediasFromStory: (PostContent & {
+          views: User[];
+        })[] = [];
         let mediaContent = sortedMedias[0];
-        const allMediasFromStory = sortedMedias.filter(
-          (media) =>
-            media.storyId === mediaContent.storyId && !media.views.length,
-        );
+        if (!mediaContent.views.length) {
+          allMediasFromStory = sortedMedias.filter(
+            (media) =>
+              media.storyId === mediaContent.storyId && !media.views.length,
+          );
+        } else {
+          allMediasFromStory = sortedMedias.filter(
+            (media) => media.storyId === mediaContent.storyId,
+          );
+        }
         if (allMediasFromStory.length > 1) {
           const sorteAllMediasFromStory = allMediasFromStory.sort(
             (media1, media2) => {
