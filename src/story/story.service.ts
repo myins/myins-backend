@@ -9,6 +9,7 @@ import {
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { omit } from 'src/util/omit';
@@ -69,6 +70,12 @@ export class StoryService {
     insID: string,
     highlight: boolean,
   ) {
+    let ins: INS | null;
+    if (insID) {
+      ins = await this.insService.ins({
+        id: insID,
+      });
+    }
     const currDate = new Date();
     const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
     const whereQuery: Prisma.StoryWhereInput = {
@@ -117,6 +124,22 @@ export class StoryService {
         author: {
           select: ShallowUserSelect,
         },
+        inses: !insID
+          ? {
+              where: {
+                members: {
+                  some: {
+                    userId: userID,
+                  },
+                },
+              },
+              select: ShallowINSSelect,
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 1,
+            }
+          : undefined,
       },
       orderBy: {
         createdAt: 'desc',
@@ -128,15 +151,25 @@ export class StoryService {
     // https://www.prisma.io/docs/concepts/components/prisma-client/aggregation-grouping-summarizing#count-relations
     // Due to the line: the _count parameter Can be used inside a top-level include or select
     this.logger.log('Counting views and likes for every story media');
-    const returnedMediaContent: { media: PostContent; author: User }[] = [];
+    const returnedMediaContent: {
+      media: PostContent & {
+        _count: { likes: number };
+      };
+      author: User;
+      ins: INS | null;
+    }[] = [];
+
     await Promise.all(
       myStories.map(async (story) => {
         const castedStory = <
           Story & {
             mediaContent: PostContent[];
             author: User;
+            inses: INS[];
           }
         >story;
+
+        const myIns = ins ?? castedStory.inses[0];
         await Promise.all(
           castedStory.mediaContent.map(async (media) => {
             const count = await this.mediaService.getMediaById(
@@ -164,6 +197,7 @@ export class StoryService {
                 >count)._count,
               },
               author: castedStory.author,
+              ins: myIns,
             };
             returnedMediaContent.push(mediaContent);
           }),
@@ -318,6 +352,10 @@ export class StoryService {
     insID: string,
     highlight: boolean,
   ) {
+    const ins = await this.insService.ins({
+      id: insID,
+    });
+
     this.logger.log(`Getting all viewed story connection to ins ${insID}`);
     const unviewedStory = await this.stories(
       this.storyQuery(insID, userID, skip, take, highlight, false),
@@ -376,6 +414,7 @@ export class StoryService {
                 >countLikes)._count,
               },
               author: castedStory.author,
+              ins,
             };
             returnedMediaContent.push(mediaContent);
           }),
