@@ -76,8 +76,8 @@ export class StoryService {
         id: insID,
       });
     }
-    const currDate = new Date();
-    const date = new Date(currDate.setDate(currDate.getDate() - 1));
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const whereQuery: Prisma.StoryWhereInput = {
       authorId: userID,
       inses: insID
@@ -103,8 +103,6 @@ export class StoryService {
         },
       };
     }
-
-    console.log('whereQuery', whereQuery.mediaContent.some?.createdAt);
 
     const myStories = await this.stories({
       where: whereQuery,
@@ -212,8 +210,8 @@ export class StoryService {
 
   async getFeed(userID: string) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
-    const currDate = new Date();
-    const date = new Date(currDate.setDate(currDate.getDate() - 1));
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const allMyINS = await this.insService.inses({
       where: {
         members: {
@@ -482,8 +480,8 @@ export class StoryService {
     highlight: boolean,
     viewed: boolean,
   ): Prisma.StoryWhereInput {
-    const currDate = new Date();
-    const date = new Date(currDate.setDate(currDate.getDate() - 1));
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const whereQuery: Prisma.StoryWhereInput = {
       inses: {
         some: {
@@ -535,8 +533,8 @@ export class StoryService {
     highlight: boolean,
     viewed: boolean,
   ): Prisma.PostContentWhereInput {
-    const currDate = new Date();
-    const date = new Date(currDate.setDate(currDate.getDate() - 1));
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const whereQuery: Prisma.PostContentWhereInput = {
       story: {
         inses: {

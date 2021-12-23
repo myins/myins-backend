@@ -22,8 +22,8 @@ export class NotificationController {
   @Cron('0 1 * * *')
   async removeOldINS() {
     this.logger.log('[Cron] Removing all notifications older than a month');
-    const currDate = new Date();
-    const date = new Date(currDate.setMonth(currDate.getMonth() - 1));
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
     const res = await this.notificationService.deleteNotifications({
       createdAt: {
         lt: date,
