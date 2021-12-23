@@ -398,6 +398,7 @@ export class StoryService {
                 _count: {
                   select: {
                     likes: true,
+                    views: true,
                   },
                 },
               },
@@ -409,6 +410,7 @@ export class StoryService {
                   PostContent & {
                     _count: {
                       likes: number;
+                      views: number;
                     };
                   }
                 >countLikes)._count,
