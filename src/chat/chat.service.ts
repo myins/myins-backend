@@ -392,9 +392,19 @@ export class ChatService {
       channel = channelsOneToOne[0];
     }
     if (channel.id) {
+      const createdAt = new Date(media.createdAt);
+      const expiryDate = new Date(createdAt.setDate(createdAt.getDate() + 1));
+      expiryDate.setMinutes(
+        expiryDate.getMinutes() + 10 - (expiryDate.getMinutes() % 10),
+      );
+      expiryDate.setSeconds(0);
+      expiryDate.setMilliseconds(0);
       await this.sendMessageToChannels([channel.id], userID, message, {
         custom_type: 'story_message',
-        mediaContent: media,
+        mediaContent: {
+          ...media,
+          expiryDate,
+        },
       });
     } else {
       this.logger.error('Error sending messsage from story!');
