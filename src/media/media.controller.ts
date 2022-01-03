@@ -1,4 +1,10 @@
-import { Post as PostModel, PostContent, Story, User } from '.prisma/client';
+import {
+  INS,
+  Post as PostModel,
+  PostContent,
+  Story,
+  User,
+} from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -18,10 +24,13 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { InsService } from 'src/ins/ins.service';
 import { PostService } from 'src/post/post.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { StoryService } from 'src/story/story.service';
 import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
+import { omit } from 'src/util/omit';
 import {
   AttachMediaAPI,
   DeleteStoryMediasAPI,
@@ -37,7 +46,94 @@ export class MediaController {
     private readonly mediaService: MediaService,
     private readonly postService: PostService,
     private readonly storyService: StoryService,
+    private readonly insService: InsService,
   ) {}
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('media')
+  async getMediaContent(
+    @PrismaUser('id') userID: string,
+    @Param('id') mediaID: string,
+    @Query('insID') insID: string,
+  ) {
+    if (!insID) {
+      this.logger.error('Invalid insID!');
+      throw new BadRequestException('Invalid insID!');
+    }
+
+    this.logger.log(`Getting details for media ${mediaID} by user ${userID}`);
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        views: {
+          where: {
+            id: userID,
+          },
+          select: {
+            id: true,
+          },
+        },
+        likes: {
+          where: {
+            id: userID,
+          },
+          select: {
+            id: true,
+          },
+        },
+        story: {
+          include: {
+            author: {
+              select: ShallowUserSelect,
+            },
+            inses: {
+              where: {
+                id: insID,
+              },
+              select: ShallowINSSelect,
+            },
+          },
+        },
+        _count: {
+          select: {
+            views: true,
+            likes: true,
+          },
+        },
+      },
+    );
+    if (!media || !media.storyId) {
+      this.logger.error(`Could not find story media ${mediaID}!`);
+      throw new NotFoundException('Could not find this story media!');
+    }
+
+    const castedMedia = <
+      PostContent & {
+        story: Story & {
+          author: User;
+          inses: INS[];
+        };
+      }
+    >media;
+    if (
+      !castedMedia.story?.authorId ||
+      castedMedia.story.authorId !== userID ||
+      !castedMedia.story.inses.length
+    ) {
+      this.logger.error('Not your story!');
+      throw new NotFoundException('Not your story!');
+    }
+
+    const mediaContent = {
+      media: omit(castedMedia, 'story'),
+      author: castedMedia.story.author,
+      ins: castedMedia.story.inses[0],
+    };
+    return mediaContent;
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -110,109 +206,6 @@ export class MediaController {
         throw new BadRequestException(`Error creating post! ${err}`);
       }
     }
-  }
-
-  @Get(':id/views')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('media')
-  async getViews(
-    @PrismaUser('id') userID: string,
-    @Param('id') mediaID: string,
-    @Query('take') take: number,
-    @Query('skip') skip: number,
-  ) {
-    this.logger.log(
-      `Getting views for story media ${mediaID} by user ${userID}`,
-    );
-    const media = await this.mediaService.getMediaById(
-      {
-        id: mediaID,
-      },
-      {
-        views: {
-          select: ShallowUserSelect,
-          skip,
-          take,
-        },
-        story: {
-          select: {
-            id: true,
-            authorId: true,
-          },
-        },
-      },
-    );
-    if (!media || !media.storyId) {
-      this.logger.error(`Could not find story media ${mediaID}!`);
-      throw new NotFoundException('Could not find this story media!');
-    }
-
-    const castedMedia = <
-      PostContent & {
-        story: Story;
-        views: User[];
-      }
-    >media;
-    if (!castedMedia.story?.authorId || castedMedia.story.authorId !== userID) {
-      this.logger.error('Not your story!');
-      throw new NotFoundException('Not your story!');
-    }
-
-    return castedMedia.views;
-  }
-
-  @Get(':id/likes')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('media')
-  async getLikes(
-    @PrismaUser('id') userID: string,
-    @Param('id') mediaID: string,
-    @Query('take') take: number,
-    @Query('skip') skip: number,
-  ) {
-    if (Number.isNaN(take) || Number.isNaN(skip)) {
-      this.logger.error('Invalid skip / take!');
-      throw new BadRequestException('Invalid skip / take!');
-    }
-
-    this.logger.log(
-      `Getting likes for story media ${mediaID} by user ${userID}`,
-    );
-    const media = await this.mediaService.getMediaById(
-      {
-        id: mediaID,
-      },
-      {
-        likes: {
-          select: ShallowUserSelect,
-          skip,
-          take,
-        },
-        story: {
-          select: {
-            id: true,
-            authorId: true,
-          },
-        },
-      },
-    );
-    if (!media || !media.storyId) {
-      this.logger.error(`Could not find story media ${mediaID}!`);
-      throw new NotFoundException('Could not find this story media!');
-    }
-
-    const castedMedia = <
-      PostContent & {
-        story: Story;
-        likes: User[];
-      }
-    >media;
-    if (!castedMedia.story?.authorId || castedMedia.story.authorId !== userID) {
-      this.logger.error('Not your story!');
-      throw new NotFoundException('Not your story!');
-    }
-
-    return castedMedia.likes;
   }
 
   @Patch(':id/set-highlight')

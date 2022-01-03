@@ -40,5 +40,9 @@ export class SendMessageToStoryAPI {
 
   @IsString()
   @IsNotEmpty()
+  insID: string;
+
+  @IsString()
+  @IsNotEmpty()
   message: string;
 }

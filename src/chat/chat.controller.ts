@@ -115,11 +115,7 @@ export class ChatController {
     this.logger.log(
       `Sending message from story media ${data.mediaID} by user ${userID}`,
     );
-    await this.chatService.sendMessageFromStory(
-      userID,
-      data.message,
-      data.mediaID,
-    );
+    await this.chatService.sendMessageFromStory(userID, data);
 
     this.logger.log('Successfully sent message from story');
     return {

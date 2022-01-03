@@ -13,6 +13,7 @@ import { InsService } from 'src/ins/ins.service';
 import { Cron } from '@nestjs/schedule';
 import { MediaService } from 'src/media/media.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { SendMessageToStoryAPI } from './chat-api.entity';
 
 @Injectable()
 export class ChatService {
@@ -335,7 +336,8 @@ export class ChatService {
     );
   }
 
-  async sendMessageFromStory(userID: string, message: string, mediaID: string) {
+  async sendMessageFromStory(userID: string, data: SendMessageToStoryAPI) {
+    const { mediaID, message, insID } = data;
     this.logger.log(`Getting media ${mediaID}`);
     const media = await this.mediaService.getMediaById(
       {
@@ -404,6 +406,7 @@ export class ChatService {
         mediaContent: {
           ...media,
           expiryDate,
+          insID,
         },
       });
     } else {
