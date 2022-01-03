@@ -118,13 +118,9 @@ export class MediaController {
         };
       }
     >media;
-    if (
-      !castedMedia.story?.authorId ||
-      castedMedia.story.authorId !== userID ||
-      !castedMedia.story.inses.length
-    ) {
-      this.logger.error('Not your story!');
-      throw new NotFoundException('Not your story!');
+    if (!castedMedia.story.inses.length) {
+      this.logger.error('INS not found!');
+      throw new NotFoundException('INS not found!');
     }
 
     const mediaContent = {
