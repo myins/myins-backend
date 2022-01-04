@@ -230,6 +230,9 @@ export class UserService {
           insId: {
             in: insId,
           },
+          role: {
+            not: UserRole.PENDING,
+          },
         },
       })
     ).map((connection) => {
