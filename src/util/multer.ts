@@ -31,6 +31,8 @@ export const photoOrVideoOptions: MulterOptions = {
     const ext = path.extname(file.originalname).toLowerCase();
     const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
     const isVideo = videoExtensions.includes(ext);
+    console.log('file - ', file);
+    console.log('isVideo - ', isVideo);
     if (!isImage && !isVideo) {
       return callback(
         new Error('The file is not in a supported format'),
