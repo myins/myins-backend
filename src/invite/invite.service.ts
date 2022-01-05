@@ -247,9 +247,13 @@ export class InviteService {
       throw new NotFoundException('Could not find that INS!');
     }
 
+    if (all && !search.length) {
+      return [];
+    }
+
     const profileInfo: Prisma.UserWhereInput = {
       OR:
-        search && search.length > 0
+        search && search.length
           ? [
               {
                 firstName: {
