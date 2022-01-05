@@ -40,6 +40,7 @@ export const photoOrVideoOptions: MulterOptions = {
 
     console.log('file - ', file);
     console.log('isVideo - ', isVideo);
+    console.log('photoOrVideoSizeLimit - ', photoOrVideoSizeLimit);
     console.log('too large?? - ', photoOrVideoSizeLimit < file.size);
 
     if (photoOrVideoSizeLimit < file.size) {
