@@ -27,14 +27,11 @@ export const photoOptions: MulterOptions = {
 
 export const photoInterceptor = FileInterceptor('file', photoOptions);
 
-let isVideoExtern = false;
-
 export const photoOrVideoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
     const isVideo = videoExtensions.includes(ext);
-    isVideoExtern = isVideo;
     if (!isImage && !isVideo) {
       return callback(
         new Error('The file is not in a supported format'),
@@ -52,7 +49,7 @@ export const photoOrVideoOptions: MulterOptions = {
     callback(null, true);
   },
   limits: {
-    fileSize: isVideoExtern ? videoSizeLimit : photoSizeLimit, // video - 100 MB, photo - 15 MB
+    fileSize: videoSizeLimit, // 100 MB - will check in fileFilter the size for photo (15 MB)
   },
 };
 
