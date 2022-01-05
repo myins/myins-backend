@@ -5,7 +5,8 @@ import {
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as path from 'path';
 
-const photoOrVideoSizeLimit = 1024 * 1024 * 15;
+const photoSizeLimit = 1024 * 1024 * 15;
+const videoSizeLimit = 1024 * 1024 * 100;
 
 export const photoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
@@ -20,17 +21,20 @@ export const photoOptions: MulterOptions = {
     callback(null, true);
   },
   limits: {
-    fileSize: photoOrVideoSizeLimit, // 10 mb
+    fileSize: photoSizeLimit, // 15 mb
   },
 };
 
 export const photoInterceptor = FileInterceptor('file', photoOptions);
+
+let isVideoExtern = false;
 
 export const photoOrVideoOptions: MulterOptions = {
   fileFilter: (_req, file, callback) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const isImage = ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
     const isVideo = videoExtensions.includes(ext);
+    isVideoExtern = isVideo;
     if (!isImage && !isVideo) {
       return callback(
         new Error('The file is not in a supported format'),
@@ -38,14 +42,17 @@ export const photoOrVideoOptions: MulterOptions = {
       );
     }
 
-    if (photoOrVideoSizeLimit < file.size) {
+    if (isImage && photoSizeLimit < file.size) {
+      return callback(new Error('The file is too large!'), false);
+    }
+    if (isVideo && videoSizeLimit < file.size) {
       return callback(new Error('The file is too large!'), false);
     }
 
     callback(null, true);
   },
   limits: {
-    fileSize: photoOrVideoSizeLimit,
+    fileSize: isVideoExtern ? videoSizeLimit : photoSizeLimit, // video - 100 MB, photo - 15 MB
   },
 };
 
