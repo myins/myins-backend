@@ -11,7 +11,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, Prisma, User } from '@prisma/client';
+import {
+  INS,
+  NotificationSource,
+  Prisma,
+  User,
+  Post as PostModel,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
@@ -111,10 +117,35 @@ export class CommentController {
       );
     }
 
-    const post = await this.postService.post({ id: postID });
+    const post = await this.postService.post(
+      { id: postID },
+      {
+        inses: {
+          where: {
+            members: {
+              some: {
+                userId: user.id,
+              },
+            },
+          },
+        },
+      },
+    );
     if (!post || !post.authorId) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find that post!');
+    }
+
+    const castedPost = <
+      PostModel & {
+        inses: INS[];
+      }
+    >post;
+    if (!castedPost.inses.length) {
+      this.logger.error(`You're not allowed to comment on that post!`);
+      throw new BadRequestException(
+        "You're not allowed to comment on that post!",
+      );
     }
 
     const author = await this.userService.user({ id: post.authorId });

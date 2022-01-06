@@ -1,11 +1,7 @@
-import { UserInsConnection } from '.prisma/client';
+import { INS, Post, UserInsConnection, Comment } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
-import {
-  CommentWithPostWithInsesID,
-  CommentWithPostWithInsesIDInclude,
-} from 'src/prisma-queries-helper/comment-include-post-inses';
 import {
   PostWithInsesId,
   PostWithInsesIdInclude,
@@ -70,20 +66,35 @@ export class InteractionService {
   }
 
   async interactComment(userId: string, commentId: string) {
-    const commentWithPost = await this.commentService.comment(
+    const comment = await this.commentService.comment(
       {
         id: commentId,
       },
-      CommentWithPostWithInsesIDInclude,
+      {
+        post: {
+          select: {
+            inses: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
     );
-    if (!commentWithPost) {
+    if (!comment) {
       this.logger.error('Invalid comment ID!');
       throw new BadRequestException('Invalid comment ID!');
     }
 
-    const insIDs = (<CommentWithPostWithInsesID>commentWithPost).post.inses.map(
-      (each) => each.id,
-    );
+    const castedComment = <
+      Comment & {
+        post: Post & {
+          inses: INS[];
+        };
+      }
+    >comment;
+    const insIDs = castedComment.post.inses.map((each) => each.id);
     this.logger.log(
       `Incrementing interaction between user ${userId} and inses ${insIDs}`,
     );

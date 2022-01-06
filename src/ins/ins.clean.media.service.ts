@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CommentService } from 'src/comment/comment.service';
-import {
-  CommentWithPostWithInses,
-  IncludeCommentWithPostWithInsesInclude,
-  IncludePostWithInsesInclude,
-  LikeCommentWithPostWithInses,
-  LikePostWithPostWithInses,
-} from 'src/prisma-queries-helper/include-post-with-inses';
 import { PostLikeService } from 'src/post/post.like.service';
 import { CommentLikeService } from 'src/comment/comment.like.service';
 import { PostService } from 'src/post/post.service';
 import { InsService } from './ins.service';
+import {
+  Post,
+  Comment,
+  INS,
+  UserPostLikeConnection,
+  UserCommentLikeConnection,
+} from '@prisma/client';
 
 @Injectable()
 export class InsCleanMediaService {
@@ -65,13 +65,34 @@ export class InsCleanMediaService {
           },
         },
       },
-      include: IncludePostWithInsesInclude(userId),
+      include: {
+        post: {
+          include: {
+            inses: {
+              where: {
+                members: {
+                  some: {
+                    userId: userId,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     this.logger.log('Checking if any comments should be remove');
     const deleteCommentIDs: string[] = [];
-    myComments.map(async (comment) => {
-      if ((<CommentWithPostWithInses>comment).post.inses.length === 1) {
+    const castedMyComments = <
+      (Comment & {
+        post: Post & {
+          inses: INS[];
+        };
+      })[]
+    >myComments;
+    castedMyComments.map(async (comment) => {
+      if (comment.post.inses.length === 1) {
         deleteCommentIDs.push(comment.id);
       }
     });
@@ -105,7 +126,21 @@ export class InsCleanMediaService {
           },
         },
       },
-      include: IncludePostWithInsesInclude(userId),
+      include: {
+        post: {
+          include: {
+            inses: {
+              where: {
+                members: {
+                  some: {
+                    userId: userId,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     this.logger.log('Checking if any like of post should be remove');
@@ -113,8 +148,15 @@ export class InsCleanMediaService {
       userId: string;
       postId: string;
     }[] = [];
-    myLikePosts.map(async (likePost) => {
-      if ((<LikePostWithPostWithInses>likePost).post.inses.length === 1) {
+    const castedMyLikePosts = <
+      (UserPostLikeConnection & {
+        post: Post & {
+          inses: INS[];
+        };
+      })[]
+    >myLikePosts;
+    castedMyLikePosts.map(async (likePost) => {
+      if (likePost.post.inses.length === 1) {
         deleteLikePostsIDs.push({
           userId: likePost.userId,
           postId: likePost.postId,
@@ -158,7 +200,25 @@ export class InsCleanMediaService {
           },
         },
       },
-      include: IncludeCommentWithPostWithInsesInclude(userId),
+      include: {
+        comment: {
+          include: {
+            post: {
+              include: {
+                inses: {
+                  where: {
+                    members: {
+                      some: {
+                        userId: userId,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     this.logger.log('Checking if any like of comment should be remove');
@@ -166,11 +226,17 @@ export class InsCleanMediaService {
       userId: string;
       commentId: string;
     }[] = [];
-    myLikeComments.map(async (likeComment) => {
-      if (
-        (<LikeCommentWithPostWithInses>likeComment).comment.post.inses
-          .length === 1
-      ) {
+    const castedMyLikeComments = <
+      (UserCommentLikeConnection & {
+        comment: Comment & {
+          post: Post & {
+            inses: INS[];
+          };
+        };
+      })[]
+    >myLikeComments;
+    castedMyLikeComments.map(async (likeComment) => {
+      if (likeComment.comment.post.inses.length === 1) {
         deleteLikeCommentsIDs.push({
           userId: likeComment.userId,
           commentId: likeComment.commentId,

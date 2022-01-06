@@ -1,4 +1,9 @@
-import { INS, NotificationSource, UserRole } from '.prisma/client';
+import {
+  INS,
+  NotificationSource,
+  UserInsConnection,
+  UserRole,
+} from '.prisma/client';
 import {
   BadRequestException,
   Body,
@@ -24,10 +29,6 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
-import {
-  ConnectionIncludeMembers,
-  ConnectionIncludeMembersInclude,
-} from 'src/prisma-queries-helper/connection-include-members';
 import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
 import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -238,7 +239,22 @@ export class InsController {
           not: UserRole.PENDING,
         },
       },
-      include: ConnectionIncludeMembersInclude,
+      include: {
+        ins: {
+          include: {
+            members: {
+              where: {
+                role: {
+                  not: UserRole.PENDING,
+                },
+                user: {
+                  isDeleted: false,
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!connections.length) {
@@ -246,7 +262,13 @@ export class InsController {
       throw new BadRequestException("You're not a member!");
     }
 
-    const connection = <ConnectionIncludeMembers>connections[0];
+    const connection = <
+      UserInsConnection & {
+        ins: INS & {
+          members: UserInsConnection[];
+        };
+      }
+    >connections[0];
     const toRet = {
       ...insWithoutInvitedPhoneNumbers,
       _count: {
@@ -458,10 +480,31 @@ export class InsController {
         insId: updatedIns.id,
         userId: userID,
       },
-      include: ConnectionIncludeMembersInclude,
+      include: {
+        ins: {
+          include: {
+            members: {
+              where: {
+                role: {
+                  not: UserRole.PENDING,
+                },
+                user: {
+                  isDeleted: false,
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    const connection = <ConnectionIncludeMembers>connections[0];
+    const connection = <
+      UserInsConnection & {
+        ins: INS & {
+          members: UserInsConnection[];
+        };
+      }
+    >connections[0];
     const toRet = {
       ...updatedIns,
       _count: {
