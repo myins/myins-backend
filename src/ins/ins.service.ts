@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, UserRole } from '@prisma/client';
+import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -7,10 +7,7 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import {
-  ShallowUserSelectWithRole,
-  ShallowUserSelectWithRoleInclude,
-} from 'src/prisma-queries-helper/shallow-user-select';
+import { ShallowUserSelectWithRoleInclude } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
@@ -219,9 +216,16 @@ export class InsService {
       select: ShallowUserSelectWithRoleInclude(insID),
     });
 
-    const usersWithRole = users.map((user) => {
-      const role = (<ShallowUserSelectWithRole>(<unknown>user)).inses[0].role;
-      const newUser = omit(<ShallowUserSelectWithRole>(<unknown>user), 'inses');
+    const castedUsers = <
+      (User & {
+        inses: (INS & {
+          role: UserRole;
+        })[];
+      })[]
+    >users;
+    const usersWithRole = castedUsers.map((user) => {
+      const role = user.inses[0].role;
+      const newUser = omit(user, 'inses');
       return {
         ...newUser,
         userRole: role,

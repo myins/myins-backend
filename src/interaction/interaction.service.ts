@@ -2,10 +2,6 @@ import { INS, Post, UserInsConnection, Comment } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
-import {
-  PostWithInsesId,
-  PostWithInsesIdInclude,
-} from 'src/prisma-queries-helper/post-include-inses-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
@@ -39,14 +35,25 @@ export class InteractionService {
       {
         id: postId,
       },
-      PostWithInsesIdInclude,
+      {
+        inses: {
+          select: {
+            id: true,
+          },
+        },
+      },
     );
     if (!postWithIns) {
       this.logger.error('Invalid post ID!');
       throw new BadRequestException('Invalid post ID!');
     }
 
-    const insIDs = (<PostWithInsesId>postWithIns).inses.map((each) => each.id);
+    const castedPost = <
+      Post & {
+        inses: INS[];
+      }
+    >postWithIns;
+    const insIDs = castedPost.inses.map((each) => each.id);
     this.logger.log(
       `Incrementing interaction between user ${userId} and inses ${insIDs}`,
     );
