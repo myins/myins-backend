@@ -11,10 +11,6 @@ import {
   ShallowUserSelectWithRole,
   ShallowUserSelectWithRoleInclude,
 } from 'src/prisma-queries-helper/shallow-user-select';
-import {
-  InsWithCountMembers,
-  InsWithCountMembersInclude,
-} from 'src/prisma-queries-helper/ins-include-count-members';
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
@@ -71,7 +67,13 @@ export class InsService {
           in: onlyIDs,
         },
       },
-      include: InsWithCountMembersInclude,
+      include: {
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
     });
 
     // The following hack is due to https://github.com/prisma/prisma/issues/8413
@@ -102,10 +104,17 @@ export class InsService {
 
     // Now we substract the pending count from the full count
     toRet.forEach((each) => {
-      const theCount = (<InsWithCountMembers>each)._count;
+      const castedIns = <
+        INS & {
+          _count: {
+            members: number;
+          };
+        }
+      >each;
+      const theCount = castedIns._count;
       if (pendingCountPerINS[each.id] && theCount) {
         theCount.members -= pendingCountPerINS[each.id];
-        (<InsWithCountMembers>each)._count = theCount;
+        castedIns._count = theCount;
       }
     });
 

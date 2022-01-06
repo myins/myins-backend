@@ -29,8 +29,6 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
-import { InsWithCountMembers } from 'src/prisma-queries-helper/ins-include-count-members';
-import { InsWithMembersID } from 'src/prisma-queries-helper/ins-include-member-id';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { photoInterceptor } from 'src/util/multer';
@@ -118,11 +116,19 @@ export class InsController {
       },
     });
     let ins = inses[0];
+    const castedIns = <
+      INS & {
+        _count: {
+          members: number;
+        };
+        members: UserInsConnection[];
+      }
+    >ins;
     if (ins) {
-      (<InsWithCountMembers>ins)._count = {
-        members: (<InsWithMembersID>ins).members.length,
+      castedIns._count = {
+        members: castedIns.members.length,
       };
-      ins = omit(<InsWithMembersID>ins, 'members');
+      ins = omit(castedIns, 'members');
 
       this.logger.log('Successfully returned ins');
       return ins;

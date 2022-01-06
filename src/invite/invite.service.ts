@@ -4,19 +4,17 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationSource, Prisma, UserRole } from '@prisma/client';
+import {
+  INS,
+  NotificationSource,
+  Prisma,
+  UserInsConnection,
+  UserRole,
+} from '@prisma/client';
 import { SmsService } from 'src/sms/sms.service';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import {
-  InsWithMembersID,
-  InsWithMembersIDInclude,
-} from 'src/prisma-queries-helper/ins-include-member-id';
-import {
-  InsWithMembersInUserIDs,
-  InsWithMembersInUserIDsInclude,
-} from 'src/prisma-queries-helper/ins-include-members-in-user-ids';
 import {
   NotificationPushService,
   PushExtraNotification,
@@ -146,23 +144,33 @@ export class InviteService {
           },
         },
       },
-      include: InsWithMembersInUserIDsInclude(otherUsers),
+      include: {
+        members: {
+          where: {
+            userId: {
+              in: otherUsers,
+            },
+          },
+        },
+      },
     });
 
     if (!theINS.length) {
       this.logger.error('Could not find that INS!');
       throw new NotFoundException('Could not find that INS!');
     }
-    if (
-      (<InsWithMembersInUserIDs>theINS[0]).members.length === otherUsers.length
-    ) {
+
+    const castedINS = <
+      INS & {
+        members: UserInsConnection[];
+      }
+    >theINS[0];
+    if (castedINS.members.length === otherUsers.length) {
       this.logger.error('All users are already in that INS!');
       throw new BadRequestException('All users are already in that INS!');
     }
 
-    const memberIDs = (<InsWithMembersInUserIDs>theINS[0]).members.map(
-      (member) => member.userId,
-    );
+    const memberIDs = castedINS.members.map((member) => member.userId);
     const usersNotInINS = otherUsers.filter(
       (otherUser) => !memberIDs.includes(otherUser),
     );
@@ -173,11 +181,11 @@ export class InviteService {
     }));
 
     this.logger.log(
-      `Update ins ${theINS[0].id}. Adding pending members ${usersNotInINS}`,
+      `Update ins ${castedINS.id}. Adding pending members ${usersNotInINS}`,
     );
     await this.insService.update({
       where: {
-        id: theINS[0].id,
+        id: castedINS.id,
       },
       data: {
         members: {
@@ -191,7 +199,7 @@ export class InviteService {
     await Promise.all(
       data.map(async (dataCreate) => {
         this.logger.log(
-          `Creating notification for pending ins ${theINS[0].id} for user ${dataCreate.userId}`,
+          `Creating notification for pending ins ${castedINS.id} for user ${dataCreate.userId}`,
         );
         await this.notificationService.createNotification({
           source: NotificationSource.PENDING_INS,
@@ -203,18 +211,18 @@ export class InviteService {
           },
           ins: {
             connect: {
-              id: theINS[0].id,
+              id: castedINS.id,
             },
           },
         });
 
         this.logger.log(
-          `Creating push notification for requesting access in ins ${theINS[0].id}`,
+          `Creating push notification for requesting access in ins ${castedINS.id}`,
         );
         const dataPush: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_ME,
           author: await this.userService.shallowUser({ id: userID }),
-          ins: theINS[0],
+          ins: castedINS,
           targets: [dataCreate.userId],
         };
         await this.notificationPushService.pushNotification(dataPush);
@@ -234,14 +242,23 @@ export class InviteService {
       {
         id: insID,
       },
-      InsWithMembersIDInclude,
+      {
+        members: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     );
 
+    const castedINS = <
+      INS & {
+        members: UserInsConnection[];
+      }
+    >theINS;
     if (
-      !theINS ||
-      (<InsWithMembersID>theINS).members.findIndex(
-        (each) => each.userId == userID,
-      ) == -1
+      !castedINS ||
+      castedINS.members.findIndex((each) => each.userId == userID) == -1
     ) {
       this.logger.error('Could not find that INS!');
       throw new NotFoundException('Could not find that INS!');
@@ -271,7 +288,7 @@ export class InviteService {
           : undefined,
       id: {
         not: {
-          in: (<InsWithMembersID>theINS).members.map((each) => each.userId),
+          in: castedINS.members.map((each) => each.userId),
         },
       },
       inses: all
