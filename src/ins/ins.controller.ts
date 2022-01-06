@@ -15,9 +15,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
+import { MediaService } from 'src/media/media.service';
 import {
   NotificationPushService,
   PushExtraNotification,
@@ -43,11 +43,11 @@ export class InsController {
 
   constructor(
     private readonly insService: InsService,
-    private readonly chatService: ChatService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
     private readonly notificationPushService: NotificationPushService,
+    private readonly mediaService: MediaService,
   ) {}
 
   @Post()
@@ -153,6 +153,11 @@ export class InsController {
     @Query('take') take: number,
     @Query('onlyMine') onlyMine: boolean,
   ) {
+    if (Number.isNaN(skip) || Number.isNaN(take)) {
+      this.logger.error('Invalid skip / take values!');
+      throw new BadRequestException('Invalid skip / take values!');
+    }
+
     const inses = await this.insService.inses({
       where: {
         id: id,
@@ -177,6 +182,54 @@ export class InsController {
     return this.insService.mediaForIns(userID, id, skip, take, onlyMine);
   }
 
+  @Get(':id/media-unwrapped')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins')
+  async getMediaUnwrappedByID(
+    @Param('id') id: string,
+    @PrismaUser('id') userID: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
+    if (Number.isNaN(skip) || Number.isNaN(take)) {
+      this.logger.error('Invalid skip / take values!');
+      throw new BadRequestException('Invalid skip / take values!');
+    }
+
+    const inses = await this.insService.inses({
+      where: {
+        id: id,
+        members: {
+          some: {
+            userId: userID,
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
+      },
+    });
+    if (!inses || inses.length !== 1) {
+      this.logger.error(`Could not find INS ${id}!`);
+      throw new NotFoundException('Could not find that INS!');
+    }
+
+    this.logger.log(`Getting media for ins ${id} by user ${userID}`);
+    return this.mediaService.getMedias({
+      where: {
+        post: {
+          inses: {
+            some: {
+              id: id,
+            },
+          },
+        },
+      },
+      skip,
+      take,
+    });
+  }
+
   @Get(':id/members')
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins')
@@ -188,6 +241,11 @@ export class InsController {
     @Query('filter') filter: string,
     @Query('without') without?: boolean,
   ) {
+    if (Number.isNaN(skip) || Number.isNaN(take)) {
+      this.logger.error('Invalid skip / take values!');
+      throw new BadRequestException('Invalid skip / take values!');
+    }
+
     const inses = await this.insService.inses({
       where: {
         id: id,
