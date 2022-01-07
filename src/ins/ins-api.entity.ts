@@ -37,3 +37,8 @@ export class MuteINSAPI {
   @IsOptional()
   minutes: number;
 }
+
+export class ChangeNameAPI {
+  @IsString()
+  name: string;
+}
