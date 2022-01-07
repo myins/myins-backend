@@ -8,7 +8,9 @@ export const ShallowUserSelect: Prisma.UserSelect = {
   isDeleted: true,
 };
 
-const shallowUserSelectWithRoleData = (insID: string) => {
+export const ShallowUserSelectWithRoleInclude = (
+  insID: string,
+): Prisma.UserSelect => {
   return {
     firstName: true,
     lastName: true,
@@ -25,16 +27,3 @@ const shallowUserSelectWithRoleData = (insID: string) => {
     },
   };
 };
-
-export const ShallowUserSelectWithRoleInclude = (
-  insID: string,
-): Prisma.UserSelect => {
-  return shallowUserSelectWithRoleData(insID);
-};
-
-const shallowUserSelectWithRole = Prisma.validator<Prisma.UserArgs>()({
-  select: shallowUserSelectWithRoleData(''),
-});
-export type ShallowUserSelectWithRole = Prisma.UserGetPayload<
-  typeof shallowUserSelectWithRole
->;

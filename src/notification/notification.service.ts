@@ -13,7 +13,7 @@ import {
   NotificationFeed,
   notificationFeedCount,
   notificationFeedQuery,
-  notificationFeedWithourPost,
+  NotificationFeedWithoutPost,
 } from 'src/prisma-queries-helper/notification-feed';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -69,7 +69,7 @@ export class NotificationService {
         return {
           ...notif,
           post: {
-            ...(<notificationFeedWithourPost>notif).post,
+            ...(<NotificationFeedWithoutPost>notif).post,
             inses: [ins],
           },
           isSeen: !!notification && notification.createdAt >= notif.createdAt,
