@@ -130,16 +130,16 @@ export class StoryController {
   @ApiTags('story')
   async getFeed(
     @PrismaUser('id') userID: string,
-    // @Query('take') take: number,
-    // @Query('skip') skip: number,
+    @Query('take') take: number,
+    @Query('skip') skip: number,
   ) {
-    // if (Number.isNaN(take) || Number.isNaN(skip)) {
-    //   this.logger.error('Invalid skip / take!');
-    //   throw new BadRequestException('Invalid skip / take!');
-    // }
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
 
     this.logger.log(`Getting stories feed for user ${userID}`);
-    return this.storyService.getFeed(userID);
+    return this.storyService.getFeed(userID, skip, take);
   }
 
   @Get('feed/ins/:id')

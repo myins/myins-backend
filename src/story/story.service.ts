@@ -208,7 +208,7 @@ export class StoryService {
     return returnedMediaContent;
   }
 
-  async getFeed(userID: string) {
+  async getFeed(userID: string, skip: number, take: number) {
     this.logger.log(`Getting all ins connections for user ${userID}`);
     const date = new Date();
     date.setDate(date.getDate() - 1);
@@ -339,10 +339,12 @@ export class StoryService {
       return time2 - time1;
     });
     const notNullInses = sortedInses.filter((each) => each != null);
-    return [
+    const finalInses = [
       ...notNullInses.filter((ins) => ins?.unviewedStories !== 0),
       ...notNullInses.filter((ins) => ins?.unviewedStories === 0),
     ];
+
+    return finalInses.slice(skip, skip + take);
   }
 
   async getStoriesForINS(
