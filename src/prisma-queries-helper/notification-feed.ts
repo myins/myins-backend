@@ -136,7 +136,7 @@ export const notificationFeedQuery = (
 const notificationFeed = Prisma.validator<Prisma.NotificationArgs>()({
   include: includeQuery(''),
 });
-const notificationFeedWithourPost = Prisma.validator<Prisma.NotificationArgs>()(
+const notificationFeedWithoutPost = Prisma.validator<Prisma.NotificationArgs>()(
   {
     include: includeQueryWithoutPost(''),
   },
@@ -144,6 +144,6 @@ const notificationFeedWithourPost = Prisma.validator<Prisma.NotificationArgs>()(
 export type NotificationFeed = Prisma.NotificationGetPayload<
   typeof notificationFeed
 >;
-export type notificationFeedWithourPost = Prisma.NotificationGetPayload<
-  typeof notificationFeedWithourPost
+export type NotificationFeedWithoutPost = Prisma.NotificationGetPayload<
+  typeof notificationFeedWithoutPost
 >;

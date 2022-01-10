@@ -18,10 +18,6 @@ export class PostService {
     });
   }
 
-  async firstPost(params: Prisma.PostFindFirstArgs): Promise<Post | null> {
-    return this.prisma.post.findFirst(params);
-  }
-
   async postWithUserInfo(
     postWhereUniqueInput: Prisma.PostWhereUniqueInput,
   ): Promise<Post | null> {

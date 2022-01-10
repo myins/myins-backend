@@ -22,6 +22,7 @@ model User {
   sandboxToken Boolean? // Check if token is sandbox for iOS
 
   posts    Post[]
+  stories  Story[]
   comments Comment[] @relation(name: "author")
 
   notifications        Notification[]
@@ -29,6 +30,8 @@ model User {
 
   likedComments UserCommentLikeConnection[]
   likedPosts    UserPostLikeConnection[]
+  likedStories  PostContent[]               @relation(name: "LikesStoryMediaToUser")
+  viewedStories PostContent[]               @relation(name: "ViewsStoryMediaToUser")
 
   inses UserInsConnection[]
 
@@ -53,18 +56,25 @@ model PostContent {
   content   String // Link to raw file
   thumbnail String? // Thumbnail, if it's a video
 
-  post   Post   @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String
+  post   Post?   @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId String?
+
+  story   Story?  @relation(name: "story", fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyId String?
 
   width  Int
   height Int
+
+  isHighlight Boolean @default(false)
+  likes       User[]  @relation(name: "LikesStoryMediaToUser")
+  views       User[]  @relation(name: "ViewsStoryMediaToUser")
 }
 
 model Post {
   id           String        @id @default(uuid())
   createdAt    DateTime      @default(now())
   edited       Boolean       @default(false)
-  content      String
+  content      String?
   mediaContent PostContent[] @relation(name: "post")
   author       User?         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId     String? // Optional because of guest posts, see onboarding service
@@ -87,6 +97,19 @@ model UserPostLikeConnection {
   createdAt DateTime @default(now())
 
   @@id([userId, postId])
+}
+
+model Story {
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  mediaContent PostContent[] @relation(name: "story")
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId     String
+
+  pending           Boolean @default(true)
+  totalMediaContent Int
+
+  inses INS[]
 }
 
 model Comment {
@@ -149,6 +172,7 @@ model INS {
 
   members             UserInsConnection[]
   posts               Post[]
+  stories             Story[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
 

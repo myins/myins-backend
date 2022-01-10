@@ -14,7 +14,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { SearchMessgesAPI } from './chat-api.entity';
+import { SearchMessgesAPI, SendMessageToStoryAPI } from './chat-api.entity';
 import { ChatSearchService } from './chat.search.service';
 import { ChatService } from './chat.service';
 
@@ -30,7 +30,7 @@ export class ChatController {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  @Get('/token')
+  @Get('token')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
   async getStreamChatToken(@PrismaUser('id') userID: string) {
@@ -73,7 +73,7 @@ export class ChatController {
     };
   }
 
-  @Post('/search')
+  @Post('search')
   @UseGuards(JwtAuthGuard)
   @ApiTags('chat')
   async searchMessages(
@@ -103,5 +103,23 @@ export class ChatController {
       )} by user ${userID}`,
     );
     return this.chatSearchService.searchMessages(userID, data);
+  }
+
+  @Post('story-message')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('chat')
+  async sendMessageFromStory(
+    @PrismaUser('id') userID: string,
+    @Body() data: SendMessageToStoryAPI,
+  ) {
+    this.logger.log(
+      `Sending message from story media ${data.mediaID} by user ${userID}`,
+    );
+    await this.chatService.sendMessageFromStory(userID, data);
+
+    this.logger.log('Successfully sent message from story');
+    return {
+      message: 'Successfully sent message from story',
+    };
   }
 }

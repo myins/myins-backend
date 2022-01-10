@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, UserRole } from '@prisma/client';
+import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -7,14 +7,7 @@ import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import * as uuid from 'uuid';
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import {
-  ShallowUserSelectWithRole,
-  ShallowUserSelectWithRoleInclude,
-} from 'src/prisma-queries-helper/shallow-user-select';
-import {
-  InsWithCountMembers,
-  InsWithCountMembersInclude,
-} from 'src/prisma-queries-helper/ins-include-count-members';
+import { ShallowUserSelectWithRoleInclude } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
@@ -71,7 +64,13 @@ export class InsService {
           in: onlyIDs,
         },
       },
-      include: InsWithCountMembersInclude,
+      include: {
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
     });
 
     // The following hack is due to https://github.com/prisma/prisma/issues/8413
@@ -86,7 +85,7 @@ export class InsService {
           },
           OR: [
             {
-              role: 'PENDING',
+              role: UserRole.PENDING,
             },
             {
               user: {
@@ -102,10 +101,17 @@ export class InsService {
 
     // Now we substract the pending count from the full count
     toRet.forEach((each) => {
-      const theCount = (<InsWithCountMembers>each)._count;
+      const castedIns = <
+        INS & {
+          _count: {
+            members: number;
+          };
+        }
+      >each;
+      const theCount = castedIns._count;
       if (pendingCountPerINS[each.id] && theCount) {
         theCount.members -= pendingCountPerINS[each.id];
-        (<InsWithCountMembers>each)._count = theCount;
+        castedIns._count = theCount;
       }
     });
 
@@ -140,7 +146,7 @@ export class InsService {
     return this.postService.posts({
       skip: skip,
       take: take,
-      include: this.postService.richPostInclude(userID, true),
+      include: this.postService.richPostInclude(userID),
       orderBy: {
         createdAt: 'desc',
       },
@@ -210,9 +216,16 @@ export class InsService {
       select: ShallowUserSelectWithRoleInclude(insID),
     });
 
-    const usersWithRole = users.map((user) => {
-      const role = (<ShallowUserSelectWithRole>(<unknown>user)).inses[0].role;
-      const newUser = omit(<ShallowUserSelectWithRole>(<unknown>user), 'inses');
+    const castedUsers = <
+      (User & {
+        inses: (INS & {
+          role: UserRole;
+        })[];
+      })[]
+    >users;
+    const usersWithRole = castedUsers.map((user) => {
+      const role = user.inses[0].role;
+      const newUser = omit(user, 'inses');
       return {
         ...newUser,
         userRole: role,

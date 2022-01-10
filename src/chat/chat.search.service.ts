@@ -1,6 +1,4 @@
-import { UserRole } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { InsService } from 'src/ins/ins.service';
 import {
   ChannelFilters,
   MessageFilters,
@@ -15,7 +13,7 @@ export class ChatSearchService {
 
   private streamChat: StreamChat;
 
-  constructor(private readonly insService: InsService) {
+  constructor() {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
       process.env.GET_STREAM_API_SECRET,
@@ -28,21 +26,8 @@ export class ChatSearchService {
           id: { $eq: data.channelId },
         }
       : {
-          id: {
-            $in: (
-              await this.insService.inses({
-                where: {
-                  members: {
-                    some: {
-                      userId: userID,
-                      role: {
-                        not: UserRole.PENDING,
-                      },
-                    },
-                  },
-                },
-              })
-            ).map((ins) => ins.id),
+          members: {
+            $in: [userID],
           },
         };
 

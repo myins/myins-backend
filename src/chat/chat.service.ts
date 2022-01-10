@@ -1,9 +1,19 @@
-import { INS, User } from '.prisma/client';
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { INS, PostContent, Story, User } from '.prisma/client';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Channel, ChannelFilters, StreamChat, UserResponse } from 'stream-chat';
 import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { Cron } from '@nestjs/schedule';
+import { MediaService } from 'src/media/media.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { SendMessageToStoryAPI } from './chat-api.entity';
 
 @Injectable()
 export class ChatService {
@@ -16,6 +26,7 @@ export class ChatService {
     private readonly userService: UserService,
     @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
+    private readonly mediaService: MediaService,
   ) {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
@@ -75,7 +86,7 @@ export class ChatService {
       const allChannels: Channel[] = [];
       do {
         channels = await this.streamChat.queryChannels(
-          {},
+          { insChannel: true },
           { created_at: 1 },
           { limit, offset },
         );
@@ -206,6 +217,20 @@ export class ChatService {
     }
   }
 
+  async createOneToOneChannel(userID: string, receiverID: string) {
+    try {
+      const channel = this.streamChat.channel('messaging', {
+        members: [userID, receiverID],
+        created_by_id: userID,
+        insChannel: false,
+      });
+      await channel.create();
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`Error creating stream channel! + ${stringErr}`);
+    }
+  }
+
   async createChannelINSWithMembersIfNotExists(ins: INS, userID: string) {
     try {
       const channels = await this.getChannelsINS({ id: ins.id });
@@ -299,10 +324,96 @@ export class ChatService {
   }
 
   async sendMessageWhenPost(insIds: string[], userID: string, postID: string) {
-    return this.sendMessageToChannels(insIds, userID, '', {
-      custom_type: 'new_post',
-      post_id: postID,
+    return this.sendMessageToChannels(
+      insIds,
+      userID,
+      '',
+      {
+        custom_type: 'new_post',
+        post_id: postID,
+      },
+      true,
+      true,
+    );
+  }
+
+  async sendMessageFromStory(userID: string, data: SendMessageToStoryAPI) {
+    const { mediaID, message, insID } = data;
+    this.logger.log(`Getting media ${mediaID}`);
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        story: {
+          include: {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        },
+      },
+    );
+    if (!media) {
+      this.logger.error('Story media not found!');
+      throw new NotFoundException('Story media not found!');
+    }
+
+    const receiver: User = (<
+      PostContent & {
+        story: Story & {
+          author: User;
+        };
+      }
+    >media).story.author;
+    this.logger.log(
+      `Getting channel 1 to 1 between user ${userID} and user ${receiver.id}`,
+    );
+    let channel;
+    const channels = await this.getChannelsINS({
+      members: {
+        $eq: [userID, receiver.id],
+      },
+      insChannel: {
+        $eq: false,
+      },
     });
+    channel = channels[0];
+    if (!channel) {
+      this.logger.log(
+        `Channel between user ${userID} and user ${receiver.id} does not exists. Creating channel`,
+      );
+      await this.createOneToOneChannel(userID, receiver.id);
+      const channelsOneToOne = await this.getChannelsINS({
+        members: {
+          $eq: [userID, receiver.id],
+        },
+        insChannel: {
+          $eq: false,
+        },
+      });
+      channel = channelsOneToOne[0];
+    }
+    if (channel.id) {
+      const createdAt = new Date(media.createdAt);
+      const expiryDate = new Date(createdAt.setDate(createdAt.getDate() + 1));
+      expiryDate.setMinutes(
+        expiryDate.getMinutes() + 10 - (expiryDate.getMinutes() % 10),
+      );
+      expiryDate.setSeconds(0);
+      expiryDate.setMilliseconds(0);
+      await this.sendMessageToChannels([channel.id], userID, message, {
+        custom_type: 'story_message',
+        mediaContent: {
+          ...media,
+          expiryDate,
+          insID,
+        },
+      });
+    } else {
+      this.logger.error('Error sending messsage from story!');
+      throw new BadRequestException('Error sending messsage from story!');
+    }
   }
 
   async sendMessageToChannels(
@@ -310,6 +421,8 @@ export class ChatService {
     userID: string,
     message: string,
     data: Record<string, unknown>,
+    silent?: boolean,
+    skip_push?: boolean,
   ) {
     try {
       const channels = await this.getChannelsINS({
@@ -318,11 +431,17 @@ export class ChatService {
       const user = await this.getStreamUser(userID);
       await Promise.all(
         channels.map(async (channel) => {
-          await channel.sendMessage({
-            user_id: user.id,
-            text: message,
-            data,
-          });
+          await channel.sendMessage(
+            {
+              user_id: user.id,
+              text: message,
+              silent: silent ?? false,
+              data,
+            },
+            {
+              skip_push: skip_push ?? false,
+            },
+          );
         }),
       );
     } catch (e) {

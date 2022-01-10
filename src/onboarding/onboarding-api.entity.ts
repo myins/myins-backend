@@ -1,7 +1,15 @@
-import { IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateGuestPostAPI {
   @IsString()
+  @IsOptional()
   content: string;
 
   @IsNumber()

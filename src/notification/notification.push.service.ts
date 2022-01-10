@@ -481,7 +481,7 @@ export class NotificationPushService {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function clean(obj: any) {
   for (const propName in obj) {
-    if (obj[propName] === null || obj[propName] === undefined) {
+    if (!obj[propName]) {
       delete obj[propName];
     }
   }

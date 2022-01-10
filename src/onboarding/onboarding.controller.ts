@@ -14,11 +14,9 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { CreateINSAPI } from 'src/ins/ins-api.entity';
 import { InsService } from 'src/ins/ins.service';
-import {
-  AttachCoverAPI,
-  AttachMediaWithClaimTokenAPI,
-} from 'src/post/post-api.entity';
-import { PostMediaService } from 'src/post/post.media.service';
+import { AttachMediaWithClaimTokenAPI } from 'src/media/media-api.entity';
+import { MediaService } from 'src/media/media.service';
+import { AttachCoverAPI } from 'src/post/post-api.entity';
 import { PostService } from 'src/post/post.service';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import {
@@ -36,7 +34,7 @@ export class OnboardingController {
     private readonly postService: PostService,
     private readonly signService: SjwtService,
     private readonly onboardingService: OnboardingService,
-    private readonly postMediaService: PostMediaService,
+    private readonly mediaService: MediaService,
   ) {}
 
   private readonly logger = new Logger(OnboardingController.name);
@@ -49,7 +47,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
@@ -123,7 +121,7 @@ export class OnboardingController {
     },
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
-    this.logger.log(`Attach media with claim token to post ${body.postID}`);
+    this.logger.log(`Attach media with claim token to post ${body.entityID}`);
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -156,7 +154,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }
@@ -173,7 +171,7 @@ export class OnboardingController {
             id: insID,
           },
         },
-        id: body.postID,
+        id: body.entityID,
       },
     });
 
@@ -183,10 +181,12 @@ export class OnboardingController {
     }
 
     try {
-      return this.postMediaService.attachMediaToPost(
+      return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        body.postID,
+        body.entityID,
+        false,
+        false,
         null,
         {
           width,
@@ -232,7 +232,7 @@ export class OnboardingController {
 
     this.logger.log('Decrypting claim token');
     const decrypted = await this.signService.decrypt(claimToken);
-    if (decrypted == null) {
+    if (!decrypted) {
       this.logger.error('Unrecognized claim token!');
       throw new BadRequestException('Unrecognized claim token!');
     }

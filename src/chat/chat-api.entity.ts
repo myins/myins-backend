@@ -32,3 +32,17 @@ export class SearchMessgesAPI {
   @IsOptional()
   onlyMine: boolean;
 }
+
+export class SendMessageToStoryAPI {
+  @IsString()
+  @IsNotEmpty()
+  mediaID: string;
+
+  @IsString()
+  @IsNotEmpty()
+  insID: string;
+
+  @IsString()
+  @IsNotEmpty()
+  message: string;
+}

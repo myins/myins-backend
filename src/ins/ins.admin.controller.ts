@@ -9,6 +9,7 @@ import {
   Post,
   BadRequestException,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -16,7 +17,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
-import { UpdateINSAdminAPI } from './ins-api.entity';
+import { ChangeNameAPI, UpdateINSAdminAPI } from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
@@ -32,7 +33,7 @@ export class InsAdminController {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Post('/change')
+  @Post('change')
   @ApiTags('ins-admin')
   @UseGuards(JwtAuthGuard)
   async changeINSAdmin(
@@ -79,7 +80,37 @@ export class InsAdminController {
     return changedAdmin;
   }
 
-  @Delete('/remove-member')
+  @Patch(':id/change-name')
+  @ApiTags('ins')
+  @UseGuards(JwtAuthGuard)
+  async changeName(
+    @PrismaUser('id') userId: string,
+    @Param('id') insId: string,
+    @Body() data: ChangeNameAPI,
+  ) {
+    const isAdmin = await this.insAdminService.isAdmin(userId, insId);
+    if (!isAdmin) {
+      this.logger.error("You're not allowed to change INS name!");
+      throw new BadRequestException("You're not allowed to change INS name!");
+    }
+
+    this.logger.log(`Updating ins ${insId}. Change name`);
+    await this.insService.update({
+      where: {
+        id: insId,
+      },
+      data: {
+        name: data.name,
+      },
+    });
+
+    this.logger.log('Successfully change name');
+    return {
+      message: 'Successfully change name',
+    };
+  }
+
+  @Delete('remove-member')
   @ApiTags('ins-admin')
   @UseGuards(JwtAuthGuard)
   async removeMemberFromINS(
@@ -89,13 +120,10 @@ export class InsAdminController {
     this.logger.log(`Removing member for ins ${data.insID} by user ${userID}`);
     const isAdmin = await this.insAdminService.isAdmin(userID, data.insID);
     if (!isAdmin) {
-      console.log(
-        `Allowing random user to remove member cuz he's such a nice guy! But also for testing.`,
+      this.logger.error("You're not allowed to remove members from INS!");
+      throw new BadRequestException(
+        "You're not allowed to remove members from INS!",
       );
-      // this.logger.error("You're not allowed to remove members from INS!");
-      // throw new BadRequestException(
-      //   "You're not allowed to remove members from INS!",
-      // );
     }
 
     this.logger.log(`Removing member ${data.memberID} from ins ${data.insID}`);
