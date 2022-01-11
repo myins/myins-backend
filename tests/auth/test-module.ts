@@ -18,6 +18,8 @@ import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { prismaMock } from 'tests/prisma-mock';
 import * as admin from 'firebase-admin';
+import { MediaService } from 'src/media/media.service';
+import { StoryService } from 'src/story/story.service';
 
 export const getAuthTestingModule = async (): Promise<TestingModule> => {
   return Test.createTestingModule({
@@ -67,6 +69,8 @@ export const getAuthTestingModule = async (): Promise<TestingModule> => {
       NotificationService,
       PostService,
       NotificationPushService,
+      MediaService,
+      StoryService,
       {
         provide: PrismaService,
         useValue: prismaMock,

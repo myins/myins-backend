@@ -18,6 +18,8 @@ import { S3Module } from 'nestjs-s3';
 import { FirebaseAdminModule } from '@aginix/nestjs-firebase-admin';
 import * as admin from 'firebase-admin';
 import { ChatSearchService } from 'src/chat/chat.search.service';
+import { MediaService } from 'src/media/media.service';
+import { StoryService } from 'src/story/story.service';
 
 export const getChatTestingModule = async (): Promise<TestingModule> => {
   return Test.createTestingModule({
@@ -67,6 +69,8 @@ export const getChatTestingModule = async (): Promise<TestingModule> => {
       PostService,
       NotificationPushService,
       ChatSearchService,
+      MediaService,
+      StoryService,
       {
         provide: PrismaService,
         useValue: prismaMock,

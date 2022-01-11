@@ -1,5 +1,6 @@
 import { Comment } from '.prisma/client';
 import * as uuid from 'uuid';
+import { insesMock } from './ins';
 
 export const commentMock: Comment = {
   id: 'commentID',
@@ -18,6 +19,6 @@ export const updatedCommentMock: Comment = {
 export const commentWithPostWithInsesMock = {
   ...commentMock,
   post: {
-    inses: [],
+    inses: insesMock,
   },
 };

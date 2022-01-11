@@ -20,6 +20,7 @@ export class StoryService {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => InsService))
     private readonly insService: InsService,
     @Inject(forwardRef(() => MediaService))
     private readonly mediaService: MediaService,
