@@ -1,40 +1,28 @@
-import { FirebaseAdminModule } from '@aginix/nestjs-firebase-admin';
-import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { S3Module } from 'nestjs-s3';
-import { TwilioModule } from 'nestjs-twilio';
-import { ChatService } from 'src/chat/chat.service';
-import { CommentController } from 'src/comment/comment.controller';
-import { CommentService } from 'src/comment/comment.service';
 import { InsService } from 'src/ins/ins.service';
-import { InteractionService } from 'src/interaction/interaction.service';
-import { NotificationPushService } from 'src/notification/notification.push.service';
-import { NotificationService } from 'src/notification/notification.service';
-import { PostService } from 'src/post/post.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { prismaMock } from 'tests/prisma-mock';
+import { InsController } from 'src/ins/ins.controller';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { PostService } from 'src/post/post.service';
+import { UserService } from 'src/user/user.service';
+import { StorageService } from 'src/storage/storage.service';
+import { S3Module } from 'nestjs-s3';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { SmsService } from 'src/sms/sms.service';
-import { StorageService } from 'src/storage/storage.service';
-import { UserConnectionService } from 'src/user/user.connection.service';
-import { UserService } from 'src/user/user.service';
-import { prismaMock } from 'tests/prisma-mock';
-import * as admin from 'firebase-admin';
+import { ChatService } from 'src/chat/chat.service';
+import { NotificationService } from 'src/notification/notification.service';
 import { MediaService } from 'src/media/media.service';
 import { StoryService } from 'src/story/story.service';
-import { CommentLikeController } from 'src/comment/comment.like.controller';
-import { CommentLikeService } from 'src/comment/comment.like.service';
+import { JwtModule } from '@nestjs/jwt';
+import { TwilioModule } from 'nestjs-twilio';
+import { NotificationPushService } from 'src/notification/notification.push.service';
+import { FirebaseAdminModule } from '@aginix/nestjs-firebase-admin';
+import * as admin from 'firebase-admin';
 
-export const getCommentTestingModule = async (): Promise<TestingModule> => {
+export const getINSTestingModule = async (): Promise<TestingModule> => {
   return Test.createTestingModule({
     imports: [
-      TwilioModule.forRoot({
-        accountSid: process.env.TWILIO_ACCOUNT_SID,
-        authToken: process.env.TWILIO_AUTH_TOKEN,
-      }),
-      JwtModule.register({
-        secret: process.env.JWT_SIGNING_KEY,
-        signOptions: { expiresIn: '7d' },
-      }),
       S3Module.forRoot({
         config: {
           accessKeyId: process.env['S3_KEY_ID'],
@@ -43,6 +31,14 @@ export const getCommentTestingModule = async (): Promise<TestingModule> => {
           s3ForcePathStyle: true,
           signatureVersion: 'v4',
         },
+      }),
+      JwtModule.register({
+        secret: process.env.JWT_SIGNING_KEY,
+        signOptions: { expiresIn: '7d' },
+      }),
+      TwilioModule.forRoot({
+        accountSid: process.env.TWILIO_ACCOUNT_SID,
+        authToken: process.env.TWILIO_AUTH_TOKEN,
       }),
       FirebaseAdminModule.forRootAsync({
         useFactory: async () => {
@@ -61,26 +57,23 @@ export const getCommentTestingModule = async (): Promise<TestingModule> => {
       }),
     ],
     providers: [
-      CommentService,
+      InsService,
+      StorageService,
+      UserConnectionService,
       PostService,
       UserService,
       SjwtService,
       SmsService,
       ChatService,
-      InsService,
-      UserConnectionService,
-      StorageService,
       NotificationService,
-      NotificationPushService,
-      InteractionService,
       MediaService,
       StoryService,
-      CommentLikeService,
+      NotificationPushService,
       {
         provide: PrismaService,
         useValue: prismaMock,
       },
     ],
-    controllers: [CommentController, CommentLikeController],
+    controllers: [InsController],
   }).compile();
 };
