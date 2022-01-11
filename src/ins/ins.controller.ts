@@ -143,11 +143,12 @@ export class InsController {
   async getINSList(
     @PrismaUser('id') userID: string,
     @Query('filter') filter: string,
+    @Query('withoutPending') withoutPending: boolean,
   ) {
     this.logger.log(
       `Getting ins list for user ${userID} with filter '${filter}'`,
     );
-    return this.insService.insList(userID, filter);
+    return this.insService.insList(userID, filter, withoutPending);
   }
 
   @Get(':id/media')

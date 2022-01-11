@@ -30,14 +30,14 @@ export class InsService {
     // Retry it a couple of times in case the code is taken
     return retry(
       async () =>
-        this.prismaService.iNS.create({
+        await this.prismaService.iNS.create({
           data,
         }),
       { retries: 3 },
     );
   }
 
-  async insList(userID: string, filter: string) {
+  async insList(userID: string, filter: string, withoutPending: boolean) {
     // First we get all the user's ins connections, ordered by his interaction count
     const connectionQuery = await this.userConnectionService.getConnections({
       where: {
@@ -51,6 +51,11 @@ export class InsService {
                 },
               }
             : undefined,
+        role: withoutPending
+          ? {
+              not: UserRole.PENDING,
+            }
+          : undefined,
       },
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
