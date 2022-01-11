@@ -45,13 +45,17 @@ export class MediaConnectionsController {
       },
       {
         views: {
+          where: {
+            id: {
+              not: userID,
+            },
+          },
           select: ShallowUserSelect,
           skip,
           take,
         },
         story: {
           select: {
-            id: true,
             authorId: true,
           },
         },
@@ -105,7 +109,6 @@ export class MediaConnectionsController {
         },
         story: {
           select: {
-            id: true,
             authorId: true,
           },
         },
