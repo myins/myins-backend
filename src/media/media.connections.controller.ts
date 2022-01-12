@@ -14,6 +14,7 @@ import { PostContent, Story, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { omit } from 'src/util/omit';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -45,11 +46,6 @@ export class MediaConnectionsController {
       },
       {
         views: {
-          where: {
-            id: {
-              not: userID,
-            },
-          },
           select: ShallowUserSelect,
           skip,
           take,
@@ -141,27 +137,45 @@ export class MediaConnectionsController {
     @Param('id') mediaID: string,
   ) {
     this.logger.log(`View story media ${mediaID} by user ${userID}`);
-    const media = await this.mediaService.getMediaById({
-      id: mediaID,
-    });
-    if (!media) {
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        story: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
+    );
+    const castedMedia = <
+      PostContent & {
+        story: Story;
+      }
+    >media;
+    if (!castedMedia) {
       this.logger.error(`Could not find story media ${mediaID}!`);
       throw new NotFoundException('Could not find this story media!');
     }
 
-    this.logger.log(
-      `Updating story media ${mediaID}. Adding view connection with user ${userID}`,
-    );
-    return this.mediaService.updateMedia({
-      where: { id: mediaID },
-      data: {
-        views: {
-          connect: {
-            id: userID,
+    if (castedMedia.story.authorId !== userID) {
+      this.logger.log(
+        `Updating story media ${mediaID}. Adding view connection with user ${userID}`,
+      );
+      return this.mediaService.updateMedia({
+        where: { id: mediaID },
+        data: {
+          views: {
+            connect: {
+              id: userID,
+            },
           },
         },
-      },
-    });
+      });
+    }
+
+    return omit(castedMedia, 'story');
   }
 
   @Post(':id/like')
