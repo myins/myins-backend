@@ -170,6 +170,11 @@ export class StoryService {
         >story;
 
         const myIns = ins ?? castedStory.inses[0];
+        if (insID) {
+          castedStory.mediaContent = castedStory.mediaContent.filter(
+            (media) => !media.excludedInses.includes(insID),
+          );
+        }
         await Promise.all(
           castedStory.mediaContent.map(async (media) => {
             const count = await this.mediaService.getMediaById(
@@ -256,7 +261,7 @@ export class StoryService {
             }[];
           }
         >ins;
-        const medias = await this.mediaService.getMedias({
+        let medias = await this.mediaService.getMedias({
           where: {
             storyId: {
               in: castedIns.stories.map((story) => story.id),
@@ -279,6 +284,9 @@ export class StoryService {
             createdAt: 'desc',
           },
         });
+        medias = medias.filter(
+          (media) => !media.excludedInses.includes(castedIns.id),
+        );
 
         const castedMedias = <
           (PostContent & {
@@ -333,17 +341,23 @@ export class StoryService {
     );
 
     this.logger.log('Sort inses by created date of first media content');
-    const sortedInses = insWithMedia.sort((ins1, ins2) => {
+    let sortedInses = insWithMedia.sort((ins1, ins2) => {
       const time1 = ins1?.mediaContent.createdAt.getTime() ?? 1;
       const time2 = ins2?.mediaContent.createdAt.getTime() ?? 1;
       return time2 - time1;
     });
     const notNullInses = sortedInses.filter((each) => each != null);
-    const finalInses = [
+    sortedInses = [
       ...notNullInses.filter((ins) => ins?.unviewedStories !== 0),
       ...notNullInses.filter((ins) => ins?.unviewedStories === 0),
     ];
 
+    const castedFinalInses = <
+      (INS & {
+        mediaContent: PostContent;
+      })[]
+    >sortedInses;
+    const finalInses = castedFinalInses.map((ins) => omit(ins, 'mediaContent'));
     return finalInses.slice(skip, skip + take);
   }
 
@@ -390,6 +404,9 @@ export class StoryService {
             author: User;
           }
         >story;
+        castedStory.mediaContent = castedStory.mediaContent.filter(
+          (media) => !media.excludedInses.includes(insID),
+        );
         await Promise.all(
           castedStory.mediaContent.map(async (media) => {
             const countLikes = await this.mediaService.getMediaById(

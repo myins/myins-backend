@@ -68,6 +68,8 @@ model PostContent {
   isHighlight Boolean @default(false)
   likes       User[]  @relation(name: "LikesStoryMediaToUser")
   views       User[]  @relation(name: "ViewsStoryMediaToUser")
+
+  excludedInses String[]
 }
 
 model Post {
