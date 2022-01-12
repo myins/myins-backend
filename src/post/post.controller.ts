@@ -101,6 +101,34 @@ export class PostController {
     });
   }
 
+  @Patch(':id/report')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async reportPost(
+    @Param('id') postID: string,
+    @PrismaUser('id') userID: string,
+  ) {
+    const post = await this.postService.post({
+      id: postID,
+    });
+    if (!post) {
+      this.logger.error(`Could not find post ${postID}!`);
+      throw new NotFoundException('Could not find this post!');
+    }
+
+    this.logger.log(
+      `Updating post ${postID} by user ${userID}. Set isReported to true'`,
+    );
+    return this.postService.updatePost({
+      where: {
+        id: postID,
+      },
+      data: {
+        isReported: true,
+      },
+    });
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
