@@ -171,7 +171,7 @@ export class MediaConnectionsController {
         where: { id: mediaID },
         data: {
           views: {
-            connect: {
+            create: {
               id: userID,
             },
           },
@@ -205,7 +205,7 @@ export class MediaConnectionsController {
       where: { id: mediaID },
       data: {
         likes: {
-          connect: {
+          create: {
             id: userID,
           },
         },
@@ -274,8 +274,11 @@ export class MediaConnectionsController {
       where: { id: mediaID },
       data: {
         likes: {
-          disconnect: {
-            id: userID,
+          delete: {
+            id_storyMediaId: {
+              id: userID,
+              storyMediaId: mediaID,
+            },
           },
         },
       },

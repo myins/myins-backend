@@ -30,8 +30,8 @@ model User {
 
   likedComments UserCommentLikeConnection[]
   likedPosts    UserPostLikeConnection[]
-  likedStories  PostContent[]               @relation(name: "LikesStoryMediaToUser")
-  viewedStories PostContent[]               @relation(name: "ViewsStoryMediaToUser")
+  likedStories  UserStoryMediaLikeConnection[]
+  viewedStories UserStoryMediaViewConnection[]
 
   inses UserInsConnection[]
 
@@ -65,9 +65,9 @@ model PostContent {
   width  Int
   height Int
 
-  isHighlight Boolean @default(false)
-  likes       User[]  @relation(name: "LikesStoryMediaToUser")
-  views       User[]  @relation(name: "ViewsStoryMediaToUser")
+  isHighlight Boolean                        @default(false)
+  likes       UserStoryMediaLikeConnection[]
+  views       UserStoryMediaViewConnection[]
 
   excludedInses String[]
   notifications Notification[]
@@ -114,6 +114,28 @@ model Story {
 
   inses         INS[]
   notifications Notification[]
+}
+
+model UserStoryMediaViewConnection {
+  user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id           String // relation scalar field (used in the `@relation` attribute above)
+  storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([id, storyMediaId])
+}
+
+model UserStoryMediaLikeConnection {
+  user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id           String // relation scalar field (used in the `@relation` attribute above)
+  storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([id, storyMediaId])
 }
 
 model Comment {
