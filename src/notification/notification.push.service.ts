@@ -142,6 +142,7 @@ export class NotificationPushService {
     switch (notif.source) {
       case NotificationSource.LIKE_POST:
       case NotificationSource.LIKE_COMMENT:
+      case NotificationSource.LIKE_STORY:
       case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
@@ -152,6 +153,7 @@ export class NotificationPushService {
         break;
       case NotificationSource.DELETED_INS:
       case NotificationSource.POST:
+      case NotificationSource.STORY:
       case NotificationSource.JOINED_INS:
         const ids = (<Array<Prisma.UserWhereUniqueInput>>(
           normalNotif.targets?.connect
@@ -160,13 +162,6 @@ export class NotificationPushService {
           .filter((id) => id !== undefined);
         usersIDs = <Array<string>>ids;
         break;
-      case NotificationSource.ADDED_PHOTOS:
-        this.logger.error(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
-        throw new BadRequestException(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
       case NotificationSource.MESSAGE:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
@@ -208,7 +203,7 @@ export class NotificationPushService {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
               userId_insId: {
-                insId: normalNotif.ins?.connect?.id,
+                insId: normalNotif.ins.connect.id,
                 userId: user.id,
               },
             });
@@ -221,7 +216,7 @@ export class NotificationPushService {
           const connectionPushNotif =
             await this.userConnectionService.getConnection({
               userId_insId: {
-                insId: pushNotif.ins?.id,
+                insId: pushNotif.ins.id,
                 userId: user.id,
               },
             });
@@ -238,12 +233,12 @@ export class NotificationPushService {
               ins: {
                 posts: {
                   some: {
-                    id: normalNotif.post?.connect?.id,
+                    id: normalNotif.post.connect.id,
                   },
                 },
                 members: {
                   some: {
-                    userId: user?.id,
+                    userId: user.id,
                   },
                 },
               },
@@ -255,13 +250,6 @@ export class NotificationPushService {
           }
         }
         break;
-      case NotificationSource.ADDED_PHOTOS:
-        this.logger.error(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
-        throw new BadRequestException(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
       case NotificationSource.MESSAGE:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
@@ -270,6 +258,58 @@ export class NotificationPushService {
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
         );
       case NotificationSource.DELETED_INS:
+        break;
+      case NotificationSource.STORY:
+        if (normalNotif.story?.connect?.id && user?.id) {
+          const connections = await this.userConnectionService.getConnections({
+            where: {
+              ins: {
+                stories: {
+                  some: {
+                    id: normalNotif.story.connect.id,
+                  },
+                },
+                members: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
+              },
+              muteUntil: null,
+            },
+          });
+          if (connections.length) {
+            isMute = false;
+          }
+        }
+        break;
+      case NotificationSource.LIKE_STORY:
+        if (normalNotif.storyMedia?.connect?.id && user?.id) {
+          const connections = await this.userConnectionService.getConnections({
+            where: {
+              ins: {
+                stories: {
+                  some: {
+                    mediaContent: {
+                      some: {
+                        id: normalNotif.storyMedia.connect.id,
+                      },
+                    },
+                  },
+                },
+                members: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
+              },
+              muteUntil: null,
+            },
+          });
+          if (connections.length) {
+            isMute = false;
+          }
+        }
         break;
       default:
         unreachable(notif);
@@ -304,6 +344,12 @@ export class NotificationPushService {
           id: normalNotif.author.connect?.id,
         });
         body = `${authorLikeComment?.firstName} ${authorLikeComment?.lastName} liked your comment!`;
+        break;
+      case NotificationSource.LIKE_STORY:
+        const authorLikeStory = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        body = `${authorLikeStory?.firstName} ${authorLikeStory?.lastName} liked your story!`;
         break;
       case NotificationSource.COMMENT:
         const authorComment = await this.userService.shallowUser({
@@ -340,13 +386,6 @@ export class NotificationPushService {
           }!`;
         }
         break;
-      case NotificationSource.ADDED_PHOTOS:
-        this.logger.error(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
-        throw new BadRequestException(
-          `Cannot create a notification of type ${NotificationSource.ADDED_PHOTOS}`,
-        );
       case NotificationSource.JOINED_INS:
         const authorInsJoined = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
@@ -387,6 +426,35 @@ export class NotificationPushService {
           id: normalNotif.ins?.connect?.id,
         });
         body = `You are now a pending user for ${insPendingIns?.name} ins!`;
+        break;
+      case NotificationSource.STORY:
+        const authorStory = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        if (normalNotif.story?.connect?.id) {
+          const inses = await this.insService.inses({
+            where: {
+              members: {
+                some: {
+                  userId: target.id,
+                  role: {
+                    not: UserRole.PENDING,
+                  },
+                },
+              },
+              stories: {
+                some: {
+                  id: normalNotif.story.connect.id,
+                },
+              },
+            },
+          });
+          body = `${authorStory?.firstName} ${
+            authorStory?.lastName
+          } added a new story in ${inses.map((ins) => ins.name)} ${
+            inses.length > 1 ? 'inses' : 'ins'
+          }!`;
+        }
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(

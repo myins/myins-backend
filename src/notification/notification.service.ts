@@ -180,7 +180,8 @@ export class NotificationService {
     const sources = [
       NotificationSource.JOINED_INS,
       NotificationSource.POST,
-      NotificationSource.CHANGE_ADMIN,
+      NotificationSource.STORY,
+      NotificationSource.DELETED_INS,
     ];
     this.logger.log(
       `Getting notifications of type ${sources} for target ${targetID}`,
@@ -206,6 +207,25 @@ export class NotificationService {
               posts: {
                 some: {
                   id: notif.postId,
+                },
+              },
+              members: {
+                some: {
+                  userId: targetID,
+                },
+              },
+            },
+          });
+          if (inses.length) {
+            notifs.splice(index, 1);
+          }
+        }
+        if (notif.source === NotificationSource.STORY && notif.storyId) {
+          const inses = await this.insService.inses({
+            where: {
+              stories: {
+                some: {
+                  id: notif.storyId,
                 },
               },
               members: {
