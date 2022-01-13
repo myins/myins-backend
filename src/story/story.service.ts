@@ -279,6 +279,11 @@ export class StoryService {
                 id: userID,
               },
             },
+            story: {
+              select: {
+                authorId: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',
@@ -291,6 +296,7 @@ export class StoryService {
         const castedMedias = <
           (PostContent & {
             views: User[];
+            story: Story;
           })[]
         >medias;
         const sortedMedias = castedMedias.sort((media1, media2) => {
@@ -301,6 +307,7 @@ export class StoryService {
 
         let allMediasFromStory: (PostContent & {
           views: User[];
+          story: Story;
         })[] = [];
         let mediaContent = sortedMedias[0];
         if (!mediaContent.views.length) {
@@ -325,7 +332,7 @@ export class StoryService {
         }
 
         const unviewedStories = castedMedias.filter(
-          (media) => !media.views.length,
+          (media) => !media.views.length && media.story.authorId !== userID,
         ).length;
 
         if (medias.length) {
