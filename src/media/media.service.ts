@@ -278,12 +278,10 @@ export class MediaService {
       }
 
       if (
-        !isStoryEntity &&
         updatedEntity.authorId &&
         (<PostStoryWithInsesAndCountMedia>updatedEntity).inses.length
       ) {
         const inses = (<PostStoryWithInsesAndCountMedia>updatedEntity).inses;
-        this.logger.log(`Creating notification for adding post ${toRet.id}`);
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -298,34 +296,56 @@ export class MediaService {
         ).map((connection) => {
           return { id: connection.userId };
         });
-        await this.notificationService.createNotification({
-          source: NotificationSource.POST,
-          targets: {
-            connect: targetIDs,
-          },
-          author: {
-            connect: {
-              id: updatedEntity.authorId,
-            },
-          },
-          post: {
-            connect: {
-              id: entity.id,
-            },
-          },
-        });
 
-        this.logger.log(
-          `Send message by user ${updatedEntity.authorId} in inses 
-          ${inses.map((ins: { id: string }) => ins.id)} with new posts ${
-            updatedEntity.id
-          }`,
-        );
-        await this.chatService.sendMessageWhenPost(
-          inses.map((ins: { id: string }) => ins.id),
-          updatedEntity.authorId,
-          updatedEntity.id,
-        );
+        if (isStoryEntity) {
+          this.logger.log(`Creating notification for adding story ${toRet.id}`);
+          await this.notificationService.createNotification({
+            source: NotificationSource.STORY,
+            targets: {
+              connect: targetIDs,
+            },
+            author: {
+              connect: {
+                id: updatedEntity.authorId,
+              },
+            },
+            story: {
+              connect: {
+                id: entity.id,
+              },
+            },
+          });
+        } else {
+          this.logger.log(`Creating notification for adding post ${toRet.id}`);
+          await this.notificationService.createNotification({
+            source: NotificationSource.POST,
+            targets: {
+              connect: targetIDs,
+            },
+            author: {
+              connect: {
+                id: updatedEntity.authorId,
+              },
+            },
+            post: {
+              connect: {
+                id: entity.id,
+              },
+            },
+          });
+
+          this.logger.log(
+            `Send message by user ${updatedEntity.authorId} in inses 
+            ${inses.map((ins: { id: string }) => ins.id)} with new posts ${
+              updatedEntity.id
+            }`,
+          );
+          await this.chatService.sendMessageWhenPost(
+            inses.map((ins: { id: string }) => ins.id),
+            updatedEntity.authorId,
+            updatedEntity.id,
+          );
+        }
       }
     });
 

@@ -10,9 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PostContent, Story, User } from '@prisma/client';
+import { NotificationSource, PostContent, Story, User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { omit } from 'src/util/omit';
 import { MediaService } from './media.service';
@@ -21,7 +22,10 @@ import { MediaService } from './media.service';
 export class MediaConnectionsController {
   private readonly logger = new Logger(MediaConnectionsController.name);
 
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(
+    private readonly mediaService: MediaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   @Get(':id/views')
   @UseGuards(JwtAuthGuard)
@@ -197,7 +201,7 @@ export class MediaConnectionsController {
     this.logger.log(
       `Updating story media ${mediaID}. Adding like connection with user ${userID}`,
     );
-    return this.mediaService.updateMedia({
+    const toRet = await this.mediaService.updateMedia({
       where: { id: mediaID },
       data: {
         likes: {
@@ -206,7 +210,45 @@ export class MediaConnectionsController {
           },
         },
       },
+      include: {
+        story: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
     });
+
+    const story = (<
+      PostContent & {
+        story: Story;
+      }
+    >toRet).story;
+    if (story.authorId !== userID) {
+      this.logger.log(
+        `Creating notification for liking story media ${toRet.id} by user ${userID}`,
+      );
+      await this.notificationService.createNotification({
+        source: NotificationSource.LIKE_STORY,
+        targets: {
+          connect: {
+            id: story.authorId,
+          },
+        },
+        author: {
+          connect: {
+            id: userID,
+          },
+        },
+        storyMedia: {
+          connect: {
+            id: toRet.id,
+          },
+        },
+      });
+    }
+
+    return toRet;
   }
 
   @Post(':id/unlike')

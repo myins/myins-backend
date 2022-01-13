@@ -42,6 +42,10 @@ export class NotificationController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
     if (take > 20) {
       this.logger.error('Take param bigger than 20!');
       throw new BadRequestException("Don't get greedy!");

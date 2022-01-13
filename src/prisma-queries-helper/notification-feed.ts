@@ -55,6 +55,12 @@ const includeQuery = (targetId: string) => {
         mediaContent: true,
       },
     },
+    storyMedia: true,
+    story: {
+      include: {
+        mediaContent: true,
+      },
+    },
   };
 };
 
@@ -100,6 +106,12 @@ const includeQueryWithoutPost = (targetId: string) => {
             createdAt: true,
           },
         },
+      },
+    },
+    storyMedia: true,
+    story: {
+      include: {
+        mediaContent: true,
       },
     },
   };

@@ -70,6 +70,7 @@ model PostContent {
   views       User[]  @relation(name: "ViewsStoryMediaToUser")
 
   excludedInses String[]
+  notifications Notification[]
 }
 
 model Post {
@@ -111,7 +112,8 @@ model Story {
   pending           Boolean @default(true)
   totalMediaContent Int
 
-  inses INS[]
+  inses         INS[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -162,6 +164,12 @@ model Notification {
 
   comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   commentId String?
+
+  story   Story?  @relation(fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyId String?
+
+  storyMedia   PostContent? @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String?
 
   metadata Json?
 }
@@ -217,13 +225,14 @@ enum NotificationSource {
   LIKE_COMMENT
   COMMENT
   POST
-  ADDED_PHOTOS
   JOINED_INS
   JOIN_INS_REJECTED
   MESSAGE
   CHANGE_ADMIN
   DELETED_INS
   PENDING_INS
+  STORY
+  LIKE_STORY
 }
 
 enum UserRole {

@@ -9,12 +9,21 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PostContent, Story, User, UserRole } from '@prisma/client';
+import {
+  NotificationSource,
+  PostContent,
+  Story,
+  User,
+  UserRole,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { MediaService } from 'src/media/media.service';
+import { NotificationService } from 'src/notification/notification.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { CreatePostAPI, CreatePostFromLinksAPI } from './post-api.entity';
 import { PostService } from './post.service';
 
@@ -27,6 +36,9 @@ export class PostCreateController {
     private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly mediaService: MediaService,
+    private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Post()
@@ -194,6 +206,43 @@ export class PostCreateController {
         });
       }),
     );
+
+    this.logger.log(`Creating notification for adding post ${toRet.id}`);
+    const targetIDs = (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: {
+            in: inses,
+          },
+          userId: {
+            not: user.id,
+          },
+        },
+      })
+    ).map((connection) => {
+      return { id: connection.userId };
+    });
+    await this.notificationService.createNotification({
+      source: NotificationSource.POST,
+      targets: {
+        connect: targetIDs,
+      },
+      author: {
+        connect: {
+          id: user.id,
+        },
+      },
+      post: {
+        connect: {
+          id: toRet.id,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Send message by user ${user.id} in inses ${inses} with new post ${toRet.id}`,
+    );
+    await this.chatService.sendMessageWhenPost(inses, user.id, toRet.id);
 
     return toRet;
   }
