@@ -240,9 +240,9 @@ export class PostCreateController {
     });
 
     this.logger.log(
-      `Send message by user ${user.id} in inses ${inses} with new post ${toRet.id}`,
+      `Send message by user ${user.id} in inses ${postData.ins} with new post ${toRet.id}`,
     );
-    await this.chatService.sendMessageWhenPost(inses, user.id, toRet.id);
+    await this.chatService.sendMessageWhenPost(postData.ins, user.id, toRet.id);
 
     return toRet;
   }
