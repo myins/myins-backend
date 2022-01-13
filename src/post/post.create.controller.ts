@@ -207,42 +207,42 @@ export class PostCreateController {
       }),
     );
 
-    this.logger.log(`Creating notification for adding post ${toRet.id}`);
-    const targetIDs = (
-      await this.userConnectionService.getConnections({
-        where: {
-          insId: {
-            in: inses,
-          },
-          userId: {
-            not: user.id,
-          },
-        },
-      })
-    ).map((connection) => {
-      return { id: connection.userId };
-    });
-    await this.notificationService.createNotification({
-      source: NotificationSource.POST,
-      targets: {
-        connect: targetIDs,
-      },
-      author: {
-        connect: {
-          id: user.id,
-        },
-      },
-      post: {
-        connect: {
-          id: toRet.id,
-        },
-      },
-    });
+    // this.logger.log(`Creating notification for adding post ${toRet.id}`);
+    // const targetIDs = (
+    //   await this.userConnectionService.getConnections({
+    //     where: {
+    //       insId: {
+    //         in: inses,
+    //       },
+    //       userId: {
+    //         not: user.id,
+    //       },
+    //     },
+    //   })
+    // ).map((connection) => {
+    //   return { id: connection.userId };
+    // });
+    // await this.notificationService.createNotification({
+    //   source: NotificationSource.POST,
+    //   targets: {
+    //     connect: targetIDs,
+    //   },
+    //   author: {
+    //     connect: {
+    //       id: user.id,
+    //     },
+    //   },
+    //   post: {
+    //     connect: {
+    //       id: toRet.id,
+    //     },
+    //   },
+    // });
 
-    this.logger.log(
-      `Send message by user ${user.id} in inses ${inses} with new post ${toRet.id}`,
-    );
-    await this.chatService.sendMessageWhenPost(inses, user.id, toRet.id);
+    // this.logger.log(
+    //   `Send message by user ${user.id} in inses ${inses} with new post ${toRet.id}`,
+    // );
+    // await this.chatService.sendMessageWhenPost(inses, user.id, toRet.id);
 
     return toRet;
   }
