@@ -15,7 +15,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
-import { PostService } from 'src/post/post.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import {
   ChangeNameAPI,
@@ -34,7 +33,6 @@ export class InsAdminController {
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
-    private readonly postService: PostService,
   ) {}
 
   @Post('change')
@@ -221,32 +219,6 @@ export class InsAdminController {
       );
     }
 
-    const post = await this.postService.post({ id: postID });
-    if (!post?.isReported) {
-      this.logger.error(`Post ${postID} is not reported!`);
-      throw new BadRequestException('Post is not reported!');
-    }
-
-    const updatedPost: Prisma.PostUpdateArgs = {
-      where: {
-        id: postID,
-      },
-      data: {},
-    };
-    if (data.isDeleted) {
-      updatedPost.data = {
-        inses: {
-          disconnect: {
-            id: insID,
-          },
-        },
-      };
-    } else {
-      updatedPost.data = {
-        isReported: false,
-      };
-    }
-
-    return this.postService.updatePost(updatedPost);
+    // rrreport - implement me with connection between ins and post
   }
 }
