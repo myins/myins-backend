@@ -452,9 +452,11 @@ export class MediaController {
           },
           stories: {
             some: {
-              mediaContent: {
-                some: {
-                  id,
+              story: {
+                mediaContent: {
+                  some: {
+                    id,
+                  },
                 },
               },
             },

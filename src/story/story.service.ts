@@ -3,6 +3,7 @@ import {
   PostContent,
   Prisma,
   Story,
+  StoryInsConnection,
   User,
   UserRole,
 } from '.prisma/client';
@@ -127,13 +128,19 @@ export class StoryService {
         inses: !insID
           ? {
               where: {
-                members: {
-                  some: {
-                    userId: userID,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userID,
+                    },
                   },
                 },
               },
-              select: ShallowINSSelect,
+              select: {
+                ins: {
+                  select: ShallowINSSelect,
+                },
+              },
               orderBy: {
                 createdAt: 'asc',
               },
@@ -165,11 +172,13 @@ export class StoryService {
           Story & {
             mediaContent: PostContent[];
             author: User;
-            inses: INS[];
+            inses: (StoryInsConnection & {
+              ins: INS;
+            })[];
           }
         >story;
 
-        const myIns = ins ?? castedStory.inses[0];
+        const myIns = ins ?? castedStory.inses[0].ins;
         if (insID) {
           castedStory.mediaContent = castedStory.mediaContent.filter(
             (media) => !media.excludedInses.includes(insID),
@@ -229,11 +238,13 @@ export class StoryService {
         },
         stories: {
           some: {
-            pending: false,
-            mediaContent: {
-              some: {
-                createdAt: {
-                  gt: date,
+            story: {
+              pending: false,
+              mediaContent: {
+                some: {
+                  createdAt: {
+                    gt: date,
+                  },
                 },
               },
             },
@@ -243,7 +254,7 @@ export class StoryService {
       include: {
         stories: {
           select: {
-            id: true,
+            storyId: true,
           },
         },
       },
@@ -257,14 +268,15 @@ export class StoryService {
         const castedIns = <
           INS & {
             stories: {
-              id: string;
+              storyId: string;
             }[];
           }
         >ins;
+
         let medias = await this.mediaService.getMedias({
           where: {
             storyId: {
-              in: castedIns.stories.map((story) => story.id),
+              in: castedIns.stories.map((story) => story.storyId),
             },
             story: {
               pending: false,

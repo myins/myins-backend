@@ -290,9 +290,11 @@ export class NotificationPushService {
               ins: {
                 stories: {
                   some: {
-                    mediaContent: {
-                      some: {
-                        id: normalNotif.storyMedia.connect.id,
+                    story: {
+                      mediaContent: {
+                        some: {
+                          id: normalNotif.storyMedia.connect.id,
+                        },
                       },
                     },
                   },
@@ -444,7 +446,7 @@ export class NotificationPushService {
               },
               stories: {
                 some: {
-                  id: normalNotif.story.connect.id,
+                  storyId: normalNotif.story.connect.id,
                 },
               },
             },

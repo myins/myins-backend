@@ -10,12 +10,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, PostContent, Story, User } from '@prisma/client';
+import {
+  NotificationSource,
+  PostContent,
+  Story,
+  User,
+  UserStoryMediaLikeConnection,
+  UserStoryMediaViewConnection,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { omit } from 'src/util/omit';
+import { MediaConnectionsService } from './media.connections.service';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -25,6 +33,7 @@ export class MediaConnectionsController {
   constructor(
     private readonly mediaService: MediaService,
     private readonly notificationService: NotificationService,
+    private readonly mediaConnectionsService: MediaConnectionsService,
   ) {}
 
   @Get(':id/views')
@@ -49,11 +58,6 @@ export class MediaConnectionsController {
         id: mediaID,
       },
       {
-        views: {
-          select: ShallowUserSelect,
-          skip,
-          take,
-        },
         story: {
           select: {
             authorId: true,
@@ -69,7 +73,6 @@ export class MediaConnectionsController {
     const castedMedia = <
       PostContent & {
         story: Story;
-        views: User[];
       }
     >media;
     if (!castedMedia.story?.authorId || castedMedia.story.authorId !== userID) {
@@ -77,7 +80,23 @@ export class MediaConnectionsController {
       throw new NotFoundException('Not your story!');
     }
 
-    return castedMedia.views;
+    const views = await this.mediaConnectionsService.getViews({
+      where: {
+        storyMediaId: mediaID,
+      },
+      select: {
+        user: {
+          select: ShallowUserSelect,
+        },
+      },
+    });
+
+    const castedViews = <
+      (UserStoryMediaViewConnection & {
+        user: User;
+      })[]
+    >views;
+    return castedViews.map((view) => view.user);
   }
 
   @Get(':id/likes')
@@ -102,11 +121,6 @@ export class MediaConnectionsController {
         id: mediaID,
       },
       {
-        likes: {
-          select: ShallowUserSelect,
-          skip,
-          take,
-        },
         story: {
           select: {
             authorId: true,
@@ -122,7 +136,6 @@ export class MediaConnectionsController {
     const castedMedia = <
       PostContent & {
         story: Story;
-        likes: User[];
       }
     >media;
     if (!castedMedia.story?.authorId || castedMedia.story.authorId !== userID) {
@@ -130,7 +143,23 @@ export class MediaConnectionsController {
       throw new NotFoundException('Not your story!');
     }
 
-    return castedMedia.likes;
+    const likes = await this.mediaConnectionsService.getLikes({
+      where: {
+        storyMediaId: mediaID,
+      },
+      select: {
+        user: {
+          select: ShallowUserSelect,
+        },
+      },
+    });
+
+    const castedLikes = <
+      (UserStoryMediaViewConnection & {
+        user: User;
+      })[]
+    >likes;
+    return castedLikes.map((like) => like.user);
   }
 
   @Post(':id/view')
@@ -151,11 +180,17 @@ export class MediaConnectionsController {
             authorId: true,
           },
         },
+        likes: {
+          where: {
+            id: userID,
+          },
+        },
       },
     );
     const castedMedia = <
       PostContent & {
         story: Story;
+        likes: UserStoryMediaLikeConnection[];
       }
     >media;
     if (!castedMedia) {
@@ -163,23 +198,25 @@ export class MediaConnectionsController {
       throw new NotFoundException('Could not find this story media!');
     }
 
-    if (castedMedia.story.authorId !== userID) {
-      this.logger.log(
-        `Updating story media ${mediaID}. Adding view connection with user ${userID}`,
-      );
-      return this.mediaService.updateMedia({
-        where: { id: mediaID },
-        data: {
-          views: {
-            create: {
-              id: userID,
+    if (castedMedia.likes.length) {
+      return omit(castedMedia, 'likes', 'story');
+    } else {
+      if (castedMedia.story.authorId !== userID) {
+        this.logger.log(
+          `Updating story media ${mediaID}. Adding view connection with user ${userID}`,
+        );
+        return this.mediaService.updateMedia({
+          where: { id: mediaID },
+          data: {
+            views: {
+              create: {
+                id: userID,
+              },
             },
           },
-        },
-      });
+        });
+      }
     }
-
-    return omit(castedMedia, 'story');
   }
 
   @Post(':id/like')
@@ -190,65 +227,83 @@ export class MediaConnectionsController {
     @Param('id') mediaID: string,
   ) {
     this.logger.log(`Like story media ${mediaID} by user ${userID}`);
-    const media = await this.mediaService.getMediaById({
-      id: mediaID,
-    });
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        likes: {
+          where: {
+            id: userID,
+          },
+        },
+      },
+    );
     if (!media) {
       this.logger.error(`Could not find story media ${mediaID}!`);
       throw new NotFoundException('Could not find this story media!');
     }
 
-    this.logger.log(
-      `Updating story media ${mediaID}. Adding like connection with user ${userID}`,
-    );
-    const toRet = await this.mediaService.updateMedia({
-      where: { id: mediaID },
-      data: {
-        likes: {
-          create: {
-            id: userID,
-          },
-        },
-      },
-      include: {
-        story: {
-          select: {
-            authorId: true,
-          },
-        },
-      },
-    });
-
-    const story = (<
+    const castedMedia = <
       PostContent & {
-        story: Story;
+        likes: UserStoryMediaLikeConnection[];
       }
-    >toRet).story;
-    if (story.authorId !== userID) {
+    >media;
+    if (castedMedia.likes.length) {
+      return omit(castedMedia, 'likes');
+    } else {
       this.logger.log(
-        `Creating notification for liking story media ${toRet.id} by user ${userID}`,
+        `Updating story media ${mediaID}. Adding like connection with user ${userID}`,
       );
-      await this.notificationService.createNotification({
-        source: NotificationSource.LIKE_STORY,
-        targets: {
-          connect: {
-            id: story.authorId,
+      const toRet = await this.mediaService.updateMedia({
+        where: { id: mediaID },
+        data: {
+          likes: {
+            create: {
+              id: userID,
+            },
           },
         },
-        author: {
-          connect: {
-            id: userID,
-          },
-        },
-        storyMedia: {
-          connect: {
-            id: toRet.id,
+        include: {
+          story: {
+            select: {
+              authorId: true,
+            },
           },
         },
       });
-    }
 
-    return toRet;
+      const story = (<
+        PostContent & {
+          story: Story;
+        }
+      >toRet).story;
+      if (story.authorId !== userID) {
+        this.logger.log(
+          `Creating notification for liking story media ${toRet.id} by user ${userID}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.LIKE_STORY,
+          targets: {
+            connect: {
+              id: story.authorId,
+            },
+          },
+          author: {
+            connect: {
+              id: userID,
+            },
+          },
+          storyMedia: {
+            connect: {
+              id: toRet.id,
+            },
+          },
+        });
+      }
+
+      return toRet;
+    }
   }
 
   @Post(':id/unlike')
@@ -259,29 +314,47 @@ export class MediaConnectionsController {
     @Param('id') mediaID: string,
   ) {
     this.logger.log(`Unlike story media ${mediaID} by user ${userID}`);
-    const media = await this.mediaService.getMediaById({
-      id: mediaID,
-    });
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        likes: {
+          where: {
+            id: userID,
+          },
+        },
+      },
+    );
     if (!media) {
       this.logger.error(`Could not find story media ${mediaID}!`);
       throw new NotFoundException('Could not find this story media!');
     }
 
-    this.logger.log(
-      `Updating story media ${mediaID}. Deleting like connection with user ${userID}`,
-    );
-    return this.mediaService.updateMedia({
-      where: { id: mediaID },
-      data: {
-        likes: {
-          delete: {
-            id_storyMediaId: {
-              id: userID,
-              storyMediaId: mediaID,
+    const castedMedia = <
+      PostContent & {
+        likes: UserStoryMediaLikeConnection[];
+      }
+    >media;
+    if (!castedMedia.likes.length) {
+      return omit(castedMedia, 'likes');
+    } else {
+      this.logger.log(
+        `Updating story media ${mediaID}. Deleting like connection with user ${userID}`,
+      );
+      return this.mediaService.updateMedia({
+        where: { id: mediaID },
+        data: {
+          likes: {
+            delete: {
+              id_storyMediaId: {
+                id: userID,
+                storyMediaId: mediaID,
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
   }
 }

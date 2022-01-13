@@ -8,6 +8,7 @@ import { StorageModule } from 'src/storage/storage.module';
 import { StoryModule } from 'src/story/story.module';
 import { UserModule } from 'src/user/user.module';
 import { MediaConnectionsController } from './media.connections.controller';
+import { MediaConnectionsService } from './media.connections.service';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 
@@ -23,7 +24,7 @@ import { MediaService } from './media.service';
     StoryModule,
   ],
   controllers: [MediaController, MediaConnectionsController],
-  providers: [MediaService],
+  providers: [MediaService, MediaConnectionsService],
   exports: [MediaService],
 })
 export class MediaModule {}

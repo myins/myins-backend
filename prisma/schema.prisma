@@ -112,7 +112,7 @@ model Story {
   pending           Boolean @default(true)
   totalMediaContent Int
 
-  inses         INS[]
+  inses         StoryInsConnection[]
   notifications Notification[]
 }
 
@@ -204,7 +204,7 @@ model INS {
 
   members             UserInsConnection[]
   posts               Post[]
-  stories             Story[]
+  stories             StoryInsConnection[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
 
@@ -229,6 +229,17 @@ model UserInsConnection {
   createdAt DateTime @default(now())
 
   @@id([userId, insId])
+}
+
+model StoryInsConnection {
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyId String // relation scalar field (used in the `@relation` attribute above)
+  ins     INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id      String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([storyId, id])
 }
 
 model CurrentVersions {
