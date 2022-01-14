@@ -85,7 +85,7 @@ export class OnboardingController {
       content: content,
       totalMediaContent: totalMediaContent,
       inses: {
-        connect: [
+        create: [
           {
             id: ins.id,
           },

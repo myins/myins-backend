@@ -1,8 +1,8 @@
 import {
-  INS,
   Post as PostModel,
   PostContent,
   Story,
+  StoryInsConnection,
   User,
 } from '.prisma/client';
 import {
@@ -114,7 +114,7 @@ export class MediaController {
       PostContent & {
         story: Story & {
           author: User;
-          inses: INS[];
+          inses: StoryInsConnection[];
         };
       }
     >media;
@@ -416,7 +416,7 @@ export class MediaController {
     );
     const castedStory = <
       Story & {
-        inses: INS[];
+        inses: StoryInsConnection[];
       }
     >story;
     if (!castedStory || !castedStory.inses.length) {

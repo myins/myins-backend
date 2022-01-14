@@ -12,7 +12,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, Post as PostModel } from '@prisma/client';
+import {
+  INS,
+  NotificationSource,
+  Post,
+  Post as PostModel,
+  PostInsConnection,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
@@ -37,19 +43,6 @@ export class PostController {
     private readonly userConnectionService: UserConnectionService,
   ) {}
 
-  @Get('pending')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  async getPendingPosts(@PrismaUser('id') userID: string) {
-    this.logger.log(`Get pending posts by user ${userID}`);
-    return this.postService.postsWithRelatedInfo({
-      where: {
-        authorId: userID,
-        pending: true,
-      },
-    });
-  }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
@@ -58,7 +51,20 @@ export class PostController {
     @PrismaUser('id') userID: string,
   ): Promise<PostModel | null> {
     this.logger.log(`Get post by id ${id} by user ${userID}`);
-    return this.postService.injectedPost(id, userID);
+    const post = await this.postService.injectedPost(id, userID);
+    const castedPost = <
+      Post & {
+        inses: (PostInsConnection & {
+          ins: INS;
+        })[];
+      }
+    >post;
+    const returnPost = {
+      ...castedPost,
+      inses: castedPost.inses.map((insConnection) => insConnection.ins),
+    };
+
+    return returnPost;
   }
 
   @Patch(':id')
@@ -222,7 +228,9 @@ export class PostController {
       },
       data: {
         inses: {
-          connect: ins.map((insId) => ({ id: insId })),
+          createMany: {
+            data: ins.map((insId) => ({ id: insId })),
+          },
         },
       },
     });

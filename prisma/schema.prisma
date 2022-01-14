@@ -88,7 +88,7 @@ model Post {
 
   notifications Notification[] // Some notifications have a post
   likes         UserPostLikeConnection[]
-  inses         INS[]
+  inses         PostInsConnection[]
 }
 
 model UserPostLikeConnection {
@@ -203,7 +203,7 @@ model INS {
   shareCode String  @unique
 
   members             UserInsConnection[]
-  posts               Post[]
+  posts               PostInsConnection[]
   stories             StoryInsConnection[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
@@ -240,6 +240,18 @@ model StoryInsConnection {
   createdAt DateTime @default(now())
 
   @@id([storyId, id])
+}
+
+model PostInsConnection {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId String // relation scalar field (used in the `@relation` attribute above)
+  ins    INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id     String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt  DateTime @default(now())
+  isReported Boolean  @default(false)
+
+  @@id([postId, id])
 }
 
 model CurrentVersions {

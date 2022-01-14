@@ -233,7 +233,7 @@ export class NotificationPushService {
               ins: {
                 posts: {
                   some: {
-                    id: normalNotif.post.connect.id,
+                    postId: normalNotif.post.connect.id,
                   },
                 },
                 members: {
@@ -266,7 +266,7 @@ export class NotificationPushService {
               ins: {
                 stories: {
                   some: {
-                    id: normalNotif.story.connect.id,
+                    storyId: normalNotif.story.connect.id,
                   },
                 },
                 members: {
@@ -376,7 +376,7 @@ export class NotificationPushService {
               },
               posts: {
                 some: {
-                  id: normalNotif.post.connect.id,
+                  postId: normalNotif.post.connect.id,
                 },
               },
             },

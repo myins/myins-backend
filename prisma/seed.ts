@@ -380,7 +380,7 @@ async function main() {
       pending: false,
       totalMediaContent: 5,
       inses: {
-        connect: { id: firstINS.id },
+        create: { id: firstINS.id },
       },
     },
     include: {
@@ -464,14 +464,16 @@ async function main() {
       pending: false,
       totalMediaContent: 5,
       inses: {
-        connect: [
-          {
-            id: firstINS.id,
-          },
-          {
-            id: secondINS.id,
-          },
-        ],
+        createMany: {
+          data: [
+            {
+              id: firstINS.id,
+            },
+            {
+              id: secondINS.id,
+            },
+          ],
+        },
       },
     },
     include: {

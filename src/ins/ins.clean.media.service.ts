@@ -8,9 +8,9 @@ import { InsService } from './ins.service';
 import {
   Post,
   Comment,
-  INS,
   UserPostLikeConnection,
   UserCommentLikeConnection,
+  PostInsConnection,
 } from '@prisma/client';
 
 @Injectable()
@@ -70,9 +70,11 @@ export class InsCleanMediaService {
           include: {
             inses: {
               where: {
-                members: {
-                  some: {
-                    userId: userId,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userId,
+                    },
                   },
                 },
               },
@@ -87,7 +89,7 @@ export class InsCleanMediaService {
     const castedMyComments = <
       (Comment & {
         post: Post & {
-          inses: INS[];
+          inses: PostInsConnection[];
         };
       })[]
     >myComments;
@@ -131,9 +133,11 @@ export class InsCleanMediaService {
           include: {
             inses: {
               where: {
-                members: {
-                  some: {
-                    userId: userId,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userId,
+                    },
                   },
                 },
               },
@@ -151,7 +155,7 @@ export class InsCleanMediaService {
     const castedMyLikePosts = <
       (UserPostLikeConnection & {
         post: Post & {
-          inses: INS[];
+          inses: PostInsConnection[];
         };
       })[]
     >myLikePosts;
@@ -207,9 +211,11 @@ export class InsCleanMediaService {
               include: {
                 inses: {
                   where: {
-                    members: {
-                      some: {
-                        userId: userId,
+                    ins: {
+                      members: {
+                        some: {
+                          userId: userId,
+                        },
                       },
                     },
                   },
@@ -230,7 +236,7 @@ export class InsCleanMediaService {
       (UserCommentLikeConnection & {
         comment: Comment & {
           post: Post & {
-            inses: INS[];
+            inses: PostInsConnection[];
           };
         };
       })[]
@@ -285,7 +291,7 @@ export class InsCleanMediaService {
       },
       data: {
         posts: {
-          disconnect: myPosts.map((myPost) => ({ id: myPost.id })),
+          deleteMany: myPosts.map((myPost) => ({ id: myPost.id })),
         },
       },
     });
