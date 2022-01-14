@@ -15,9 +15,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
+import { PostConnectionService } from 'src/post/post.connection.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { UserService } from 'src/user/user.service';
-import { ChangeNameAPI, UpdateINSAdminAPI } from './ins-api.entity';
+import {
+  ChangeNameAPI,
+  DeletePostFromINSAPI,
+  UpdateINSAdminAPI,
+} from './ins-api.entity';
 import { InsAdminService } from './ins.admin.service';
 import { InsService } from './ins.service';
 
@@ -28,9 +32,9 @@ export class InsAdminController {
   constructor(
     private readonly insAdminService: InsAdminService,
     private readonly insService: InsService,
-    private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
+    private readonly postConnectionService: PostConnectionService,
   ) {}
 
   @Post('change')
@@ -194,5 +198,65 @@ export class InsAdminController {
 
     this.logger.log(`Deleting ins ${insID}`);
     return this.insAdminService.deleteINS({ id: insID });
+  }
+
+  @Delete(':id/post/:postID')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins-admin')
+  async deletePostFromINS(
+    @Param('id') insID: string,
+    @Param('postID') postID: string,
+    @PrismaUser('id') userID: string,
+    @Body() data: DeletePostFromINSAPI,
+  ) {
+    this.logger.log(
+      `Deciding action for reported post ${postID} from ins ${insID} by user ${userID}`,
+    );
+
+    const isAdmin = await this.insAdminService.isAdmin(userID, insID);
+    if (!isAdmin) {
+      this.logger.error(`You're not allowed to delete post from ins ${insID}!`);
+      throw new BadRequestException(
+        "You're not allowed to delete post from this INS!",
+      );
+    }
+
+    const connection = await this.postConnectionService.get({
+      postId_id: {
+        id: insID,
+        postId: postID,
+      },
+    });
+    if (!connection?.isReported) {
+      this.logger.error(`Post is no longer reported in ins ${insID}!`);
+      throw new BadRequestException('Post is no longer reported in INS!');
+    }
+
+    if (data.isDeleted) {
+      this.logger.log(
+        `Deleting post ${postID} from ins ${insID} by user ${userID}`,
+      );
+      return this.postConnectionService.delete({
+        postId_id: {
+          id: insID,
+          postId: postID,
+        },
+      });
+    } else {
+      this.logger.log(
+        `Removing reporting for post ${postID} from ins ${insID} by user ${userID}`,
+      );
+      return this.postConnectionService.update({
+        where: {
+          postId_id: {
+            id: insID,
+            postId: postID,
+          },
+        },
+        data: {
+          isReported: false,
+        },
+      });
+    }
   }
 }

@@ -42,3 +42,9 @@ export class ChangeNameAPI {
   @IsString()
   name: string;
 }
+
+export class DeletePostFromINSAPI {
+  @IsBoolean()
+  @IsNotEmpty()
+  isDeleted: boolean;
+}

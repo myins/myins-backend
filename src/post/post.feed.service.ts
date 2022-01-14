@@ -29,11 +29,13 @@ export class PostFeedService {
         inses: !onlyMine
           ? {
               some: {
-                members: {
-                  some: {
-                    userId: userID,
-                    role: {
-                      not: UserRole.PENDING,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userID,
+                      role: {
+                        not: UserRole.PENDING,
+                      },
                     },
                   },
                 },

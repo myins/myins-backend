@@ -1,4 +1,9 @@
-import { INS, Post, UserInsConnection, Comment } from '.prisma/client';
+import {
+  Post,
+  UserInsConnection,
+  Comment,
+  PostInsConnection,
+} from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
@@ -50,7 +55,7 @@ export class InteractionService {
 
     const castedPost = <
       Post & {
-        inses: INS[];
+        inses: PostInsConnection[];
       }
     >postWithIns;
     const insIDs = castedPost.inses.map((each) => each.id);
@@ -97,7 +102,7 @@ export class InteractionService {
     const castedComment = <
       Comment & {
         post: Post & {
-          inses: INS[];
+          inses: PostInsConnection[];
         };
       }
     >comment;

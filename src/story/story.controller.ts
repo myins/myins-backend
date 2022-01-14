@@ -119,7 +119,9 @@ export class StoryController {
         },
       },
       inses: {
-        connect: mappedINSIDs,
+        createMany: {
+          data: mappedINSIDs,
+        },
       },
       totalMediaContent: storyData.totalMediaContent,
     });

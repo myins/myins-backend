@@ -12,7 +12,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, Post as PostModel } from '@prisma/client';
+import {
+  INS,
+  NotificationSource,
+  Post,
+  Post as PostModel,
+  PostInsConnection,
+  UserInsConnection,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
@@ -23,6 +30,7 @@ import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { PostConnectionService } from './post.connection.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -35,20 +43,8 @@ export class PostController {
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly postConnectionService: PostConnectionService,
   ) {}
-
-  @Get('pending')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  async getPendingPosts(@PrismaUser('id') userID: string) {
-    this.logger.log(`Get pending posts by user ${userID}`);
-    return this.postService.postsWithRelatedInfo({
-      where: {
-        authorId: userID,
-        pending: true,
-      },
-    });
-  }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
@@ -58,7 +54,20 @@ export class PostController {
     @PrismaUser('id') userID: string,
   ): Promise<PostModel | null> {
     this.logger.log(`Get post by id ${id} by user ${userID}`);
-    return this.postService.injectedPost(id, userID);
+    const post = await this.postService.injectedPost(id, userID);
+    const castedPost = <
+      Post & {
+        inses: (PostInsConnection & {
+          ins: INS;
+        })[];
+      }
+    >post;
+    const returnPost = {
+      ...castedPost,
+      inses: castedPost.inses.map((insConnection) => insConnection.ins),
+    };
+
+    return returnPost;
   }
 
   @Patch(':id')
@@ -97,6 +106,55 @@ export class PostController {
       data: {
         content: content,
         edited: true,
+      },
+    });
+  }
+
+  @Patch(':id/ins/:insID/report')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async reportPost(
+    @Param('id') postID: string,
+    @Param('insID') insID: string,
+    @PrismaUser('id') userID: string,
+  ) {
+    const ins = await this.insService.ins(
+      {
+        id: insID,
+      },
+      {
+        posts: {
+          where: {
+            postId: postID,
+          },
+        },
+        members: {
+          where: {
+            userId: userID,
+          },
+        },
+      },
+    );
+    const castedINS = <
+      INS & {
+        posts: PostInsConnection[];
+        members: UserInsConnection[];
+      }
+    >ins;
+    if (!castedINS || !castedINS.posts.length || !castedINS.members.length) {
+      this.logger.error(`You're not allowed to report post ${postID}!`);
+      throw new BadRequestException("You're not allowed to report this post!");
+    }
+
+    return this.postConnectionService.update({
+      where: {
+        postId_id: {
+          id: insID,
+          postId: postID,
+        },
+      },
+      data: {
+        isReported: true,
       },
     });
   }
@@ -211,7 +269,9 @@ export class PostController {
       },
       data: {
         inses: {
-          connect: ins.map((insId) => ({ id: insId })),
+          createMany: {
+            data: ins.map((insId) => ({ id: insId })),
+          },
         },
       },
     });

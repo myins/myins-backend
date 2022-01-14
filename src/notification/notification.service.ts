@@ -5,6 +5,10 @@ import {
   NotificationSource,
   User,
   UserRole,
+  PostInsConnection,
+  Post,
+  INS,
+  UserInsConnection,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -71,6 +75,34 @@ export class NotificationService {
           post: {
             ...(<NotificationFeedWithoutPost>notif).post,
             inses: [ins],
+          },
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+        };
+      }
+
+      const notificationsWithPostInses: NotificationSource[] = [
+        NotificationSource.POST,
+        NotificationSource.LIKE_POST,
+      ];
+      if (notificationsWithPostInses.includes(notif.source)) {
+        const castedNotif = <
+          Notification & {
+            post: Post & {
+              inses: (PostInsConnection & {
+                ins: INS & {
+                  members: UserInsConnection[];
+                };
+              })[];
+            };
+          }
+        >notif;
+        return {
+          ...notif,
+          post: {
+            ...(<NotificationFeedWithoutPost>notif).post,
+            inses: castedNotif.post.inses.map((insConnection) => {
+              return omit(insConnection.ins, 'members');
+            }),
           },
           isSeen: !!notification && notification.createdAt >= notif.createdAt,
         };
@@ -206,7 +238,7 @@ export class NotificationService {
             where: {
               posts: {
                 some: {
-                  id: notif.postId,
+                  postId: notif.postId,
                 },
               },
               members: {
@@ -225,7 +257,7 @@ export class NotificationService {
             where: {
               stories: {
                 some: {
-                  id: notif.storyId,
+                  storyId: notif.storyId,
                 },
               },
               members: {

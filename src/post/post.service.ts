@@ -50,7 +50,11 @@ export class PostService {
         },
       },
       inses: {
-        select: ShallowINSSelect,
+        include: {
+          ins: {
+            select: ShallowINSSelect,
+          },
+        },
       },
       author: {
         select: ShallowUserSelect,
@@ -69,16 +73,6 @@ export class PostService {
 
   async posts(params: Prisma.PostFindManyArgs): Promise<Post[]> {
     return this.prisma.post.findMany(params);
-  }
-
-  async postsWithRelatedInfo(params: Prisma.PostFindManyArgs): Promise<Post[]> {
-    params.include = {
-      author: {
-        select: ShallowUserSelect,
-      },
-      mediaContent: true,
-    };
-    return this.posts(params);
   }
 
   async createPost(data: Prisma.PostCreateInput): Promise<Post> {

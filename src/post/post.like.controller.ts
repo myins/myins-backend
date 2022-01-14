@@ -11,13 +11,20 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, User, UserRole } from '@prisma/client';
+import {
+  NotificationSource,
+  User,
+  UserPostLikeConnection,
+  UserRole,
+  Post as PostModel,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { omit } from 'src/util/omit';
 import { PostLikeService } from './post.like.service';
 import { PostService } from './post.service';
 
@@ -42,6 +49,11 @@ export class PostLikeController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
+    if (Number.isNaN(take) || Number.isNaN(skip)) {
+      this.logger.error('Invalid skip / take!');
+      throw new BadRequestException('Invalid skip / take!');
+    }
+
     this.logger.log(
       `Getting post ${postID} with all inses where user ${userID} is a member`,
     );
@@ -50,11 +62,13 @@ export class PostLikeController {
         id: postID,
         inses: {
           some: {
-            members: {
-              some: {
-                userId: userID,
-                role: {
-                  not: UserRole.PENDING,
+            ins: {
+              members: {
+                some: {
+                  userId: userID,
+                  role: {
+                    not: UserRole.PENDING,
+                  },
                 },
               },
             },
@@ -69,9 +83,12 @@ export class PostLikeController {
     }
 
     this.logger.log(`Getting all likes for post ${postID}`);
-    return this.postLikeService.postLikes({
+    const postLikes = await this.postLikeService.postLikes({
       where: {
         postId: postID,
+        user: {
+          isDeleted: false,
+        },
       },
       skip: skip,
       take: take,
@@ -86,6 +103,18 @@ export class PostLikeController {
         },
       },
     });
+    const castedPostLikes = <
+      (UserPostLikeConnection & {
+        user: User;
+      })[]
+    >postLikes;
+    const returnPostLikes = await Promise.all(
+      castedPostLikes.map((postLike) => {
+        return postLike.user;
+      }),
+    );
+
+    return returnPostLikes;
   }
 
   @Post(':id/like')
@@ -93,9 +122,18 @@ export class PostLikeController {
   @ApiTags('posts')
   async likePost(@PrismaUser() user: User, @Param('id') postID: string) {
     this.logger.log(`Like post ${postID} by user ${user.id}`);
-    const post = await this.postService.post({
-      id: postID,
-    });
+    const post = await this.postService.post(
+      {
+        id: postID,
+      },
+      {
+        likes: {
+          where: {
+            userId: user.id,
+          },
+        },
+      },
+    );
     if (!post || !post.authorId) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
@@ -109,50 +147,59 @@ export class PostLikeController {
       );
     }
 
-    this.logger.log(
-      `Updating post ${postID}. Adding like connection with user ${user.id}`,
-    );
-    const toRet = await this.postService.updatePost({
-      where: { id: postID },
-      data: {
-        likes: {
-          create: {
-            userId: user.id,
-          },
-        },
-      },
-    });
-
-    this.logger.log(
-      `Adding interaction for user ${user.id} when liking post ${postID}`,
-    );
-    await this.interactionService.interactPost(user.id, toRet.id);
-
-    if (post.authorId !== user.id) {
+    const castedPost = <
+      PostModel & {
+        likes: UserPostLikeConnection[];
+      }
+    >post;
+    if (castedPost.likes.length) {
+      return omit(castedPost, 'likes');
+    } else {
       this.logger.log(
-        `Creating notification for liking post ${postID} by user ${user.id}`,
+        `Updating post ${postID}. Adding like connection with user ${user.id}`,
       );
-      await this.notificationService.createNotification({
-        source: NotificationSource.LIKE_POST,
-        targets: {
-          connect: {
-            id: post.authorId,
-          },
-        },
-        author: {
-          connect: {
-            id: user.id,
-          },
-        },
-        post: {
-          connect: {
-            id: toRet.id,
+      const toRet = await this.postService.updatePost({
+        where: { id: postID },
+        data: {
+          likes: {
+            create: {
+              userId: user.id,
+            },
           },
         },
       });
-    }
 
-    return toRet;
+      this.logger.log(
+        `Adding interaction for user ${user.id} when liking post ${postID}`,
+      );
+      await this.interactionService.interactPost(user.id, toRet.id);
+
+      if (post.authorId !== user.id) {
+        this.logger.log(
+          `Creating notification for liking post ${postID} by user ${user.id}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.LIKE_POST,
+          targets: {
+            connect: {
+              id: post.authorId,
+            },
+          },
+          author: {
+            connect: {
+              id: user.id,
+            },
+          },
+          post: {
+            connect: {
+              id: toRet.id,
+            },
+          },
+        });
+      }
+
+      return toRet;
+    }
   }
 
   @Post(':id/unlike')
@@ -160,9 +207,18 @@ export class PostLikeController {
   @ApiTags('posts')
   async unlikePost(@PrismaUser() user: User, @Param('id') postID: string) {
     this.logger.log(`Unlike post ${postID} by user ${user.id}`);
-    const post = await this.postService.post({
-      id: postID,
-    });
+    const post = await this.postService.post(
+      {
+        id: postID,
+      },
+      {
+        likes: {
+          where: {
+            userId: user.id,
+          },
+        },
+      },
+    );
     if (!post) {
       this.logger.error(`Could not find post ${postID}!`);
       throw new NotFoundException('Could not find this post!');
@@ -176,21 +232,30 @@ export class PostLikeController {
       );
     }
 
-    this.logger.log(
-      `Updating post ${postID}. Deleting like connection with user ${user.id}`,
-    );
-    return this.postService.updatePost({
-      where: { id: postID },
-      data: {
-        likes: {
-          delete: {
-            userId_postId: {
-              userId: user.id,
-              postId: postID,
+    const castedPost = <
+      PostModel & {
+        likes: UserPostLikeConnection[];
+      }
+    >post;
+    if (!castedPost.likes.length) {
+      return omit(castedPost, 'likes');
+    } else {
+      this.logger.log(
+        `Updating post ${postID}. Deleting like connection with user ${user.id}`,
+      );
+      return this.postService.updatePost({
+        where: { id: postID },
+        data: {
+          likes: {
+            delete: {
+              userId_postId: {
+                userId: user.id,
+                postId: postID,
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
   }
 }

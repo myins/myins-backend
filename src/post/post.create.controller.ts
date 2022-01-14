@@ -95,7 +95,9 @@ export class PostCreateController {
       pending: true,
       totalMediaContent: postData.totalMediaContent,
       inses: {
-        connect: mappedINSIDs,
+        createMany: {
+          data: mappedINSIDs,
+        },
       },
     });
   }
@@ -183,7 +185,9 @@ export class PostCreateController {
       pending: false,
       totalMediaContent: postData.media.length,
       inses: {
-        connect: mappedINSIDs,
+        createMany: {
+          data: mappedINSIDs,
+        },
       },
     });
 

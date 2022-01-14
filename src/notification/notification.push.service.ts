@@ -233,7 +233,7 @@ export class NotificationPushService {
               ins: {
                 posts: {
                   some: {
-                    id: normalNotif.post.connect.id,
+                    postId: normalNotif.post.connect.id,
                   },
                 },
                 members: {
@@ -266,7 +266,7 @@ export class NotificationPushService {
               ins: {
                 stories: {
                   some: {
-                    id: normalNotif.story.connect.id,
+                    storyId: normalNotif.story.connect.id,
                   },
                 },
                 members: {
@@ -290,9 +290,11 @@ export class NotificationPushService {
               ins: {
                 stories: {
                   some: {
-                    mediaContent: {
-                      some: {
-                        id: normalNotif.storyMedia.connect.id,
+                    story: {
+                      mediaContent: {
+                        some: {
+                          id: normalNotif.storyMedia.connect.id,
+                        },
                       },
                     },
                   },
@@ -374,7 +376,7 @@ export class NotificationPushService {
               },
               posts: {
                 some: {
-                  id: normalNotif.post.connect.id,
+                  postId: normalNotif.post.connect.id,
                 },
               },
             },
@@ -444,7 +446,7 @@ export class NotificationPushService {
               },
               stories: {
                 some: {
-                  id: normalNotif.story.connect.id,
+                  storyId: normalNotif.story.connect.id,
                 },
               },
             },
