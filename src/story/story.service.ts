@@ -179,64 +179,66 @@ export class StoryService {
           }
         >story;
 
-        const myIns = ins ?? castedStory.inses[0].ins;
+        const myIns = ins ?? castedStory.inses[0]?.ins;
         if (insID) {
           castedStory.mediaContent = castedStory.mediaContent.filter(
             (media) => !media.excludedInses.includes(insID),
           );
         }
-        await Promise.all(
-          castedStory.mediaContent.map(async (media) => {
-            const mediaInfo = await this.mediaService.getMediaById(
-              {
-                id: media.id,
-              },
-              {
-                _count: {
-                  select: {
-                    likes: true,
-                    views: true,
-                  },
+        if (myIns) {
+          await Promise.all(
+            castedStory.mediaContent.map(async (media) => {
+              const mediaInfo = await this.mediaService.getMediaById(
+                {
+                  id: media.id,
                 },
-                views: {
-                  where: {
-                    storyMediaId: media.id,
-                  },
-                  include: {
-                    user: {
-                      select: ShallowUserSelect,
+                {
+                  _count: {
+                    select: {
+                      likes: true,
+                      views: true,
                     },
                   },
-                  orderBy: {
-                    createdAt: 'desc',
+                  views: {
+                    where: {
+                      storyMediaId: media.id,
+                    },
+                    include: {
+                      user: {
+                        select: ShallowUserSelect,
+                      },
+                    },
+                    orderBy: {
+                      createdAt: 'desc',
+                    },
+                    take: 3,
                   },
-                  take: 3,
                 },
-              },
-            );
-            const castedMediaInfo = <
-              PostContent & {
-                _count: {
-                  likes: number;
-                  views: number;
-                };
-                views: (UserStoryMediaViewConnection & {
-                  user: User;
-                })[];
-              }
-            >mediaInfo;
-            const mediaContent = {
-              media: {
-                ...media,
-                _count: castedMediaInfo._count,
-              },
-              author: castedStory.author,
-              ins: myIns,
-              lastViews: castedMediaInfo.views.map((view) => view.user),
-            };
-            returnedMediaContent.push(mediaContent);
-          }),
-        );
+              );
+              const castedMediaInfo = <
+                PostContent & {
+                  _count: {
+                    likes: number;
+                    views: number;
+                  };
+                  views: (UserStoryMediaViewConnection & {
+                    user: User;
+                  })[];
+                }
+              >mediaInfo;
+              const mediaContent = {
+                media: {
+                  ...media,
+                  _count: castedMediaInfo._count,
+                },
+                author: castedStory.author,
+                ins: myIns,
+                lastViews: castedMediaInfo.views.map((view) => view.user),
+              };
+              returnedMediaContent.push(mediaContent);
+            }),
+          );
+        }
       }),
     );
 

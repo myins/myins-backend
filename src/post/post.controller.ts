@@ -55,6 +55,11 @@ export class PostController {
   ): Promise<PostModel | null> {
     this.logger.log(`Get post by id ${id} by user ${userID}`);
     const post = await this.postService.injectedPost(id, userID);
+    if (!post) {
+      this.logger.error(`Could not find post ${id}!`);
+      throw new NotFoundException('Could not find this post!');
+    }
+
     const castedPost = <
       Post & {
         inses: (PostInsConnection & {
