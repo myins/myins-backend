@@ -83,11 +83,17 @@ export class MediaConnectionsController {
     const views = await this.mediaConnectionsService.getViews({
       where: {
         storyMediaId: mediaID,
+        user: {
+          isDeleted: false,
+        },
       },
       select: {
         user: {
           select: ShallowUserSelect,
         },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
@@ -146,11 +152,17 @@ export class MediaConnectionsController {
     const likes = await this.mediaConnectionsService.getLikes({
       where: {
         storyMediaId: mediaID,
+        user: {
+          isDeleted: false,
+        },
       },
       select: {
         user: {
           select: ShallowUserSelect,
         },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 

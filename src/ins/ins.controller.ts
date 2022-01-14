@@ -87,7 +87,6 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseInterceptors(NotFoundInterceptor)
-  @UseGuards(JwtAuthGuard)
   async getInsByCode(
     @PrismaUser('id') userID: string,
     @Param('code') insCode: string,

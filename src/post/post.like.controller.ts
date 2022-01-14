@@ -86,6 +86,9 @@ export class PostLikeController {
     const postLikes = await this.postLikeService.postLikes({
       where: {
         postId: postID,
+        user: {
+          isDeleted: false,
+        },
       },
       skip: skip,
       take: take,

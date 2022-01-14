@@ -6,6 +6,7 @@ import {
   StoryInsConnection,
   User,
   UserRole,
+  UserStoryMediaViewConnection,
 } from '.prisma/client';
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
@@ -186,7 +187,7 @@ export class StoryService {
         }
         await Promise.all(
           castedStory.mediaContent.map(async (media) => {
-            const count = await this.mediaService.getMediaById(
+            const mediaInfo = await this.mediaService.getMediaById(
               {
                 id: media.id,
               },
@@ -197,21 +198,41 @@ export class StoryService {
                     views: true,
                   },
                 },
+                views: {
+                  where: {
+                    storyMediaId: media.id,
+                  },
+                  include: {
+                    user: {
+                      select: ShallowUserSelect,
+                    },
+                  },
+                  orderBy: {
+                    createdAt: 'desc',
+                  },
+                  take: 3,
+                },
               },
             );
+            const castedMediaInfo = <
+              PostContent & {
+                _count: {
+                  likes: number;
+                  views: number;
+                };
+                views: (UserStoryMediaViewConnection & {
+                  user: User;
+                })[];
+              }
+            >mediaInfo;
             const mediaContent = {
               media: {
                 ...media,
-                _count: (<
-                  PostContent & {
-                    _count: {
-                      likes: number;
-                    };
-                  }
-                >count)._count,
+                _count: castedMediaInfo._count,
               },
               author: castedStory.author,
               ins: myIns,
+              lastViews: castedMediaInfo.views.map((view) => view.user),
             };
             returnedMediaContent.push(mediaContent);
           }),
@@ -428,7 +449,7 @@ export class StoryService {
         );
         await Promise.all(
           castedStory.mediaContent.map(async (media) => {
-            const countLikes = await this.mediaService.getMediaById(
+            const mediaInfo = await this.mediaService.getMediaById(
               {
                 id: media.id,
               },
@@ -439,22 +460,41 @@ export class StoryService {
                     views: true,
                   },
                 },
+                views: {
+                  where: {
+                    storyMediaId: media.id,
+                  },
+                  include: {
+                    user: {
+                      select: ShallowUserSelect,
+                    },
+                  },
+                  orderBy: {
+                    createdAt: 'desc',
+                  },
+                  take: 3,
+                },
               },
             );
+            const castedMediaInfo = <
+              PostContent & {
+                _count: {
+                  likes: number;
+                  views: number;
+                };
+                views: (UserStoryMediaViewConnection & {
+                  user: User;
+                })[];
+              }
+            >mediaInfo;
             const mediaContent = {
               media: {
                 ...media,
-                _count: (<
-                  PostContent & {
-                    _count: {
-                      likes: number;
-                      views: number;
-                    };
-                  }
-                >countLikes)._count,
+                _count: castedMediaInfo._count,
               },
               author: castedStory.author,
               ins,
+              lastViews: castedMediaInfo.views.map((view) => view.user),
             };
             returnedMediaContent.push(mediaContent);
           }),
