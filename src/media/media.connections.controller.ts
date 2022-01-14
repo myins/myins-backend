@@ -227,6 +227,8 @@ export class MediaConnectionsController {
             },
           },
         });
+      } else {
+        return omit(castedMedia, 'likes', 'story');
       }
     }
   }
