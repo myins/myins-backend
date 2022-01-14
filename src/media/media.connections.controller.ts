@@ -192,7 +192,7 @@ export class MediaConnectionsController {
             authorId: true,
           },
         },
-        likes: {
+        views: {
           where: {
             id: userID,
           },
@@ -202,7 +202,7 @@ export class MediaConnectionsController {
     const castedMedia = <
       PostContent & {
         story: Story;
-        likes: UserStoryMediaLikeConnection[];
+        views: UserStoryMediaLikeConnection[];
       }
     >media;
     if (!castedMedia) {
@@ -210,8 +210,8 @@ export class MediaConnectionsController {
       throw new NotFoundException('Could not find this story media!');
     }
 
-    if (castedMedia.likes.length) {
-      return omit(castedMedia, 'likes', 'story');
+    if (castedMedia.views.length) {
+      return omit(castedMedia, 'views', 'story');
     } else {
       if (castedMedia.story.authorId !== userID) {
         this.logger.log(
@@ -228,7 +228,7 @@ export class MediaConnectionsController {
           },
         });
       } else {
-        return omit(castedMedia, 'likes', 'story');
+        return omit(castedMedia, 'views', 'story');
       }
     }
   }
