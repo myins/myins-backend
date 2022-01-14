@@ -18,6 +18,7 @@ import {
   Post,
   Post as PostModel,
   PostInsConnection,
+  UserInsConnection,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -29,6 +30,7 @@ import { InsService } from 'src/ins/ins.service';
 import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { PostConnectionService } from './post.connection.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -41,6 +43,7 @@ export class PostController {
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly postConnectionService: PostConnectionService,
   ) {}
 
   @Get(':id')
@@ -115,7 +118,45 @@ export class PostController {
     @Param('insID') insID: string,
     @PrismaUser('id') userID: string,
   ) {
-    // rrreport - move me and implement me
+    const ins = await this.insService.ins(
+      {
+        id: insID,
+      },
+      {
+        posts: {
+          where: {
+            postId: postID,
+          },
+        },
+        members: {
+          where: {
+            userId: userID,
+          },
+        },
+      },
+    );
+    const castedINS = <
+      INS & {
+        posts: PostInsConnection[];
+        members: UserInsConnection[];
+      }
+    >ins;
+    if (!castedINS || !castedINS.posts.length || !castedINS.members.length) {
+      this.logger.error(`You're not allowed to report post ${postID}!`);
+      throw new BadRequestException("You're not allowed to report this post!");
+    }
+
+    return this.postConnectionService.update({
+      where: {
+        postId_id: {
+          id: insID,
+          postId: postID,
+        },
+      },
+      data: {
+        isReported: true,
+      },
+    });
   }
 
   @Delete(':id')

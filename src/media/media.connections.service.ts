@@ -1,11 +1,9 @@
 import { Prisma } from '.prisma/client';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class MediaConnectionsService {
-  private readonly logger = new Logger(MediaConnectionsService.name);
-
   constructor(private readonly prismaService: PrismaService) {}
 
   async getViews(params: Prisma.UserStoryMediaViewConnectionFindManyArgs) {

@@ -15,6 +15,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
+import { PostConnectionService } from 'src/post/post.connection.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import {
   ChangeNameAPI,
@@ -33,6 +34,7 @@ export class InsAdminController {
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
+    private readonly postConnectionService: PostConnectionService,
   ) {}
 
   @Post('change')
@@ -208,7 +210,7 @@ export class InsAdminController {
     @Body() data: DeletePostFromINSAPI,
   ) {
     this.logger.log(
-      `Deleting post ${postID} from ins ${insID} by user ${userID}`,
+      `Deciding action for reported post ${postID} from ins ${insID} by user ${userID}`,
     );
 
     const isAdmin = await this.insAdminService.isAdmin(userID, insID);
@@ -219,6 +221,42 @@ export class InsAdminController {
       );
     }
 
-    // rrreport - implement me with connection between ins and post
+    const connection = await this.postConnectionService.get({
+      postId_id: {
+        id: insID,
+        postId: postID,
+      },
+    });
+    if (!connection?.isReported) {
+      this.logger.error(`Post is no longer reported in ins ${insID}!`);
+      throw new BadRequestException('Post is no longer reported in INS!');
+    }
+
+    if (data.isDeleted) {
+      this.logger.log(
+        `Deleting post ${postID} from ins ${insID} by user ${userID}`,
+      );
+      return this.postConnectionService.delete({
+        postId_id: {
+          id: insID,
+          postId: postID,
+        },
+      });
+    } else {
+      this.logger.log(
+        `Removing reporting for post ${postID} from ins ${insID} by user ${userID}`,
+      );
+      return this.postConnectionService.update({
+        where: {
+          postId_id: {
+            id: insID,
+            postId: postID,
+          },
+        },
+        data: {
+          isReported: false,
+        },
+      });
+    }
   }
 }
