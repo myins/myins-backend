@@ -50,6 +50,15 @@ export class PostService {
         },
       },
       inses: {
+        where: {
+          ins: {
+            members: {
+              some: {
+                userId: userID,
+              },
+            },
+          },
+        },
         include: {
           ins: {
             select: ShallowINSSelect,

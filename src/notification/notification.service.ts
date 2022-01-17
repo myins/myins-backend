@@ -9,6 +9,8 @@ import {
   Post,
   INS,
   UserInsConnection,
+  Story,
+  StoryInsConnection,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -104,6 +106,30 @@ export class NotificationService {
               return omit(insConnection.ins, 'members');
             }),
           },
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+        };
+      }
+      if (notif.source === NotificationSource.STORY) {
+        const castedNotif = <
+          Notification & {
+            story: Story & {
+              inses: (StoryInsConnection & {
+                ins: INS;
+              })[];
+            };
+          }
+        >notif;
+        return {
+          ...notif,
+          story: {
+            ...(<NotificationFeedWithoutPost>notif).story,
+            inses: castedNotif.story.inses.map((insConnection) => {
+              return insConnection.ins;
+            }),
+          },
+          ins: castedNotif.story.inses.sort(
+            (ins1, ins2) => ins1.createdAt.getTime() - ins2.createdAt.getTime(),
+          )[0].ins,
           isSeen: !!notification && notification.createdAt >= notif.createdAt,
         };
       }

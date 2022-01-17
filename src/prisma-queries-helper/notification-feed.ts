@@ -37,6 +37,15 @@ const includeQuery = (targetId: string) => {
     post: {
       include: {
         inses: {
+          where: {
+            ins: {
+              members: {
+                some: {
+                  userId: targetId,
+                },
+              },
+            },
+          },
           include: {
             ins: {
               select: {
@@ -61,6 +70,28 @@ const includeQuery = (targetId: string) => {
     story: {
       include: {
         mediaContent: true,
+        inses: {
+          where: {
+            ins: {
+              members: {
+                some: {
+                  userId: targetId,
+                },
+              },
+            },
+          },
+          include: {
+            ins: {
+              select: {
+                id: true,
+                name: true,
+                cover: true,
+                shareCode: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
       },
     },
   };
@@ -93,6 +124,15 @@ const includeQueryWithoutPost = (targetId: string) => {
     post: {
       select: {
         inses: {
+          where: {
+            ins: {
+              members: {
+                some: {
+                  userId: targetId,
+                },
+              },
+            },
+          },
           include: {
             ins: {
               select: {
@@ -116,6 +156,28 @@ const includeQueryWithoutPost = (targetId: string) => {
     story: {
       include: {
         mediaContent: true,
+        inses: {
+          where: {
+            ins: {
+              members: {
+                some: {
+                  userId: targetId,
+                },
+              },
+            },
+          },
+          include: {
+            ins: {
+              select: {
+                id: true,
+                name: true,
+                cover: true,
+                shareCode: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
       },
     },
   };

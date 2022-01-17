@@ -14,6 +14,7 @@ import {
   NotificationSource,
   PostContent,
   Story,
+  StoryInsConnection,
   User,
   UserStoryMediaLikeConnection,
   UserStoryMediaViewConnection,
@@ -282,17 +283,34 @@ export class MediaConnectionsController {
           story: {
             select: {
               authorId: true,
+              inses: {
+                where: {
+                  ins: {
+                    members: {
+                      some: {
+                        userId: userID,
+                      },
+                    },
+                  },
+                },
+                orderBy: {
+                  createdAt: 'asc',
+                },
+                take: 1,
+              },
             },
           },
         },
       });
 
-      const story = (<
+      const castedToRet = <
         PostContent & {
-          story: Story;
+          story: Story & {
+            inses: StoryInsConnection[];
+          };
         }
-      >toRet).story;
-      if (story.authorId !== userID) {
+      >toRet;
+      if (castedToRet.story.authorId !== userID) {
         this.logger.log(
           `Creating notification for liking story media ${toRet.id} by user ${userID}`,
         );
@@ -300,7 +318,7 @@ export class MediaConnectionsController {
           source: NotificationSource.LIKE_STORY,
           targets: {
             connect: {
-              id: story.authorId,
+              id: castedToRet.story.authorId,
             },
           },
           author: {
@@ -313,10 +331,15 @@ export class MediaConnectionsController {
               id: toRet.id,
             },
           },
+          ins: {
+            connect: {
+              id: castedToRet.story.inses[0].id,
+            },
+          },
         });
       }
 
-      return toRet;
+      return omit(castedToRet, 'story');
     }
   }
 
