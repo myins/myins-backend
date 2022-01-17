@@ -87,16 +87,13 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseInterceptors(NotFoundInterceptor)
-  async getInsByCode(
-    @PrismaUser('id') userID: string,
-    @Param('code') insCode: string,
-  ) {
+  async getInsByCode(@Param('code') insCode: string) {
     if (insCode.length <= 0) {
       this.logger.error(`Invalid code ${insCode}!`);
       throw new BadRequestException('Invalid code!');
     }
 
-    this.logger.log(`Getting ins by code ${insCode} by user ${userID}`);
+    this.logger.log(`Getting ins by code ${insCode}`);
     const inses = await this.insService.inses({
       where: {
         shareCode: insCode,
