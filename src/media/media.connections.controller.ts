@@ -37,12 +37,13 @@ export class MediaConnectionsController {
     private readonly mediaConnectionsService: MediaConnectionsService,
   ) {}
 
-  @Get(':id/views')
+  @Get(':id/ins/:insId/views')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
   async getViews(
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
+    @Param('insId') insId: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
   ) {
@@ -52,7 +53,7 @@ export class MediaConnectionsController {
     }
 
     this.logger.log(
-      `Getting views for story media ${mediaID} by user ${userID}`,
+      `Getting views for story media ${mediaID} in ins ${insId} by user ${userID}`,
     );
     const media = await this.mediaService.getMediaById(
       {
@@ -84,6 +85,7 @@ export class MediaConnectionsController {
     const views = await this.mediaConnectionsService.getViews({
       where: {
         storyMediaId: mediaID,
+        insId: insId,
         user: {
           isDeleted: false,
         },
@@ -106,12 +108,13 @@ export class MediaConnectionsController {
     return castedViews.map((view) => view.user);
   }
 
-  @Get(':id/likes')
+  @Get(':id/ins/:insId/likes')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
   async getLikes(
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
+    @Param('insId') insId: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
   ) {
@@ -121,7 +124,7 @@ export class MediaConnectionsController {
     }
 
     this.logger.log(
-      `Getting likes for story media ${mediaID} by user ${userID}`,
+      `Getting likes for story media ${mediaID} in ins ${insId} by user ${userID}`,
     );
     const media = await this.mediaService.getMediaById(
       {
@@ -153,6 +156,7 @@ export class MediaConnectionsController {
     const likes = await this.mediaConnectionsService.getLikes({
       where: {
         storyMediaId: mediaID,
+        insId: insId,
         user: {
           isDeleted: false,
         },
@@ -175,40 +179,63 @@ export class MediaConnectionsController {
     return castedLikes.map((like) => like.user);
   }
 
-  @Post(':id/view')
+  @Post(':id/ins/:insId/view')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
   async viewMedia(
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
+    @Param('insId') insId: string,
   ) {
-    this.logger.log(`View story media ${mediaID} by user ${userID}`);
+    this.logger.log(
+      `View story media ${mediaID} in ins ${insId} by user ${userID}`,
+    );
     const media = await this.mediaService.getMediaById(
       {
         id: mediaID,
       },
       {
         story: {
-          select: {
-            authorId: true,
+          include: {
+            inses: {
+              where: {
+                id: insId,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userID,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         views: {
           where: {
             id: userID,
+            insId: insId,
           },
         },
       },
     );
     const castedMedia = <
       PostContent & {
-        story: Story;
+        story: Story & {
+          inses: StoryInsConnection[];
+        };
         views: UserStoryMediaLikeConnection[];
       }
     >media;
     if (!castedMedia) {
       this.logger.error(`Could not find story media ${mediaID}!`);
       throw new NotFoundException('Could not find this story media!');
+    }
+    if (!castedMedia.story.inses.length) {
+      this.logger.error(`You're not allowed to see a story from INS ${insId}!`);
+      throw new BadRequestException(
+        "You're not allowed to see a story from this INS!",
+      );
     }
 
     if (castedMedia.views.length) {
@@ -224,6 +251,7 @@ export class MediaConnectionsController {
             views: {
               create: {
                 id: userID,
+                insId: insId,
               },
             },
           },
@@ -234,36 +262,65 @@ export class MediaConnectionsController {
     }
   }
 
-  @Post(':id/like')
+  @Post(':id/ins/:insId/like')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
   async likeMedia(
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
+    @Param('insId') insId: string,
   ) {
-    this.logger.log(`Like story media ${mediaID} by user ${userID}`);
+    this.logger.log(
+      `Like story media ${mediaID} in ins ${insId} by user ${userID}`,
+    );
     const media = await this.mediaService.getMediaById(
       {
         id: mediaID,
       },
       {
+        story: {
+          include: {
+            inses: {
+              where: {
+                id: insId,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userID,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         likes: {
           where: {
             id: userID,
+            insId: insId,
           },
         },
       },
     );
-    if (!media) {
-      this.logger.error(`Could not find story media ${mediaID}!`);
-      throw new NotFoundException('Could not find this story media!');
-    }
-
     const castedMedia = <
       PostContent & {
+        story: Story & {
+          inses: StoryInsConnection[];
+        };
         likes: UserStoryMediaLikeConnection[];
       }
     >media;
+    if (!castedMedia) {
+      this.logger.error(`Could not find story media ${mediaID}!`);
+      throw new NotFoundException('Could not find this story media!');
+    }
+    if (!castedMedia.story.inses.length) {
+      this.logger.error(`You're not allowed to see a story from INS ${insId}!`);
+      throw new BadRequestException(
+        "You're not allowed to see a story from this INS!",
+      );
+    }
+
     if (castedMedia.likes.length) {
       return omit(castedMedia, 'likes');
     } else {
@@ -276,41 +333,13 @@ export class MediaConnectionsController {
           likes: {
             create: {
               id: userID,
-            },
-          },
-        },
-        include: {
-          story: {
-            select: {
-              authorId: true,
-              inses: {
-                where: {
-                  ins: {
-                    members: {
-                      some: {
-                        userId: userID,
-                      },
-                    },
-                  },
-                },
-                orderBy: {
-                  createdAt: 'asc',
-                },
-                take: 1,
-              },
+              insId: insId,
             },
           },
         },
       });
 
-      const castedToRet = <
-        PostContent & {
-          story: Story & {
-            inses: StoryInsConnection[];
-          };
-        }
-      >toRet;
-      if (castedToRet.story.authorId !== userID) {
+      if (castedMedia.story.authorId !== userID) {
         this.logger.log(
           `Creating notification for liking story media ${toRet.id} by user ${userID}`,
         );
@@ -318,7 +347,7 @@ export class MediaConnectionsController {
           source: NotificationSource.LIKE_STORY,
           targets: {
             connect: {
-              id: castedToRet.story.authorId,
+              id: castedMedia.story.authorId,
             },
           },
           author: {
@@ -333,48 +362,77 @@ export class MediaConnectionsController {
           },
           ins: {
             connect: {
-              id: castedToRet.story.inses[0].id,
+              id: insId,
             },
           },
         });
       }
 
-      return omit(castedToRet, 'story');
+      return toRet;
     }
   }
 
-  @Post(':id/unlike')
+  @Post(':id/ins/:insId/unlike')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
   async unlikeMedia(
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
+    @Param('insId') insId: string,
   ) {
-    this.logger.log(`Unlike story media ${mediaID} by user ${userID}`);
+    this.logger.log(
+      `Unlike story media ${mediaID} in ins ${insId} by user ${userID}`,
+    );
     const media = await this.mediaService.getMediaById(
       {
         id: mediaID,
       },
       {
+        story: {
+          include: {
+            inses: {
+              where: {
+                id: insId,
+                ins: {
+                  members: {
+                    some: {
+                      userId: userID,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         likes: {
           where: {
             id: userID,
+            insId: insId,
           },
         },
       },
     );
-    if (!media) {
-      this.logger.error(`Could not find story media ${mediaID}!`);
-      throw new NotFoundException('Could not find this story media!');
-    }
-
     const castedMedia = <
       PostContent & {
+        story: Story & {
+          inses: StoryInsConnection[];
+        };
         likes: UserStoryMediaLikeConnection[];
       }
     >media;
+    if (!castedMedia) {
+      this.logger.error(`Could not find story media ${mediaID}!`);
+      throw new NotFoundException('Could not find this story media!');
+    }
+    if (!castedMedia.story.inses.length) {
+      this.logger.error(`You're not allowed to see a story from INS ${insId}!`);
+      throw new BadRequestException(
+        "You're not allowed to see a story from this INS!",
+      );
+    }
+
     if (!castedMedia.likes.length) {
-      return omit(castedMedia, 'likes');
+      return omit(castedMedia, 'likes', 'story');
     } else {
       this.logger.log(
         `Updating story media ${mediaID}. Deleting like connection with user ${userID}`,
@@ -384,9 +442,10 @@ export class MediaConnectionsController {
         data: {
           likes: {
             delete: {
-              id_storyMediaId: {
+              id_storyMediaId_insId: {
                 id: userID,
                 storyMediaId: mediaID,
+                insId: insId,
               },
             },
           },

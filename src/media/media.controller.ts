@@ -1,4 +1,5 @@
 import {
+  INS,
   Post as PostModel,
   PostContent,
   Story,
@@ -36,6 +37,7 @@ import {
   DeleteStoryMediasAPI,
   SetHighlightAPI,
 } from './media-api.entity';
+import { MediaConnectionsService } from './media.connections.service';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -47,6 +49,7 @@ export class MediaController {
     private readonly postService: PostService,
     private readonly storyService: StoryService,
     private readonly insService: InsService,
+    private readonly mediaConnectionsService: MediaConnectionsService,
   ) {}
 
   @Get(':id')
@@ -71,6 +74,7 @@ export class MediaController {
         views: {
           where: {
             id: userID,
+            insId: insID,
           },
           select: {
             id: true,
@@ -79,6 +83,7 @@ export class MediaController {
         likes: {
           where: {
             id: userID,
+            insId: insID,
           },
           select: {
             id: true,
@@ -93,14 +98,16 @@ export class MediaController {
               where: {
                 id: insID,
               },
-              select: ShallowINSSelect,
+              select: {
+                ins: {
+                  select: ShallowINSSelect,
+                },
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+              take: 1,
             },
-          },
-        },
-        _count: {
-          select: {
-            views: true,
-            likes: true,
           },
         },
       },
@@ -114,7 +121,9 @@ export class MediaController {
       PostContent & {
         story: Story & {
           author: User;
-          inses: StoryInsConnection[];
+          inses: (StoryInsConnection & {
+            ins: INS;
+          })[];
         };
       }
     >media;
@@ -123,10 +132,29 @@ export class MediaController {
       throw new NotFoundException('INS not found!');
     }
 
+    const views = await this.mediaConnectionsService.countViews({
+      where: {
+        storyMediaId: castedMedia.id,
+        insId: insID,
+      },
+    });
+    const likes = await this.mediaConnectionsService.countLikes({
+      where: {
+        storyMediaId: castedMedia.id,
+        insId: insID,
+      },
+    });
+
     const mediaContent = {
-      media: omit(castedMedia, 'story'),
+      media: {
+        ...omit(castedMedia, 'story'),
+        _count: {
+          views: views,
+          likes: likes,
+        },
+      },
       author: castedMedia.story.author,
-      ins: castedMedia.story.inses[0],
+      ins: castedMedia.story.inses[0].ins,
     };
     return mediaContent;
   }

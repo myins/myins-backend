@@ -121,10 +121,12 @@ model UserStoryMediaViewConnection {
   id           String // relation scalar field (used in the `@relation` attribute above)
   storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+  ins          INS         @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  insId        String // relation scalar field (used in the `@relation` attribute above)
 
   createdAt DateTime @default(now())
 
-  @@id([id, storyMediaId])
+  @@id([id, storyMediaId, insId])
 }
 
 model UserStoryMediaLikeConnection {
@@ -132,10 +134,12 @@ model UserStoryMediaLikeConnection {
   id           String // relation scalar field (used in the `@relation` attribute above)
   storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+  ins          INS         @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  insId        String // relation scalar field (used in the `@relation` attribute above)
 
   createdAt DateTime @default(now())
 
-  @@id([id, storyMediaId])
+  @@id([id, storyMediaId, insId])
 }
 
 model Comment {
@@ -207,6 +211,9 @@ model INS {
   stories             StoryInsConnection[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
+
+  viewedStories UserStoryMediaViewConnection[]
+  likedStories  UserStoryMediaLikeConnection[]
 
   createdAt DateTime @default(now())
 }
