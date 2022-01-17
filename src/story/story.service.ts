@@ -10,6 +10,7 @@ import {
 } from '.prisma/client';
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InsService } from 'src/ins/ins.service';
+import { MediaConnectionsService } from 'src/media/media.connections.service';
 import { MediaService } from 'src/media/media.service';
 import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
@@ -25,6 +26,7 @@ export class StoryService {
     private readonly insService: InsService,
     @Inject(forwardRef(() => MediaService))
     private readonly mediaService: MediaService,
+    private readonly mediaConnectionsService: MediaConnectionsService,
   ) {}
 
   async story(
@@ -193,15 +195,10 @@ export class StoryService {
                   id: media.id,
                 },
                 {
-                  _count: {
-                    select: {
-                      likes: true,
-                      views: true,
-                    },
-                  },
                   views: {
                     where: {
                       storyMediaId: media.id,
+                      insId: myIns.id,
                     },
                     include: {
                       user: {
@@ -215,12 +212,22 @@ export class StoryService {
                   },
                 },
               );
+
+              const views = await this.mediaConnectionsService.countViews({
+                where: {
+                  storyMediaId: media.id,
+                  insId: myIns.id,
+                },
+              });
+              const likes = await this.mediaConnectionsService.countLikes({
+                where: {
+                  storyMediaId: media.id,
+                  insId: myIns.id,
+                },
+              });
+
               const castedMediaInfo = <
                 PostContent & {
-                  _count: {
-                    likes: number;
-                    views: number;
-                  };
                   views: (UserStoryMediaViewConnection & {
                     user: User;
                   })[];
@@ -229,7 +236,10 @@ export class StoryService {
               const mediaContent = {
                 media: {
                   ...media,
-                  _count: castedMediaInfo._count,
+                  _count: {
+                    views: views,
+                    likes: likes,
+                  },
                 },
                 author: castedStory.author,
                 ins: myIns,
@@ -312,6 +322,7 @@ export class StoryService {
             views: {
               where: {
                 id: userID,
+                insId: castedIns.id,
               },
             },
             story: {
@@ -456,15 +467,10 @@ export class StoryService {
                 id: media.id,
               },
               {
-                _count: {
-                  select: {
-                    likes: true,
-                    views: true,
-                  },
-                },
                 views: {
                   where: {
                     storyMediaId: media.id,
+                    insId: insID,
                   },
                   include: {
                     user: {
@@ -478,12 +484,22 @@ export class StoryService {
                 },
               },
             );
+
+            const views = await this.mediaConnectionsService.countViews({
+              where: {
+                storyMediaId: media.id,
+                insId: insID,
+              },
+            });
+            const likes = await this.mediaConnectionsService.countLikes({
+              where: {
+                storyMediaId: media.id,
+                insId: insID,
+              },
+            });
+
             const castedMediaInfo = <
               PostContent & {
-                _count: {
-                  likes: number;
-                  views: number;
-                };
                 views: (UserStoryMediaViewConnection & {
                   user: User;
                 })[];
@@ -492,7 +508,10 @@ export class StoryService {
             const mediaContent = {
               media: {
                 ...media,
-                _count: castedMediaInfo._count,
+                _count: {
+                  views: views,
+                  likes: likes,
+                },
               },
               author: castedStory.author,
               ins,
@@ -526,6 +545,7 @@ export class StoryService {
             views: {
               where: {
                 id: userID,
+                insId: insID,
               },
               select: {
                 id: true,
@@ -534,6 +554,7 @@ export class StoryService {
             likes: {
               where: {
                 id: userID,
+                insId: insID,
               },
               select: {
                 id: true,
@@ -596,11 +617,13 @@ export class StoryService {
           ? {
               some: {
                 id: userID,
+                insId: insID,
               },
             }
           : {
               none: {
                 id: userID,
+                insId: insID,
               },
             },
       },
@@ -638,12 +661,14 @@ export class StoryService {
       whereQuery.views = {
         some: {
           id: userID,
+          insId: insID,
         },
       };
     } else {
       whereQuery.views = {
         none: {
           id: userID,
+          insId: insID,
         },
       };
     }
