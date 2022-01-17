@@ -1,8 +1,8 @@
 import {
-  INS,
   Post as PostModel,
   PostContent,
   Story,
+  StoryInsConnection,
   User,
 } from '.prisma/client';
 import {
@@ -114,7 +114,7 @@ export class MediaController {
       PostContent & {
         story: Story & {
           author: User;
-          inses: INS[];
+          inses: StoryInsConnection[];
         };
       }
     >media;
@@ -385,6 +385,92 @@ export class MediaController {
     this.logger.log('Story medias deleted');
     return {
       message: 'Story medias deleted!',
+    };
+  }
+
+  @Delete(':id/ins/:insID')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('media')
+  async deleteStoryMediaFromINS(
+    @PrismaUser('id') userID: string,
+    @Param('id') id: string,
+    @Param('insID') insID: string,
+  ) {
+    const media = await this.mediaService.getMediaById({ id });
+    if (!media || !media.storyId) {
+      this.logger.error(`Could not find media!`);
+      throw new NotFoundException('Could not find media!');
+    }
+
+    const story = await this.storyService.story(
+      {
+        id: media.storyId,
+      },
+      {
+        inses: {
+          where: {
+            id: insID,
+          },
+        },
+      },
+    );
+    const castedStory = <
+      Story & {
+        inses: StoryInsConnection[];
+      }
+    >story;
+    if (!castedStory || !castedStory.inses.length) {
+      this.logger.error(`Story not in that INS!`);
+      throw new NotFoundException('Story not in that INS!');
+    }
+    if (castedStory.authorId !== userID) {
+      this.logger.error(`Not your story!`);
+      throw new NotFoundException('Not your story!');
+    }
+
+    if (!media.excludedInses.includes(insID)) {
+      this.logger.log(`Update media ${id}. Add ins ${insID} to excluded inses`);
+      await this.mediaService.updateMedia({
+        where: {
+          id: id,
+        },
+        data: {
+          excludedInses: {
+            push: insID,
+          },
+        },
+      });
+
+      this.logger.log(`Check if media ${id} should be deleted`);
+      const newExcludedInses = [...media.excludedInses, insID];
+      const inses = await this.insService.inses({
+        where: {
+          id: {
+            not: {
+              in: newExcludedInses,
+            },
+          },
+          stories: {
+            some: {
+              story: {
+                mediaContent: {
+                  some: {
+                    id,
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!inses.length) {
+        await this.deleteMedia(id, userID);
+      }
+    }
+
+    this.logger.log('Media deleted from INS');
+    return {
+      message: 'Media deleted from INS!',
     };
   }
 }

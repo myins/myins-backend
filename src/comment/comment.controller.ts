@@ -12,11 +12,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
-  INS,
   NotificationSource,
   Prisma,
   User,
   Post as PostModel,
+  UserRole,
+  PostInsConnection,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
@@ -122,9 +123,14 @@ export class CommentController {
       {
         inses: {
           where: {
-            members: {
-              some: {
-                userId: user.id,
+            ins: {
+              members: {
+                some: {
+                  userId: user.id,
+                  role: {
+                    not: UserRole.PENDING,
+                  },
+                },
               },
             },
           },
@@ -138,7 +144,7 @@ export class CommentController {
 
     const castedPost = <
       PostModel & {
-        inses: INS[];
+        inses: PostInsConnection[];
       }
     >post;
     if (!castedPost.inses.length) {

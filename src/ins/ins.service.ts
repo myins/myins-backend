@@ -1,5 +1,13 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { INS, Post, Prisma, User, UserRole } from '@prisma/client';
+import {
+  INS,
+  Post,
+  PostInsConnection,
+  Prisma,
+  User,
+  UserInsConnection,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
 import * as path from 'path';
@@ -30,14 +38,14 @@ export class InsService {
     // Retry it a couple of times in case the code is taken
     return retry(
       async () =>
-        this.prismaService.iNS.create({
+        await this.prismaService.iNS.create({
           data,
         }),
       { retries: 3 },
     );
   }
 
-  async insList(userID: string, filter: string) {
+  async insList(userID: string, filter: string, withoutPending: boolean) {
     // First we get all the user's ins connections, ordered by his interaction count
     const connectionQuery = await this.userConnectionService.getConnections({
       where: {
@@ -51,6 +59,11 @@ export class InsService {
                 },
               }
             : undefined,
+        role: withoutPending
+          ? {
+              not: UserRole.PENDING,
+            }
+          : undefined,
       },
       orderBy: [{ pinned: 'desc' }, { interactions: 'desc' }],
     });
@@ -143,7 +156,7 @@ export class InsService {
     take: number,
     onlyMine: boolean,
   ): Promise<Post[]> {
-    return this.postService.posts({
+    const posts = await this.postService.posts({
       skip: skip,
       take: take,
       include: this.postService.richPostInclude(userID),
@@ -160,6 +173,23 @@ export class InsService {
         authorId: onlyMine ? userID : undefined,
       },
     });
+    const castedPosts = <
+      (Post & {
+        inses: (PostInsConnection & {
+          ins: INS;
+        })[];
+      })[]
+    >posts;
+    const returnPosts = await Promise.all(
+      castedPosts.map((post) => {
+        return {
+          ...post,
+          inses: post.inses.map((insConnection) => insConnection.ins),
+        };
+      }),
+    );
+
+    return returnPosts;
   }
 
   async membersForIns(
@@ -218,9 +248,7 @@ export class InsService {
 
     const castedUsers = <
       (User & {
-        inses: (INS & {
-          role: UserRole;
-        })[];
+        inses: UserInsConnection[];
       })[]
     >users;
     const usersWithRole = castedUsers.map((user) => {

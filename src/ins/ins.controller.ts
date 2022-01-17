@@ -87,7 +87,6 @@ export class InsController {
   //@Throttle(1,60) // FIXME: re-add this throttle for prod
   @ApiTags('ins')
   @UseInterceptors(NotFoundInterceptor)
-  @UseGuards(JwtAuthGuard)
   async getInsByCode(
     @PrismaUser('id') userID: string,
     @Param('code') insCode: string,
@@ -143,11 +142,12 @@ export class InsController {
   async getINSList(
     @PrismaUser('id') userID: string,
     @Query('filter') filter: string,
+    @Query('withoutPending') withoutPending: boolean,
   ) {
     this.logger.log(
       `Getting ins list for user ${userID} with filter '${filter}'`,
     );
-    return this.insService.insList(userID, filter);
+    return this.insService.insList(userID, filter, withoutPending);
   }
 
   @Get(':id/media')

@@ -5,6 +5,10 @@ import {
   NotificationSource,
   User,
   UserRole,
+  PostInsConnection,
+  Post,
+  INS,
+  UserInsConnection,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -73,6 +77,34 @@ export class NotificationService {
           post: {
             ...(<NotificationFeedWithoutPost>notif).post,
             inses: [ins],
+          },
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+        };
+      }
+
+      const notificationsWithPostInses: NotificationSource[] = [
+        NotificationSource.POST,
+        NotificationSource.LIKE_POST,
+      ];
+      if (notificationsWithPostInses.includes(notif.source)) {
+        const castedNotif = <
+          Notification & {
+            post: Post & {
+              inses: (PostInsConnection & {
+                ins: INS & {
+                  members: UserInsConnection[];
+                };
+              })[];
+            };
+          }
+        >notif;
+        return {
+          ...notif,
+          post: {
+            ...(<NotificationFeedWithoutPost>notif).post,
+            inses: castedNotif.post.inses.map((insConnection) => {
+              return omit(insConnection.ins, 'members');
+            }),
           },
           isSeen: !!notification && notification.createdAt >= notif.createdAt,
         };
@@ -182,7 +214,8 @@ export class NotificationService {
     const sources = [
       NotificationSource.JOINED_INS,
       NotificationSource.POST,
-      NotificationSource.CHANGE_ADMIN,
+      NotificationSource.STORY,
+      NotificationSource.DELETED_INS,
     ];
     this.logger.log(
       `Getting notifications of type ${sources} for target ${targetID}`,
@@ -207,7 +240,26 @@ export class NotificationService {
             where: {
               posts: {
                 some: {
-                  id: notif.postId,
+                  postId: notif.postId,
+                },
+              },
+              members: {
+                some: {
+                  userId: targetID,
+                },
+              },
+            },
+          });
+          if (inses.length) {
+            notifs.splice(index, 1);
+          }
+        }
+        if (notif.source === NotificationSource.STORY && notif.storyId) {
+          const inses = await this.insService.inses({
+            where: {
+              stories: {
+                some: {
+                  storyId: notif.storyId,
                 },
               },
               members: {

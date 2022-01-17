@@ -37,21 +37,29 @@ const includeQuery = (targetId: string) => {
     post: {
       include: {
         inses: {
-          where: {
-            members: {
-              some: {
-                userId: targetId,
+          include: {
+            ins: {
+              select: {
+                id: true,
+                name: true,
+                cover: true,
+                shareCode: true,
+                createdAt: true,
+                members: {
+                  where: {
+                    userId: targetId,
+                  },
+                },
               },
             },
           },
-          select: {
-            id: true,
-            name: true,
-            cover: true,
-            shareCode: true,
-            createdAt: true,
-          },
         },
+        mediaContent: true,
+      },
+    },
+    storyMedia: true,
+    story: {
+      include: {
         mediaContent: true,
       },
     },
@@ -85,21 +93,29 @@ const includeQueryWithoutPost = (targetId: string) => {
     post: {
       select: {
         inses: {
-          where: {
-            members: {
-              some: {
-                userId: targetId,
+          include: {
+            ins: {
+              select: {
+                id: true,
+                name: true,
+                cover: true,
+                shareCode: true,
+                createdAt: true,
+                members: {
+                  where: {
+                    userId: targetId,
+                  },
+                },
               },
             },
           },
-          select: {
-            id: true,
-            name: true,
-            cover: true,
-            shareCode: true,
-            createdAt: true,
-          },
         },
+      },
+    },
+    storyMedia: true,
+    story: {
+      include: {
+        mediaContent: true,
       },
     },
   };

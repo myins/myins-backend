@@ -8,18 +8,25 @@ import {
   Min,
 } from 'class-validator';
 
-export class CreatePostAPI {
+class CreatePostMainAPI {
   @IsString()
   @IsOptional()
   content: string;
 
+  @ArrayNotEmpty()
+  ins: string[];
+}
+
+export class CreatePostAPI extends CreatePostMainAPI {
   @IsNumber()
   @Min(1)
   @Max(20)
   totalMediaContent: number;
+}
 
+export class CreatePostFromLinksAPI extends CreatePostMainAPI {
   @ArrayNotEmpty()
-  ins: string[];
+  media: string[];
 }
 
 export class AttachCoverAPI {

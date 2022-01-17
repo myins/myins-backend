@@ -10,6 +10,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { UserModule } from 'src/user/user.module';
 import { PostCommentsController } from './post.comments.controller';
+import { PostConnectionService } from './post.connection.service';
 import { PostController } from './post.controller';
 import { PostCreateController } from './post.create.controller';
 import { PostFeedController } from './post.feed.controller';
@@ -38,7 +39,12 @@ import { PostService } from './post.service';
     PostController,
     PostCreateController,
   ],
-  providers: [PostService, PostFeedService, PostLikeService],
-  exports: [PostService, PostLikeService],
+  providers: [
+    PostService,
+    PostFeedService,
+    PostLikeService,
+    PostConnectionService,
+  ],
+  exports: [PostService, PostLikeService, PostConnectionService],
 })
 export class PostModule {}

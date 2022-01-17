@@ -30,8 +30,8 @@ model User {
 
   likedComments UserCommentLikeConnection[]
   likedPosts    UserPostLikeConnection[]
-  likedStories  PostContent[]               @relation(name: "LikesStoryMediaToUser")
-  viewedStories PostContent[]               @relation(name: "ViewsStoryMediaToUser")
+  likedStories  UserStoryMediaLikeConnection[]
+  viewedStories UserStoryMediaViewConnection[]
 
   inses UserInsConnection[]
 
@@ -65,9 +65,12 @@ model PostContent {
   width  Int
   height Int
 
-  isHighlight Boolean @default(false)
-  likes       User[]  @relation(name: "LikesStoryMediaToUser")
-  views       User[]  @relation(name: "ViewsStoryMediaToUser")
+  isHighlight Boolean                        @default(false)
+  likes       UserStoryMediaLikeConnection[]
+  views       UserStoryMediaViewConnection[]
+
+  excludedInses String[]
+  notifications Notification[]
 }
 
 model Post {
@@ -85,7 +88,7 @@ model Post {
 
   notifications Notification[] // Some notifications have a post
   likes         UserPostLikeConnection[]
-  inses         INS[]
+  inses         PostInsConnection[]
 }
 
 model UserPostLikeConnection {
@@ -109,7 +112,30 @@ model Story {
   pending           Boolean @default(true)
   totalMediaContent Int
 
-  inses INS[]
+  inses         StoryInsConnection[]
+  notifications Notification[]
+}
+
+model UserStoryMediaViewConnection {
+  user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id           String // relation scalar field (used in the `@relation` attribute above)
+  storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([id, storyMediaId])
+}
+
+model UserStoryMediaLikeConnection {
+  user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id           String // relation scalar field (used in the `@relation` attribute above)
+  storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([id, storyMediaId])
 }
 
 model Comment {
@@ -161,6 +187,12 @@ model Notification {
   comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   commentId String?
 
+  story   Story?  @relation(fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyId String?
+
+  storyMedia   PostContent? @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String?
+
   metadata Json?
 }
 
@@ -171,8 +203,8 @@ model INS {
   shareCode String  @unique
 
   members             UserInsConnection[]
-  posts               Post[]
-  stories             Story[]
+  posts               PostInsConnection[]
+  stories             StoryInsConnection[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
 
@@ -199,6 +231,29 @@ model UserInsConnection {
   @@id([userId, insId])
 }
 
+model StoryInsConnection {
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyId String // relation scalar field (used in the `@relation` attribute above)
+  ins     INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id      String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @default(now())
+
+  @@id([storyId, id])
+}
+
+model PostInsConnection {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  postId String // relation scalar field (used in the `@relation` attribute above)
+  ins    INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id     String // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt  DateTime @default(now())
+  isReported Boolean  @default(false)
+
+  @@id([postId, id])
+}
+
 model CurrentVersions {
   type      DocumentType @id
   updatedAt DateTime     @default(now())
@@ -215,13 +270,14 @@ enum NotificationSource {
   LIKE_COMMENT
   COMMENT
   POST
-  ADDED_PHOTOS
   JOINED_INS
   JOIN_INS_REJECTED
   MESSAGE
   CHANGE_ADMIN
   DELETED_INS
   PENDING_INS
+  STORY
+  LIKE_STORY
 }
 
 enum UserRole {

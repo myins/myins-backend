@@ -8,6 +8,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { INS, Post, PostInsConnection } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -43,6 +44,28 @@ export class PostFeedController {
     }
 
     this.logger.log(`Getting posts feed for user ${userID}`);
-    return this.postFeedService.getFeed(skip, take, userID, onlyMine);
+    const posts = await this.postFeedService.getFeed(
+      skip,
+      take,
+      userID,
+      onlyMine,
+    );
+    const castedPosts = <
+      (Post & {
+        inses: (PostInsConnection & {
+          ins: INS;
+        })[];
+      })[]
+    >posts;
+    const returnPosts = await Promise.all(
+      castedPosts.map((post) => {
+        return {
+          ...post,
+          inses: post.inses.map((insConnection) => insConnection.ins),
+        };
+      }),
+    );
+
+    return returnPosts;
   }
 }

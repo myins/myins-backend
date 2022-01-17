@@ -3,17 +3,28 @@ import {
   Body,
   Controller,
   Logger,
+  NotFoundException,
   Post,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { User, UserRole } from '@prisma/client';
+import {
+  NotificationSource,
+  PostContent,
+  Story,
+  User,
+  UserRole,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { CreatePostAPI } from './post-api.entity';
+import { MediaService } from 'src/media/media.service';
+import { NotificationService } from 'src/notification/notification.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
+import { CreatePostAPI, CreatePostFromLinksAPI } from './post-api.entity';
 import { PostService } from './post.service';
 
 @Controller('post')
@@ -24,6 +35,10 @@ export class PostCreateController {
   constructor(
     private readonly postService: PostService,
     private readonly insService: InsService,
+    private readonly mediaService: MediaService,
+    private readonly userConnectionService: UserConnectionService,
+    private readonly notificationService: NotificationService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Post()
@@ -80,8 +95,159 @@ export class PostCreateController {
       pending: true,
       totalMediaContent: postData.totalMediaContent,
       inses: {
-        connect: mappedINSIDs,
+        createMany: {
+          data: mappedINSIDs,
+        },
       },
     });
+  }
+
+  @Post('/links')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('posts')
+  async createPostFromLinks(
+    @Body() postData: CreatePostFromLinksAPI,
+    @PrismaUser() user: User,
+  ) {
+    if (!user.phoneNumberVerified) {
+      this.logger.error(
+        `Please verify phone ${user.phoneNumber} before creating posts!`,
+      );
+      throw new BadRequestException(
+        'Please verify your phone before creating posts!',
+      );
+    }
+
+    const mappedINSIDs = postData.ins.map((each) => {
+      return { id: each };
+    });
+
+    const inses = (
+      await this.insService.insesSelectIDs({
+        members: {
+          some: {
+            userId: user.id,
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
+      })
+    ).map((each) => each.id);
+
+    for (const each of mappedINSIDs) {
+      if (!inses.includes(each.id)) {
+        this.logger.error("You're not allowed to post to that INS!");
+        throw new BadRequestException(
+          "You're not allowed to post to that INS!",
+        );
+      }
+    }
+
+    const medias = await this.mediaService.getMedias({
+      where: {
+        id: {
+          in: postData.media,
+        },
+      },
+      include: {
+        story: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
+    });
+    medias.forEach((media) => {
+      const story = (<
+        PostContent & {
+          story: Story;
+        }
+      >media).story;
+      if (!story || !story.authorId || story.authorId !== user.id) {
+        this.logger.error(`Not your story!`);
+        throw new NotFoundException(`Not your story!`);
+      }
+    });
+
+    this.logger.log(
+      `Creating post by user ${user.id} in inses ${mappedINSIDs.map(
+        (ins) => ins.id,
+      )} with content: '${postData.content}'`,
+    );
+    const toRet = await this.postService.createPost({
+      content: postData.content,
+      author: {
+        connect: {
+          id: user.id,
+        },
+      },
+      pending: false,
+      totalMediaContent: postData.media.length,
+      inses: {
+        createMany: {
+          data: mappedINSIDs,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Getting story medias ${postData.media} and creating new post medias with same data`,
+    );
+    await Promise.all(
+      medias.map((media) => {
+        this.mediaService.create({
+          content: media.content,
+          post: {
+            connect: {
+              id: toRet.id,
+            },
+          },
+          thumbnail: media.thumbnail,
+          width: media.width,
+          height: media.height,
+          isVideo: media.isVideo,
+        });
+      }),
+    );
+
+    this.logger.log(`Creating notification for adding post ${toRet.id}`);
+    const targetIDs = (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: {
+            in: postData.ins,
+          },
+          userId: {
+            not: user.id,
+          },
+        },
+      })
+    ).map((connection) => {
+      return { id: connection.userId };
+    });
+    await this.notificationService.createNotification({
+      source: NotificationSource.POST,
+      targets: {
+        connect: targetIDs,
+      },
+      author: {
+        connect: {
+          id: user.id,
+        },
+      },
+      post: {
+        connect: {
+          id: toRet.id,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Send message by user ${user.id} in inses ${postData.ins} with new post ${toRet.id}`,
+    );
+    await this.chatService.sendMessageWhenPost(postData.ins, user.id, toRet.id);
+
+    return toRet;
   }
 }
