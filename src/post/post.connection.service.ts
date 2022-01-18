@@ -25,7 +25,14 @@ export class PostConnectionService {
     return this.prismaService.postInsConnection.update(params);
   }
 
-  async delete(where: Prisma.PostInsConnectionWhereUniqueInput) {
-    return this.prismaService.postInsConnection.delete({ where });
+  async delete(
+    where: Prisma.PostInsConnectionWhereUniqueInput,
+    include?: Prisma.PostInsConnectionInclude,
+  ) {
+    return this.prismaService.postInsConnection.delete({ where, include });
+  }
+
+  async deleteMany(params: Prisma.PostInsConnectionDeleteManyArgs) {
+    return this.prismaService.postInsConnection.deleteMany(params);
   }
 }

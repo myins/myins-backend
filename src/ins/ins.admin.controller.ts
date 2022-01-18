@@ -352,4 +352,38 @@ export class InsAdminController {
       });
     }
   }
+
+  @Delete('/posts/report')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins-admin')
+  async deleteReportedPosts(@PrismaUser('id') userID: string) {
+    this.logger.log(`Deleting all reported posts by user ${userID}`);
+
+    const insesAdmin = await this.insService.inses({
+      where: {
+        members: {
+          some: {
+            userId: userID,
+            role: UserRole.ADMIN,
+          },
+        },
+      },
+    });
+
+    await this.postConnectionService.deleteMany({
+      where: {
+        id: {
+          in: insesAdmin.map((ins) => ins.id),
+        },
+        reportedAt: {
+          not: null,
+        },
+      },
+    });
+
+    this.logger.log('Posts succesffully deleted by admin ins');
+    return {
+      message: 'Posts succesffully deleted by admin ins',
+    };
+  }
 }
