@@ -398,7 +398,7 @@ export class NotificationPushService {
         });
         let inses: INS[] = [];
         const metadataPost = normalNotif.metadata as Prisma.JsonObject;
-        if (metadataPost.insesIDs) {
+        if (metadataPost?.insesIDs) {
           inses = await this.insService.inses({
             where: {
               id: {
