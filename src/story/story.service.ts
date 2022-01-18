@@ -67,6 +67,73 @@ export class StoryService {
     return this.prisma.story.deleteMany(params);
   }
 
+  async getMediaForStory(userID: string, insID: string, storyID: string) {
+    const story = await this.story(
+      {
+        id: storyID,
+      },
+      {
+        author: {
+          select: ShallowUserSelect,
+        },
+        mediaContent: {
+          include: {
+            views: {
+              where: {
+                id: userID,
+                insId: insID,
+              },
+            },
+            likes: {
+              where: {
+                id: userID,
+                insId: insID,
+              },
+            },
+          },
+        },
+      },
+    );
+
+    const ins = await this.insService.ins({
+      id: insID,
+    });
+
+    const castedStory = <
+      Story & {
+        author: User;
+        mediaContent: PostContent[];
+      }
+    >story;
+    return Promise.all(
+      castedStory.mediaContent.map(async (media) => {
+        const views = await this.mediaConnectionsService.countViews({
+          where: {
+            storyMediaId: media.id,
+            insId: insID,
+          },
+        });
+        const likes = await this.mediaConnectionsService.countLikes({
+          where: {
+            storyMediaId: media.id,
+            insId: insID,
+          },
+        });
+        return {
+          media: {
+            ...media,
+            _count: {
+              likes,
+              views,
+            },
+          },
+          author: castedStory.author,
+          ins: ins,
+        };
+      }),
+    );
+  }
+
   async getMyStories(
     skip: number,
     take: number,

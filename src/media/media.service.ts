@@ -311,7 +311,7 @@ export class MediaService {
             },
             story: {
               connect: {
-                id: entity.id,
+                id: updatedEntity.id,
               },
             },
           });
@@ -329,7 +329,7 @@ export class MediaService {
             },
             post: {
               connect: {
-                id: entity.id,
+                id: updatedEntity.id,
               },
             },
           });

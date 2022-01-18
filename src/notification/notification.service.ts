@@ -8,7 +8,6 @@ import {
   PostInsConnection,
   Post,
   INS,
-  UserInsConnection,
   Story,
   StoryInsConnection,
 } from '@prisma/client';
@@ -93,9 +92,7 @@ export class NotificationService {
           Notification & {
             post: Post & {
               inses: (PostInsConnection & {
-                ins: INS & {
-                  members: UserInsConnection[];
-                };
+                ins: INS;
               })[];
             };
           }
@@ -105,7 +102,7 @@ export class NotificationService {
           post: {
             ...(<NotificationFeedWithoutPost>notif).post,
             inses: castedNotif.post.inses.map((insConnection) => {
-              return omit(insConnection.ins, 'members');
+              return insConnection.ins;
             }),
           },
           isSeen: !!notification && notification.createdAt >= notif.createdAt,

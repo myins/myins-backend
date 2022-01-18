@@ -4,6 +4,7 @@ const postStoryWithInsesAndCountMediaData = {
   inses: {
     select: {
       id: true,
+      createdAt: true,
     },
   },
   _count: {

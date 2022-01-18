@@ -216,4 +216,43 @@ export class StoryController {
     );
     return this.storyService.getMyStories(skip, take, userID, insID, highlight);
   }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('story')
+  async getMediaForStory(
+    @PrismaUser('id') userID: string,
+    @Param('id') storyID: string,
+    @Query('insID') insID: string,
+  ) {
+    if (!insID) {
+      this.logger.error('Invalid insID!');
+      throw new BadRequestException('Invalid insID!');
+    }
+
+    const inses = await this.insService.inses({
+      where: {
+        members: {
+          some: {
+            insId: insID,
+            userId: userID,
+          },
+        },
+        stories: {
+          some: {
+            storyId: storyID,
+          },
+        },
+      },
+    });
+    if (!inses.length) {
+      this.logger.error(`You're not allowed to see story ${storyID}!`);
+      throw new BadRequestException("You're not allowed to see this story!");
+    }
+
+    this.logger.log(
+      `Getting media for story ${storyID} in ins ${insID} by user ${userID}`,
+    );
+    return this.storyService.getMediaForStory(userID, insID, storyID);
+  }
 }

@@ -113,6 +113,30 @@ export class NotificationPushService {
 
         if (target?.pushToken && isNotDisableNotification && !isMute) {
           this.logger.log(`Adding push notification for user ${target.id}`);
+          if (notif.source === NotificationSource.STORY) {
+            const inses = await this.insService.inses({
+              where: {
+                members: {
+                  some: {
+                    userId: target.id,
+                  },
+                },
+                stories: {
+                  some: {
+                    storyId: notif.story?.connect?.id,
+                  },
+                },
+              },
+            });
+            notif.ins = {
+              connect: {
+                id: inses.sort(
+                  (ins1, ins2) =>
+                    ins1.createdAt.getTime() - ins2.createdAt.getTime(),
+                )[0].id,
+              },
+            };
+          }
           const notifBody = await this.constructNotificationBody(target, notif);
           const result = await this.pushData(
             target.pushToken,
