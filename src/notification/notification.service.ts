@@ -85,6 +85,8 @@ export class NotificationService {
       const notificationsWithPostInses: NotificationSource[] = [
         NotificationSource.POST,
         NotificationSource.LIKE_POST,
+        NotificationSource.COMMENT,
+        NotificationSource.LIKE_COMMENT,
       ];
       if (notificationsWithPostInses.includes(notif.source)) {
         const castedNotif = <
