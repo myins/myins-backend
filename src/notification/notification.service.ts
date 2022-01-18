@@ -10,6 +10,7 @@ import {
   INS,
   Story,
   StoryInsConnection,
+  UserInsConnection,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -86,13 +87,16 @@ export class NotificationService {
         NotificationSource.LIKE_POST,
         NotificationSource.COMMENT,
         NotificationSource.LIKE_COMMENT,
+        NotificationSource.DELETED_POST_BY_ADMIN,
       ];
       if (notificationsWithPostInses.includes(notif.source)) {
         const castedNotif = <
           Notification & {
             post: Post & {
               inses: (PostInsConnection & {
-                ins: INS;
+                ins: INS & {
+                  members: UserInsConnection[];
+                };
               })[];
             };
           }
@@ -102,7 +106,7 @@ export class NotificationService {
           post: {
             ...(<NotificationFeedWithoutPost>notif).post,
             inses: castedNotif.post.inses.map((insConnection) => {
-              return insConnection.ins;
+              return omit(insConnection.ins, 'members');
             }),
           },
           isSeen: !!notification && notification.createdAt >= notif.createdAt,
