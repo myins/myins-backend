@@ -175,6 +175,7 @@ export class NotificationPushService {
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
       case NotificationSource.PENDING_INS:
+      case NotificationSource.DELETED_POST_BY_ADMIN:
         const id = (<Prisma.UserWhereUniqueInput>normalNotif.targets?.connect)
           .id;
         usersIDs = id !== undefined ? [id] : [];
@@ -228,6 +229,7 @@ export class NotificationPushService {
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
       case NotificationSource.PENDING_INS:
+      case NotificationSource.DELETED_POST_BY_ADMIN:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -458,6 +460,15 @@ export class NotificationPushService {
           id: normalNotif.ins?.connect?.id,
         });
         body = `You are now a pending user for ${insPendingIns?.name} ins!`;
+        break;
+      case NotificationSource.DELETED_POST_BY_ADMIN:
+        const authorDeletedPostByAdmin = await this.userService.shallowUser({
+          id: normalNotif.author.connect?.id,
+        });
+        const insDeletedPostByAdmin = await this.insService.ins({
+          id: normalNotif.ins?.connect?.id,
+        });
+        body = `Your post was deleted by ${authorDeletedPostByAdmin?.firstName} ${authorDeletedPostByAdmin?.lastName} from ins ${insDeletedPostByAdmin?.name} due to inappropriate content!`;
         break;
       case NotificationSource.STORY:
         const authorStory = await this.userService.shallowUser({

@@ -287,6 +287,7 @@ enum NotificationSource {
   PENDING_INS
   STORY
   LIKE_STORY
+  DELETED_POST_BY_ADMIN
 }
 
 enum UserRole {

@@ -328,12 +328,60 @@ export class InsAdminController {
       this.logger.log(
         `Deleting post ${postID} from ins ${insID} by user ${userID}`,
       );
-      return this.postConnectionService.delete({
-        postId_id: {
-          id: insID,
-          postId: postID,
+      const postConnection = await this.postConnectionService.delete(
+        {
+          postId_id: {
+            id: insID,
+            postId: postID,
+          },
         },
-      });
+        {
+          post: {
+            select: {
+              authorId: true,
+            },
+          },
+        },
+      );
+
+      const castedPostConnection = <
+        PostInsConnection & {
+          post: PostModel;
+        }
+      >postConnection;
+      if (
+        castedPostConnection.post.authorId &&
+        castedPostConnection.post.authorId !== userID
+      ) {
+        this.logger.log(
+          `Creating notification for removing post ${postID} from ins ${insID} by user ${userID}`,
+        );
+        await this.notificationService.createNotification({
+          source: NotificationSource.DELETED_POST_BY_ADMIN,
+          targets: {
+            connect: {
+              id: castedPostConnection.post.authorId,
+            },
+          },
+          author: {
+            connect: {
+              id: userID,
+            },
+          },
+          post: {
+            connect: {
+              id: postID,
+            },
+          },
+          ins: {
+            connect: {
+              id: insID,
+            },
+          },
+        });
+      }
+
+      return postConnection;
     } else {
       this.logger.log(
         `Removing reporting for post ${postID} from ins ${insID} by user ${userID}`,
@@ -370,6 +418,24 @@ export class InsAdminController {
       },
     });
 
+    const deletedPosts = await this.postConnectionService.getInsConnections({
+      where: {
+        id: {
+          in: insesAdmin.map((ins) => ins.id),
+        },
+        reportedAt: {
+          not: null,
+        },
+      },
+      include: {
+        post: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
+    });
+
     await this.postConnectionService.deleteMany({
       where: {
         id: {
@@ -380,6 +446,47 @@ export class InsAdminController {
         },
       },
     });
+
+    const castedDeletedPosts = <
+      (PostInsConnection & {
+        post: PostModel;
+      })[]
+    >deletedPosts;
+    await Promise.all(
+      castedDeletedPosts.map(async (postConnection) => {
+        if (
+          postConnection.post.authorId &&
+          postConnection.post.authorId !== userID
+        ) {
+          this.logger.log(
+            `Creating notification for removing post ${postConnection.postId} from ins ${postConnection.id} by user ${userID}`,
+          );
+          await this.notificationService.createNotification({
+            source: NotificationSource.DELETED_POST_BY_ADMIN,
+            targets: {
+              connect: {
+                id: postConnection.post.authorId,
+              },
+            },
+            author: {
+              connect: {
+                id: userID,
+              },
+            },
+            post: {
+              connect: {
+                id: postConnection.postId,
+              },
+            },
+            ins: {
+              connect: {
+                id: postConnection.id,
+              },
+            },
+          });
+        }
+      }),
+    );
 
     this.logger.log('Posts succesffully deleted by admin ins');
     return {
