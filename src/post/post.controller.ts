@@ -18,6 +18,7 @@ import {
   Post,
   Post as PostModel,
   PostInsConnection,
+  Prisma,
   UserInsConnection,
   UserRole,
 } from '@prisma/client';
@@ -357,6 +358,9 @@ export class PostController {
     ).map((connection) => {
       return { id: connection.userId };
     });
+    const notifMetadata = {
+      insesIDs: ins,
+    } as Prisma.JsonObject;
     await this.notificationService.createNotification({
       source: NotificationSource.POST,
       targets: {
@@ -372,6 +376,7 @@ export class PostController {
           id: post.id,
         },
       },
+      metadata: notifMetadata,
     });
 
     this.logger.log(

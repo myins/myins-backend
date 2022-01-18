@@ -24,6 +24,7 @@ import {
 import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { InsService } from 'src/ins/ins.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 
 @Injectable()
 export class NotificationService {
@@ -63,85 +64,114 @@ export class NotificationService {
     const notification = user?.lastReadNotificationID
       ? await this.getById({ id: user.lastReadNotificationID })
       : null;
-    const dataReturn = feedNotifications.map((notif) => {
-      const notificationsWithINs: NotificationSource[] = [
-        NotificationSource.JOINED_INS,
-        NotificationSource.JOIN_INS_REJECTED,
-        NotificationSource.CHANGE_ADMIN,
-      ];
-      if (notificationsWithINs.includes(notif.source)) {
-        const ins = (<NotificationFeed>notif).ins;
-        notif = omit(<NotificationFeed>notif, 'ins');
-        return {
-          ...notif,
-          post: {
-            ...(<NotificationFeedWithoutPost>notif).post,
-            inses: [ins],
-          },
-          isSeen: !!notification && notification.createdAt >= notif.createdAt,
-        };
-      }
+    const dataReturn = await Promise.all(
+      feedNotifications.map(async (notif) => {
+        const notificationsWithINs: NotificationSource[] = [
+          NotificationSource.JOINED_INS,
+          NotificationSource.JOIN_INS_REJECTED,
+          NotificationSource.CHANGE_ADMIN,
+        ];
+        if (notificationsWithINs.includes(notif.source)) {
+          const ins = (<NotificationFeed>notif).ins;
+          notif = omit(<NotificationFeed>notif, 'ins');
 
-      const notificationsWithPostInses: NotificationSource[] = [
-        NotificationSource.POST,
-        NotificationSource.LIKE_POST,
-        NotificationSource.COMMENT,
-        NotificationSource.LIKE_COMMENT,
-        NotificationSource.DELETED_POST_BY_ADMIN,
-      ];
-      if (notificationsWithPostInses.includes(notif.source)) {
-        const castedNotif = <
-          Notification & {
-            post: Post & {
-              inses: (PostInsConnection & {
-                ins: INS & {
-                  members: UserInsConnection[];
-                };
-              })[];
+          return {
+            ...notif,
+            post: {
+              ...(<NotificationFeedWithoutPost>notif).post,
+              inses: [ins],
+            },
+            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+          };
+        }
+
+        const notificationsWithPostInses: NotificationSource[] = [
+          NotificationSource.POST,
+          NotificationSource.LIKE_POST,
+          NotificationSource.COMMENT,
+          NotificationSource.LIKE_COMMENT,
+          NotificationSource.DELETED_POST_BY_ADMIN,
+        ];
+        if (notificationsWithPostInses.includes(notif.source)) {
+          const metadata = notif.metadata as Prisma.JsonObject;
+          if (metadata?.insesIDs) {
+            const inses = await this.insService.inses({
+              where: {
+                id: {
+                  in: <string[]>metadata?.insesIDs,
+                },
+              },
+              select: ShallowINSSelect,
+            });
+
+            return {
+              ...notif,
+              post: {
+                ...(<NotificationFeed>notif).post,
+                inses,
+              },
+              isSeen:
+                !!notification && notification.createdAt >= notif.createdAt,
             };
           }
-        >notif;
-        return {
-          ...notif,
-          post: {
-            ...(<NotificationFeedWithoutPost>notif).post,
-            inses: castedNotif.post.inses.map((insConnection) => {
-              return omit(insConnection.ins, 'members');
-            }),
-          },
-          isSeen: !!notification && notification.createdAt >= notif.createdAt,
-        };
-      }
-      if (notif.source === NotificationSource.STORY) {
-        const castedNotif = <
-          Notification & {
-            story: Story & {
-              inses: (StoryInsConnection & {
-                ins: INS;
-              })[];
-            };
-          }
-        >notif;
-        return {
-          ...notif,
-          story: {
-            ...(<NotificationFeedWithoutPost>notif).story,
-            inses: castedNotif.story.inses.map((insConnection) => {
-              return insConnection.ins;
-            }),
-          },
-          ins: castedNotif.story.inses.sort(
-            (ins1, ins2) => ins1.createdAt.getTime() - ins2.createdAt.getTime(),
-          )[0].ins,
-          isSeen: !!notification && notification.createdAt >= notif.createdAt,
-        };
-      }
 
-      return {
-        ...notif,
-        isSeen: !!notification && notification.createdAt >= notif.createdAt,
-      };
-    });
+          const castedNotif = <
+            Notification & {
+              post: Post & {
+                inses: (PostInsConnection & {
+                  ins: INS & {
+                    members: UserInsConnection[];
+                  };
+                })[];
+              };
+            }
+          >notif;
+
+          return {
+            ...notif,
+            post: {
+              ...(<NotificationFeedWithoutPost>notif).post,
+              inses: castedNotif.post.inses.map((insConnection) => {
+                return omit(insConnection.ins, 'members');
+              }),
+            },
+            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+          };
+        }
+
+        if (notif.source === NotificationSource.STORY) {
+          const castedNotif = <
+            Notification & {
+              story: Story & {
+                inses: (StoryInsConnection & {
+                  ins: INS;
+                })[];
+              };
+            }
+          >notif;
+
+          return {
+            ...notif,
+            story: {
+              ...(<NotificationFeedWithoutPost>notif).story,
+              inses: castedNotif.story.inses.map((insConnection) => {
+                return insConnection.ins;
+              }),
+            },
+            ins: castedNotif.story.inses.sort(
+              (ins1, ins2) =>
+                ins1.createdAt.getTime() - ins2.createdAt.getTime(),
+            )[0].ins,
+            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+          };
+        }
+
+        return {
+          ...notif,
+          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+        };
+      }),
+    );
 
     if (skip === 0 && dataReturn.length) {
       await this.userService.setLastReadNotificationID(

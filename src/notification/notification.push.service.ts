@@ -21,6 +21,7 @@ import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
@@ -395,8 +396,19 @@ export class NotificationPushService {
         const authorPost = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        if (normalNotif.post?.connect?.id) {
-          const inses = await this.insService.inses({
+        let inses: INS[] = [];
+        const metadataPost = normalNotif.metadata as Prisma.JsonObject;
+        if (metadataPost.insesIDs) {
+          inses = await this.insService.inses({
+            where: {
+              id: {
+                in: <string[]>metadataPost?.insesIDs,
+              },
+            },
+            select: ShallowINSSelect,
+          });
+        } else if (normalNotif.post?.connect?.id) {
+          inses = await this.insService.inses({
             where: {
               members: {
                 some: {
@@ -413,12 +425,12 @@ export class NotificationPushService {
               },
             },
           });
-          body = `${authorPost?.firstName} ${
-            authorPost?.lastName
-          } added a new post in ${inses.map((ins) => ins.name)} ${
-            inses.length > 1 ? 'inses' : 'ins'
-          }!`;
         }
+        body = `${authorPost?.firstName} ${
+          authorPost?.lastName
+        } added a new post in ${inses.map((ins) => ins.name)} ${
+          inses.length > 1 ? 'inses' : 'ins'
+        }!`;
         break;
       case NotificationSource.JOINED_INS:
         const authorInsJoined = await this.userService.shallowUser({
