@@ -98,7 +98,7 @@ export class NotificationService {
             const inses = await this.insService.inses({
               where: {
                 id: {
-                  in: <string[]>metadata?.insesIDs,
+                  in: <string[]>metadata.insesIDs,
                 },
               },
               select: ShallowINSSelect,

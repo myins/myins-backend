@@ -402,7 +402,7 @@ export class NotificationPushService {
           inses = await this.insService.inses({
             where: {
               id: {
-                in: <string[]>metadataPost?.insesIDs,
+                in: <string[]>metadataPost.insesIDs,
               },
             },
             select: ShallowINSSelect,
