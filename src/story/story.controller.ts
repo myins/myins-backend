@@ -16,7 +16,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { MediaService } from 'src/media/media.service';
-import { PostService } from 'src/post/post.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { CreateStoryAPI } from './story-api.entity';
 import { StoryService } from './story.service';
@@ -28,7 +27,6 @@ export class StoryController {
   constructor(
     private readonly storyService: StoryService,
     private readonly mediaService: MediaService,
-    private readonly postService: PostService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
   ) {}

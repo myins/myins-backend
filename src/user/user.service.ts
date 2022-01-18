@@ -26,7 +26,6 @@ import {
   EnableDisableNotificationAPI,
 } from './user-api.entity';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationPushService } from 'src/notification/notification.push.service';
 
 @Injectable()
 export class UserService {
@@ -36,14 +35,11 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly jwtService: SjwtService,
     private readonly smsService: SmsService,
-    @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
-    @Inject(forwardRef(() => NotificationPushService))
-    private readonly notificationPushService: NotificationPushService,
   ) {}
 
   async user(
@@ -126,7 +122,6 @@ export class UserService {
     return usersWithoutImportantFields;
   }
 
-  //FIXME: also figure out type returns to allow select
   async shallowUsers(params: Prisma.UserFindManyArgs) {
     params.select = ShallowUserSelect;
     return this.users(params);

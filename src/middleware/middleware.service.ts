@@ -12,8 +12,6 @@ export class MiddlewareService {
     private readonly prismaService: PrismaService,
     private readonly chatService: ChatService,
   ) {
-    // Ready for use
-
     this.prismaService.$use(async (params, next) => {
       const result = await next(params);
       if (params.model == 'INS') {

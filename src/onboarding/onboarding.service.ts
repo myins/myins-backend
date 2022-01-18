@@ -62,7 +62,6 @@ export class OnboardingService {
     }
 
     // Firstly, we want to create the chat channel
-
     this.logger.log(`Create channel for ins ${insID} by user stream ${userID}`);
     await this.chatService.createChannelINS(castedIns, userID);
     await this.prismaService.$transaction(async () => {

@@ -19,7 +19,10 @@ import { ShallowUserSelectWithRoleInclude } from 'src/prisma-queries-helper/shal
 import { UserService } from 'src/user/user.service';
 import fetch from 'node-fetch';
 import { PostService } from 'src/post/post.service';
-import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
+import {
+  ShallowINSSelect,
+  ShallowINSSelectID,
+} from 'src/prisma-queries-helper/shallow-ins-select';
 
 @Injectable()
 export class InsService {
@@ -342,13 +345,10 @@ export class InsService {
     return insesWithoutPhoneNumbers;
   }
 
-  //FIXME: figure out type safety with select statements
   async insesSelectIDs(where: Prisma.INSWhereInput): Promise<INS[]> {
     return this.inses({
       where: where,
-      select: {
-        id: true,
-      },
+      select: ShallowINSSelectID,
     });
   }
 

@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ChatModule } from 'src/chat/chat.module';
 import { CurrentVersionsModule } from 'src/current-versions/current-versions.module';
 import { InsModule } from 'src/ins/ins.module';
@@ -23,7 +23,7 @@ import { UserVersionsController } from './user.versions.controller';
     StorageModule,
     CurrentVersionsModule,
     InsModule,
-    forwardRef(() => ChatModule),
+    ChatModule,
     NotificationModule,
   ],
   controllers: [

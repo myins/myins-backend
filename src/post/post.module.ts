@@ -1,13 +1,11 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
-import { FfmpegModule } from 'src/ffmpeg/ffmpeg.module';
 import { InsModule } from 'src/ins/ins.module';
 import { InteractionModule } from 'src/interaction/interaction.module';
 import { MediaModule } from 'src/media/media.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { StorageModule } from 'src/storage/storage.module';
 import { UserModule } from 'src/user/user.module';
 import { PostCommentsController } from './post.comments.controller';
 import { PostConnectionService } from './post.connection.service';
@@ -23,10 +21,8 @@ import { PostService } from './post.service';
   imports: [
     PrismaModule,
     forwardRef(() => UserModule),
-    StorageModule,
     forwardRef(() => CommentModule),
     NotificationModule,
-    FfmpegModule,
     forwardRef(() => InsModule),
     forwardRef(() => ChatModule),
     InteractionModule,

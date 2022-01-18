@@ -7,3 +7,7 @@ export const ShallowINSSelect: Prisma.INSSelect = {
   shareCode: true,
   createdAt: true,
 };
+
+export const ShallowINSSelectID: Prisma.INSSelect = {
+  id: true,
+};

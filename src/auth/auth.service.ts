@@ -23,7 +23,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UserService,
     private readonly jwtService: SjwtService,
-    private readonly smsService: SmsService, //@InjectTwilio() private readonly twilioClient: TwilioClient
+    private readonly smsService: SmsService,
     private readonly chatService: ChatService,
   ) {}
 

@@ -86,16 +86,16 @@ model Post {
   pending           Boolean @default(true)
   totalMediaContent Int
 
-  notifications Notification[] // Some notifications have a post
+  notifications Notification[]
   likes         UserPostLikeConnection[]
   inses         PostInsConnection[]
 }
 
 model UserPostLikeConnection {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String // relation scalar field (used in the `@relation` attribute above)
+  userId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String // relation scalar field (used in the `@relation` attribute above)
+  postId String
 
   createdAt DateTime @default(now())
 
@@ -118,11 +118,11 @@ model Story {
 
 model UserStoryMediaViewConnection {
   user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id           String // relation scalar field (used in the `@relation` attribute above)
+  id           String
   storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+  storyMediaId String
   ins          INS         @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  insId        String // relation scalar field (used in the `@relation` attribute above)
+  insId        String
 
   createdAt DateTime @default(now())
 
@@ -131,11 +131,11 @@ model UserStoryMediaViewConnection {
 
 model UserStoryMediaLikeConnection {
   user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id           String // relation scalar field (used in the `@relation` attribute above)
+  id           String
   storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  storyMediaId String // relation scalar field (used in the `@relation` attribute above)
+  storyMediaId String
   ins          INS         @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  insId        String // relation scalar field (used in the `@relation` attribute above)
+  insId        String
 
   createdAt DateTime @default(now())
 
@@ -148,7 +148,6 @@ model Comment {
   edited    Boolean  @default(false)
   content   String
 
-  //The author is the one who created the comment
   author   User   @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId String
 
@@ -162,9 +161,9 @@ model Comment {
 
 model UserCommentLikeConnection {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String // relation scalar field (used in the `@relation` attribute above)
+  userId    String
   comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  commentId String // relation scalar field (used in the `@relation` attribute above)
+  commentId String
 
   createdAt DateTime @default(now())
 
@@ -177,14 +176,12 @@ model Notification {
   source    NotificationSource
   targets   User[]
 
-  // Some notifications come from the ether, others from the user
   author   User   @relation(name: "notifAuthor", fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId String
 
   ins   INS?    @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   insId String?
 
-  //Some notifications have a related post / comment, sometimes both
   post   Post?   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   postId String?
 
@@ -220,9 +217,9 @@ model INS {
 
 model UserInsConnection {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String // relation scalar field (used in the `@relation` attribute above)
+  userId String
   ins    INS    @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  insId  String // relation scalar field (used in the `@relation` attribute above)
+  insId  String
 
   interactions Int       @default(0)
   pinned       Boolean   @default(false)
@@ -240,9 +237,9 @@ model UserInsConnection {
 
 model StoryInsConnection {
   story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  storyId String // relation scalar field (used in the `@relation` attribute above)
+  storyId String
   ins     INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id      String // relation scalar field (used in the `@relation` attribute above)
+  id      String
 
   createdAt DateTime @default(now())
 
@@ -251,9 +248,9 @@ model StoryInsConnection {
 
 model PostInsConnection {
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String // relation scalar field (used in the `@relation` attribute above)
+  postId String
   ins    INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id     String // relation scalar field (used in the `@relation` attribute above)
+  id     String
 
   createdAt DateTime @default(now())
 

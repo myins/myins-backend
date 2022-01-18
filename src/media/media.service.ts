@@ -34,11 +34,9 @@ export class MediaService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly storageService: StorageService, // private readonly ffmpegService: FfmpegService,
-    @Inject(forwardRef(() => InsService))
+    private readonly storageService: StorageService,
     private readonly insService: InsService,
     private readonly postService: PostService,
-    @Inject(forwardRef(() => StoryService))
     private readonly storyService: StoryService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
@@ -234,7 +232,7 @@ export class MediaService {
         this.logger.log(
           `${isStoryEntity ? 'Story' : 'Post'} isn't pending, returning early!`,
         );
-        return; // Nothing to do here, looks like the other thread
+        return;
       }
 
       const realMediaCount =
@@ -246,7 +244,7 @@ export class MediaService {
         this.logger.log(
           `${isStoryEntity ? 'Story' : 'Post'} isn't ready, returning early!`,
         );
-        return; // Nothing to do here, it's not ready yet
+        return;
       }
 
       this.logger.log(

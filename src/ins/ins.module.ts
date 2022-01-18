@@ -1,5 +1,4 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { ChatModule } from 'src/chat/chat.module';
 import { CommentModule } from 'src/comment/comment.module';
 import { MediaModule } from 'src/media/media.module';
 import { NotificationModule } from 'src/notification/notification.module';
@@ -19,7 +18,6 @@ import { InsSettingsController } from './ins.settings.controller';
   imports: [
     PrismaModule,
     StorageModule,
-    forwardRef(() => ChatModule),
     CommentModule,
     forwardRef(() => UserModule),
     PostModule,

@@ -24,8 +24,6 @@ export class InviteController {
 
   constructor(private readonly inviteService: InviteService) {}
 
-  // invite by phone number, invite by user id
-
   @Post('ins-users')
   @UseGuards(JwtAuthGuard)
   @ApiTags('invite')
