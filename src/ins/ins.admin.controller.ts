@@ -1,4 +1,11 @@
-import { NotificationSource, Prisma, UserRole } from '.prisma/client';
+import {
+  NotificationSource,
+  PostInsConnection,
+  Prisma,
+  UserRole,
+  Post as PostModel,
+  INS,
+} from '.prisma/client';
 import {
   Body,
   Controller,
@@ -10,12 +17,15 @@ import {
   BadRequestException,
   UseGuards,
   Patch,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostConnectionService } from 'src/post/post.connection.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import {
   ChangeNameAPI,
@@ -200,6 +210,88 @@ export class InsAdminController {
     return this.insAdminService.deleteINS({ id: insID });
   }
 
+  @Get('reports')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('ins-admin')
+  async getReportedPosts(
+    @PrismaUser('id') userID: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
+    if (isNaN(skip) || isNaN(take)) {
+      this.logger.error('Skip and take must be number!');
+      throw new BadRequestException('Skip and take must be number!');
+    }
+
+    this.logger.log(`Getting all inses where user ${userID} is admin`);
+    const adminInses = await this.insService.inses({
+      where: {
+        members: {
+          some: {
+            userId: userID,
+            role: UserRole.ADMIN,
+          },
+        },
+      },
+    });
+
+    const whereQuery: Prisma.PostInsConnectionWhereInput = {
+      id: {
+        in: adminInses.map((ins) => ins.id),
+      },
+      reportedAt: {
+        not: null,
+      },
+    };
+
+    this.logger.log(`Counting all reported post for admin ${userID}`);
+    const countReportedPosts = await this.postConnectionService.count({
+      where: whereQuery,
+    });
+
+    this.logger.log(`Getting reported post for admin ${userID}`);
+    const reportedPostConnections =
+      await this.postConnectionService.getInsConnections({
+        where: whereQuery,
+        include: {
+          post: {
+            include: {
+              mediaContent: true,
+            },
+          },
+          ins: {
+            select: ShallowINSSelect,
+          },
+        },
+        orderBy: {
+          reportedAt: 'desc',
+        },
+        skip,
+        take,
+      });
+
+    const castedReportedPostsConnections = <
+      (PostInsConnection & {
+        post: PostModel;
+        ins: INS;
+      })[]
+    >reportedPostConnections;
+
+    const toRetData = castedReportedPostsConnections.map((reportedPost) => {
+      return {
+        post: reportedPost.post,
+        ins: reportedPost.ins,
+        createdAt: reportedPost.reportedAt,
+        countUsers: reportedPost.reportedByUsers.length,
+      };
+    });
+
+    return {
+      count: countReportedPosts,
+      data: toRetData,
+    };
+  }
+
   @Delete(':id/post/:postID')
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins-admin')
@@ -227,7 +319,7 @@ export class InsAdminController {
         postId: postID,
       },
     });
-    if (!connection?.isReported) {
+    if (!connection?.reportedAt) {
       this.logger.error(`Post is no longer reported in ins ${insID}!`);
       throw new BadRequestException('Post is no longer reported in INS!');
     }
@@ -254,7 +346,8 @@ export class InsAdminController {
           },
         },
         data: {
-          isReported: false,
+          reportedAt: null,
+          reportedByUsers: [],
         },
       });
     }

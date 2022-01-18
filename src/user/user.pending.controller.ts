@@ -12,10 +12,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { ChatService } from 'src/chat/chat.service';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { NotificationService } from 'src/notification/notification.service';
 import { PendingUser } from 'src/prisma-queries-helper/pending-user-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
@@ -31,8 +29,6 @@ export class UserPendingController {
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
-    private readonly chatService: ChatService,
-    private readonly notificationService: NotificationService,
   ) {}
 
   @Get()

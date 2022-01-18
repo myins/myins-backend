@@ -255,8 +255,10 @@ model PostInsConnection {
   ins    INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   id     String // relation scalar field (used in the `@relation` attribute above)
 
-  createdAt  DateTime @default(now())
-  isReported Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  reportedAt      DateTime?
+  reportedByUsers String[]
 
   @@id([postId, id])
 }

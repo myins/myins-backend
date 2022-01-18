@@ -12,6 +12,7 @@ import { FirebaseMessagingService } from '@aginix/nestjs-firebase-admin';
 import {
   INS,
   NotificationSource,
+  Post,
   Prisma,
   User,
   UserRole,
@@ -24,13 +25,16 @@ import { NotificationService } from './notification.service';
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
   REQUEST_FOR_ME = 'REQUEST_FOR_ME',
+  REPORT_ADMIN = 'REPORT_ADMIN',
 }
 
 export interface PushExtraNotification {
   source: PushNotificationSource;
-  author: User | null;
-  ins: INS | null;
+  author?: User | null;
+  ins?: INS | null;
+  post?: Post | null;
   targets: string[];
+  countUsers?: number;
 }
 
 const sandboxSettings = {
@@ -171,6 +175,7 @@ export class NotificationPushService {
         );
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
       case PushNotificationSource.REQUEST_FOR_ME:
+      case PushNotificationSource.REPORT_ADMIN:
         usersIDs = pushNotif.targets;
         break;
       default:
@@ -212,6 +217,7 @@ export class NotificationPushService {
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
       case PushNotificationSource.REQUEST_FOR_OTHER_USER:
+      case PushNotificationSource.REPORT_ADMIN:
         if (pushNotif.ins?.id && user?.id) {
           const connectionPushNotif =
             await this.userConnectionService.getConnection({
@@ -469,7 +475,10 @@ export class NotificationPushService {
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} requested access to ${pushNotif.ins?.name} ins!`;
         break;
       case PushNotificationSource.REQUEST_FOR_ME:
-        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} Ins!`;
+        body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} ins!`;
+        break;
+      case PushNotificationSource.REPORT_ADMIN:
+        body = `This post has been reported by ${pushNotif.countUsers} users as being inappropriate in ${pushNotif.ins?.name} ins!`;
         break;
       default:
         unreachable(source);

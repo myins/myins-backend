@@ -19,6 +19,7 @@ import {
   Post as PostModel,
   PostInsConnection,
   UserInsConnection,
+  UserRole,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -31,6 +32,12 @@ import { ChatService } from 'src/chat/chat.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { PostConnectionService } from './post.connection.service';
+import {
+  NotificationPushService,
+  PushExtraNotification,
+  PushNotificationSource,
+} from 'src/notification/notification.push.service';
+import { UserService } from 'src/user/user.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -42,7 +49,9 @@ export class PostController {
     private readonly insService: InsService,
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
+    private readonly notificationPushService: NotificationPushService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly userService: UserService,
     private readonly postConnectionService: PostConnectionService,
   ) {}
 
@@ -151,17 +160,69 @@ export class PostController {
       throw new BadRequestException("You're not allowed to report this post!");
     }
 
-    return this.postConnectionService.update({
-      where: {
+    const postConnection = await this.postConnectionService.get(
+      {
         postId_id: {
           id: insID,
           postId: postID,
         },
       },
-      data: {
-        isReported: true,
+      {
+        post: {
+          include: {
+            mediaContent: true,
+          },
+        },
       },
-    });
+    );
+
+    if (postConnection?.reportedByUsers.includes(userID)) {
+      return postConnection;
+    } else {
+      const toRet = await this.postConnectionService.update({
+        where: {
+          postId_id: {
+            id: insID,
+            postId: postID,
+          },
+        },
+        data: {
+          reportedAt: new Date(),
+          reportedByUsers: {
+            push: userID,
+          },
+        },
+      });
+
+      this.logger.log(
+        `Creating push notification for requesting access in ins ${castedINS.id}`,
+      );
+      const castedPostConnection = <
+        PostInsConnection & {
+          post: Post;
+        }
+      >postConnection;
+      const insesAdmin = await this.userService.users({
+        where: {
+          inses: {
+            some: {
+              insId: insID,
+              role: UserRole.ADMIN,
+            },
+          },
+        },
+      });
+      const dataPush: PushExtraNotification = {
+        source: PushNotificationSource.REPORT_ADMIN,
+        ins: ins,
+        post: castedPostConnection.post,
+        targets: [insesAdmin[0].id],
+        countUsers: toRet.reportedByUsers.length,
+      };
+      await this.notificationPushService.pushNotification(dataPush);
+
+      return toRet;
+    }
   }
 
   @Delete(':id')
