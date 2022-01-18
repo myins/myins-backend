@@ -5,6 +5,7 @@ import {
   Story,
   StoryInsConnection,
   User,
+  UserStoryMediaViewConnection,
 } from '.prisma/client';
 import {
   BadRequestException,
@@ -144,7 +145,27 @@ export class MediaController {
         insId: insID,
       },
     });
+    const lastViews = await this.mediaConnectionsService.getViews({
+      where: {
+        storyMediaId: media.id,
+        insId: insID,
+      },
+      include: {
+        user: {
+          select: ShallowUserSelect,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 3,
+    });
 
+    const castedLastViews = <
+      (UserStoryMediaViewConnection & {
+        user: User;
+      })[]
+    >lastViews;
     const mediaContent = {
       media: {
         ...omit(castedMedia, 'story'),
@@ -155,6 +176,7 @@ export class MediaController {
       },
       author: castedMedia.story.author,
       ins: castedMedia.story.inses[0].ins,
+      lastViews: castedLastViews.map((view) => view.user),
     };
     return mediaContent;
   }
