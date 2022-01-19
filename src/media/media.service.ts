@@ -355,7 +355,9 @@ export class MediaService {
       );
       for (const eachINS of (<PostStoryWithInsesAndCountMedia>entity).inses) {
         await this.insService.update({
-          where: eachINS,
+          where: {
+            id: eachINS.id,
+          },
           data: {
             cover: dataURL,
           },
