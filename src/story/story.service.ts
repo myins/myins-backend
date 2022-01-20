@@ -402,8 +402,16 @@ export class StoryService {
             createdAt: 'desc',
           },
         });
+        console.log(
+          'medias',
+          medias.map((media) => media.id),
+        );
         medias = medias.filter(
           (media) => media && !media.excludedInses.includes(castedIns.id),
+        );
+        console.log(
+          'medias',
+          medias.map((media) => media.id),
         );
 
         const castedMedias = <
@@ -412,17 +420,26 @@ export class StoryService {
             story: Story;
           })[]
         >medias;
+        console.log(
+          'castedMedias',
+          castedMedias.map((media) => media.id),
+        );
         const sortedMedias = castedMedias.sort((media1, media2) => {
           const views1 = media1.views.length;
           const views2 = media2.views.length;
           return views1 - views2;
         });
+        console.log(
+          'sortedMedias',
+          sortedMedias.map((media) => media.id),
+        );
 
         let allMediasFromStory: (PostContent & {
           views: User[];
           story: Story;
         })[] = [];
         let mediaContent = sortedMedias[0];
+        console.log('mediaContent', mediaContent.id);
         if (!mediaContent.views.length) {
           allMediasFromStory = sortedMedias.filter(
             (media) =>
@@ -443,6 +460,7 @@ export class StoryService {
           );
           mediaContent = sorteAllMediasFromStory[0];
         }
+        console.log('mediaContent', mediaContent.id);
 
         const unviewedStories = castedMedias.filter(
           (media) => !media.views.length && media.story.authorId !== userID,
