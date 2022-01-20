@@ -83,38 +83,21 @@ export class PostLikeController {
     }
 
     this.logger.log(`Getting all likes for post ${postID}`);
-    const postLikes = await this.postLikeService.postLikes({
+    return this.postLikeService.postLikes({
       where: {
         postId: postID,
         user: {
           isDeleted: false,
         },
       },
-      skip: skip,
-      take: take,
       include: {
         user: {
           select: ShallowUserSelect,
         },
       },
-      orderBy: {
-        user: {
-          firstName: 'desc',
-        },
-      },
+      skip: skip,
+      take: take,
     });
-    const castedPostLikes = <
-      (UserPostLikeConnection & {
-        user: User;
-      })[]
-    >postLikes;
-    const returnPostLikes = await Promise.all(
-      castedPostLikes.map((postLike) => {
-        return postLike.user;
-      }),
-    );
-
-    return returnPostLikes;
   }
 
   @Post(':id/like')
