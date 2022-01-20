@@ -403,7 +403,7 @@ export class StoryService {
           },
         });
         medias = medias.filter(
-          (media) => !media.excludedInses.includes(castedIns.id),
+          (media) => media && !media.excludedInses.includes(castedIns.id),
         );
 
         const castedMedias = <
