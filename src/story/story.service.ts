@@ -402,16 +402,8 @@ export class StoryService {
             createdAt: 'desc',
           },
         });
-        console.log(
-          'medias',
-          medias.map((media) => media.id),
-        );
         medias = medias.filter(
           (media) => media && !media.excludedInses.includes(castedIns.id),
-        );
-        console.log(
-          'medias',
-          medias.map((media) => media.id),
         );
 
         const castedMedias = <
@@ -420,59 +412,51 @@ export class StoryService {
             story: Story;
           })[]
         >medias;
-        console.log(
-          'castedMedias',
-          castedMedias.map((media) => media.id),
-        );
         const sortedMedias = castedMedias.sort((media1, media2) => {
           const views1 = media1.views.length;
           const views2 = media2.views.length;
           return views1 - views2;
         });
-        console.log(
-          'sortedMedias',
-          sortedMedias.map((media) => media.id),
-        );
 
         let allMediasFromStory: (PostContent & {
           views: User[];
           story: Story;
         })[] = [];
         let mediaContent = sortedMedias[0];
-        console.log('mediaContent', mediaContent.id);
-        if (!mediaContent.views.length) {
-          allMediasFromStory = sortedMedias.filter(
-            (media) =>
-              media.storyId === mediaContent.storyId && !media.views.length,
-          );
-        } else {
-          allMediasFromStory = sortedMedias.filter(
-            (media) => media.storyId === mediaContent.storyId,
-          );
-        }
-        if (allMediasFromStory.length > 1) {
-          const sorteAllMediasFromStory = allMediasFromStory.sort(
-            (media1, media2) => {
-              const createdAt1 = media1.createdAt.getTime();
-              const createdAt2 = media2.createdAt.getTime();
-              return createdAt1 - createdAt2;
-            },
-          );
-          mediaContent = sorteAllMediasFromStory[0];
-        }
-        console.log('mediaContent', mediaContent.id);
+        if (mediaContent) {
+          if (!mediaContent.views.length) {
+            allMediasFromStory = sortedMedias.filter(
+              (media) =>
+                media.storyId === mediaContent.storyId && !media.views.length,
+            );
+          } else {
+            allMediasFromStory = sortedMedias.filter(
+              (media) => media.storyId === mediaContent.storyId,
+            );
+          }
+          if (allMediasFromStory.length > 1) {
+            const sorteAllMediasFromStory = allMediasFromStory.sort(
+              (media1, media2) => {
+                const createdAt1 = media1.createdAt.getTime();
+                const createdAt2 = media2.createdAt.getTime();
+                return createdAt1 - createdAt2;
+              },
+            );
+            mediaContent = sorteAllMediasFromStory[0];
+          }
 
-        const unviewedStories = castedMedias.filter(
-          (media) => !media.views.length && media.story.authorId !== userID,
-        ).length;
+          const unviewedStories = castedMedias.filter(
+            (media) => !media.views.length && media.story.authorId !== userID,
+          ).length;
 
-        if (medias.length) {
-          return {
-            ...omit(castedIns, 'stories'),
-            mediaContent: omit(mediaContent, 'views'),
-            unviewedStories,
-            countStory: medias.length,
-          };
+          if (medias.length) {
+            return {
+              ...omit(castedIns, 'stories'),
+              mediaContent: omit(mediaContent, 'views'),
+              unviewedStories,
+              countStory: medias.length,
+            };
+          }
         }
         return null;
       }),
@@ -480,8 +464,8 @@ export class StoryService {
 
     this.logger.log('Sort inses by created date of first media content');
     let sortedInses = insWithMedia.sort((ins1, ins2) => {
-      const time1 = ins1?.mediaContent.createdAt.getTime() ?? 1;
-      const time2 = ins2?.mediaContent.createdAt.getTime() ?? 1;
+      const time1 = ins1?.mediaContent?.createdAt.getTime() ?? 1;
+      const time2 = ins2?.mediaContent?.createdAt.getTime() ?? 1;
       return time2 - time1;
     });
     const notNullInses = sortedInses.filter((each) => each != null);
