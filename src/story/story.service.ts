@@ -562,6 +562,11 @@ export class StoryService {
           take: 3,
         });
 
+        const castedLastViews = <
+          (UserStoryMediaViewConnection & {
+            user: User;
+          })[]
+        >lastViews;
         const mediaContent = {
           media: {
             ...media,
@@ -572,7 +577,7 @@ export class StoryService {
           },
           author: media.story.author,
           ins,
-          lastViews,
+          lastViews: castedLastViews.map((view) => view.user),
         };
         returnedMediaContent.push(mediaContent);
       }),
