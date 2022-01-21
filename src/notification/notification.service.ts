@@ -236,35 +236,38 @@ export class NotificationService {
       },
     });
     const insIDs = userConnections.map((connection) => connection.insId);
-    const unreadRequests = await this.prisma.$queryRaw<
-      { count: number }[]
-    >(Prisma.sql`SELECT count(*) FROM "public"."UserInsConnection" as uic
-    INNER JOIN "User" as u on u.id=uic."userId"
-    WHERE 
-      uic."role"=${UserRole.PENDING} AND 
-      u."isDeleted"=false AND 
-      (
+    if (insIDs.length) {
+      const unreadRequests = await this.prisma.$queryRaw<
+        { count: number }[]
+      >(Prisma.sql`SELECT count(*) FROM "public"."UserInsConnection" as uic
+      INNER JOIN "User" as u on u.id=uic."userId"
+      WHERE 
+        uic."role"=${UserRole.PENDING} AND 
+        u."isDeleted"=false AND 
         (
-          uic."userId"=${id} AND 
-          uic."invitedBy" IS NOT NULL
-        ) OR 
-        (
-          uic."insId" IN (${Prisma.join(insIDs)}) AND 
-          uic."invitedBy" IS NULL AND
           (
-            uic."deniedByUsers" IS NULL OR
-            NOT uic."deniedByUsers" && '{${Prisma.raw(id)}}'::text[]
+            uic."userId"=${id} AND 
+            uic."invitedBy" IS NOT NULL
+          ) OR 
+          (
+            uic."insId" IN (${Prisma.join(insIDs)}) AND 
+            uic."invitedBy" IS NULL AND
+            (
+              uic."deniedByUsers" IS NULL OR
+              NOT uic."deniedByUsers" && '{${Prisma.raw(id)}}'::text[]
+            )
           )
-        )
-      ) AND
-      uic."createdAt" >= 
-        (SELECT "createdAt" FROM "UserInsConnection" as myuic 
-        WHERE myuic."userId"=${id} AND myuic."insId"=uic."insId") AND
-      uic."createdAt" > ${
-        lastReadRequest ?? new Date(new Date().setFullYear(2000))
-      }`);
+        ) AND
+        uic."createdAt" >= 
+          (SELECT "createdAt" FROM "UserInsConnection" as myuic 
+          WHERE myuic."userId"=${id} AND myuic."insId"=uic."insId") AND
+        uic."createdAt" > ${
+          lastReadRequest ?? new Date(new Date().setFullYear(2000))
+        }`);
+      return unreadNotif + unreadRequests[0].count;
+    }
 
-    return unreadNotif + unreadRequests[0].count;
+    return unreadNotif + 0;
   }
 
   async removeTargetFromNotifications(targetID: string) {
