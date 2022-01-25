@@ -30,7 +30,7 @@ workflows:
           container-image-name-updates: "container=app,tag=${CIRCLE_SHA1}"
   build_and_push_image_prod:
     jobs:
-      - aws-ecr/build-and-push-image-prod:
+      - aws-ecr/build-and-push-image:
           account-url: AWS_ECR_ACCOUNT_URL
           aws-access-key-id: AWS_ACCESS_KEY_ID_PROD
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY_PROD
@@ -46,7 +46,7 @@ workflows:
                 - master
       - aws-ecs/deploy-service-update:
           requires:
-            - aws-ecr/build-and-push-image-prod # only run this job once aws-ecr/build-and-push-image has completed
+            - aws-ecr/build-and-push-image # only run this job once aws-ecr/build-and-push-image has completed
           family: "myinsn-backend-prod"
           cluster-name: "myinsn-backend-prod"
           container-image-name-updates: "container=app,tag=${CIRCLE_SHA1}"
