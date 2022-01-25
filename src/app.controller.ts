@@ -5,7 +5,7 @@ export class AppController {
   @Get()
   async getStatus(): Promise<{ status: string }> {
     return {
-      status: 'All good! v7',
+      status: 'All good! Prod -v7',
     };
   }
 }
