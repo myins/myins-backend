@@ -107,8 +107,8 @@ export class InviteService {
             otherUserPhoneNumer,
             `You've been invited to MyINS! Click this link to get the app: ${
               isProd()
-                ? 'https://myinsdevelop.page.link'
-                : process.env.SHARE_LINK_URL
+                ? process.env.SHARE_LINK_URL
+                : 'https://myinsdevelop.page.link'
             }/${theINS[0].shareCode}`,
           );
         }),
