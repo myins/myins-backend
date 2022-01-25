@@ -52,4 +52,3 @@ workflows:
           family: "myinsn-backend-prod"
           cluster-name: "myinsn-backend-prod"
           container-image-name-updates: "container=app,tag=${CIRCLE_SHA1}"
-          container-image-name-updates: "container=app,tag=${CIRCLE_SHA1}"
