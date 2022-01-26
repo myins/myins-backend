@@ -17,7 +17,7 @@ export class PostConnectionService {
     return this.prismaService.postInsConnection.findMany(params);
   }
 
-  async count(params: Prisma.PostInsConnectionCountArgs) {
+  async count(params: Prisma.PostInsConnectionCountArgs): Promise<number> {
     return this.prismaService.postInsConnection.count(params);
   }
 
