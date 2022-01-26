@@ -21,6 +21,7 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
+import { isProd } from 'src/util/is-prod';
 
 @Injectable()
 export class InviteService {
@@ -104,7 +105,11 @@ export class InviteService {
         otherUsersPhoneNumbers.map(async (otherUserPhoneNumer) => {
           await this.smsService.sendSMS(
             otherUserPhoneNumer,
-            `You've been invited to MyINS! Click this link to get the app: https://myinsdevelop.page.link/${theINS[0].shareCode}`,
+            `You've been invited to MyINS! Click this link to get the app: ${
+              isProd()
+                ? process.env.SHARE_LINK_URL
+                : 'https://myinsdevelop.page.link'
+            }/${theINS[0].shareCode}`,
           );
         }),
       );

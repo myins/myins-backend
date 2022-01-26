@@ -23,6 +23,7 @@ import {
   ShallowINSSelect,
   ShallowINSSelectID,
 } from 'src/prisma-queries-helper/shallow-ins-select';
+import { isProd } from 'src/util/is-prod';
 
 @Injectable()
 export class InsService {
@@ -405,6 +406,10 @@ export class InsService {
       }
       return result;
     };
+
+    if (!isProd()) {
+      return makeRandom();
+    }
 
     const res = await fetch(
       `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${process.env.FIREBASE_API_KEY}`,
