@@ -36,83 +36,83 @@ export class ChatService {
 
   @Cron('0 1 * * *')
   async cleanUpStreamChat() {
-    if (!isProd()) {
-      try {
-        this.logger.log('[Cron] Clean up stream chat users');
+    if (isProd()) {
+      return;
+    }
 
-        this.logger.log('[Cron] Getting users from db');
-        const users = await this.userService.users({});
-        const usersIDs = users.map((user) => user.id);
+    try {
+      this.logger.log('[Cron] Clean up stream chat users');
 
-        this.logger.log('[Cron] Getting stream chat users');
-        const limit = 100;
-        let offset = 0;
-        let streamUsers;
-        const allUsersIDs: string[] = [];
-        do {
-          streamUsers = await this.streamChat.queryUsers(
-            {},
-            { created_at: 1 },
-            { limit, offset },
-          );
-          const userIDs: string[] = streamUsers.users
-            .filter((streamUser) => streamUser.role === 'user')
-            .map((streamUser) => streamUser.id);
-          allUsersIDs.push(...userIDs);
-          offset = offset + limit;
-        } while (streamUsers.users.length);
+      this.logger.log('[Cron] Getting users from db');
+      const users = await this.userService.users({});
+      const usersIDs = users.map((user) => user.id);
 
-        const nonexistentUsersIDs = allUsersIDs.filter(
-          (userID) => !usersIDs.includes(userID),
+      this.logger.log('[Cron] Getting stream chat users');
+      const limit = 100;
+      let offset = 0;
+      let streamUsers;
+      const allUsersIDs: string[] = [];
+      do {
+        streamUsers = await this.streamChat.queryUsers(
+          {},
+          { created_at: 1 },
+          { limit, offset },
         );
-        await Promise.all(
-          nonexistentUsersIDs.map(async (userID) => {
-            await this.deleteStreamUser(userID);
-          }),
-        );
+        const userIDs: string[] = streamUsers.users
+          .filter((streamUser) => streamUser.role === 'user')
+          .map((streamUser) => streamUser.id);
+        allUsersIDs.push(...userIDs);
+        offset = offset + limit;
+      } while (streamUsers.users.length);
 
-        this.logger.log(
-          `[Cron] Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
-        );
+      const nonexistentUsersIDs = allUsersIDs.filter(
+        (userID) => !usersIDs.includes(userID),
+      );
+      await Promise.all(
+        nonexistentUsersIDs.map(async (userID) => {
+          await this.deleteStreamUser(userID);
+        }),
+      );
 
-        this.logger.log('[Cron] Clean up channels');
+      this.logger.log(
+        `[Cron] Cleaned up ${nonexistentUsersIDs.length} nonexistent stream users!`,
+      );
 
-        this.logger.log('[Cron] Getting inses from db');
-        const inses = await this.insService.inses({});
-        const insesIDs = inses.map((ins) => ins.id);
+      this.logger.log('[Cron] Clean up channels');
 
-        this.logger.log('[Cron] Getting channels');
-        offset = 0;
-        let channels;
-        const allChannels: Channel[] = [];
-        do {
-          channels = await this.streamChat.queryChannels(
-            { insChannel: true },
-            { created_at: 1 },
-            { limit, offset },
-          );
-          allChannels.push(...channels);
-          offset = offset + limit;
-        } while (channels.length);
+      this.logger.log('[Cron] Getting inses from db');
+      const inses = await this.insService.inses({});
+      const insesIDs = inses.map((ins) => ins.id);
 
-        const nonexistentChannels = allChannels.filter(
-          (channel) => channel.id && !insesIDs.includes(channel.id),
+      this.logger.log('[Cron] Getting channels');
+      offset = 0;
+      let channels;
+      const allChannels: Channel[] = [];
+      do {
+        channels = await this.streamChat.queryChannels(
+          { insChannel: true },
+          { created_at: 1 },
+          { limit, offset },
         );
-        await Promise.all(
-          nonexistentChannels.map(async (channel) => {
-            await channel.delete();
-          }),
-        );
+        allChannels.push(...channels);
+        offset = offset + limit;
+      } while (channels.length);
 
-        this.logger.log(
-          `[Cron] Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
-        );
-      } catch (e) {
-        const stringErr: string = <string>e;
-        this.logger.error(
-          `[Cron] Error cleaned up stream chat! + ${stringErr}`,
-        );
-      }
+      const nonexistentChannels = allChannels.filter(
+        (channel) => channel.id && !insesIDs.includes(channel.id),
+      );
+      await Promise.all(
+        nonexistentChannels.map(async (channel) => {
+          await channel.delete();
+        }),
+      );
+
+      this.logger.log(
+        `[Cron] Cleaned up ${nonexistentChannels.length} nonexistent channels!`,
+      );
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`[Cron] Error cleaned up stream chat! + ${stringErr}`);
     }
   }
 
