@@ -394,7 +394,7 @@ export class InsService {
 
   async randomCode() {
     const makeRandom = () => {
-      const length = 20;
+      const length = 10;
       let result = '';
       const characters =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -407,7 +407,7 @@ export class InsService {
       return result;
     };
 
-    if (!isProd()) {
+    if (isProd()) {
       return makeRandom();
     }
 
