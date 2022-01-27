@@ -38,12 +38,12 @@ model User {
   lastAcceptedTermsAndConditionsVersion DateTime?
   lastAcceptedPrivacyPolicyVersion      DateTime?
 
-  lastReadNotificationID String?
-  lastReadRequest        DateTime?
-  disabledNotifications  NotificationSource[]
+  lastReadNotification DateTime  @default(now())
+  lastReadRequest      DateTime?
 
+  disabledNotifications  NotificationSource[]
   disabledBiometryINSIds String[]
-  disabledAllBiometry    Boolean  @default(false)
+  disabledAllBiometry    Boolean              @default(false)
 
   isDeleted Boolean @default(false)
 }

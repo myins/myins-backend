@@ -61,9 +61,6 @@ export class NotificationService {
 
     this.logger.log('Adding isSeen prop for every notification');
     const user = await this.userService.user({ id: userID });
-    const notification = user?.lastReadNotificationID
-      ? await this.getById({ id: user.lastReadNotificationID })
-      : null;
     const dataReturn = await Promise.all(
       feedNotifications.map(async (notif) => {
         const notificationsWithINs: NotificationSource[] = [
@@ -81,7 +78,7 @@ export class NotificationService {
               ...(<NotificationFeedWithoutPost>notif).post,
               inses: [ins],
             },
-            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+            isSeen: user && user?.lastReadNotification >= notif.createdAt,
           };
         }
 
@@ -110,8 +107,7 @@ export class NotificationService {
                 ...(<NotificationFeed>notif).post,
                 inses,
               },
-              isSeen:
-                !!notification && notification.createdAt >= notif.createdAt,
+              isSeen: user && user?.lastReadNotification >= notif.createdAt,
             };
           }
 
@@ -135,7 +131,7 @@ export class NotificationService {
                 return omit(insConnection.ins, 'members');
               }),
             },
-            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+            isSeen: user && user?.lastReadNotification >= notif.createdAt,
           };
         }
 
@@ -162,13 +158,13 @@ export class NotificationService {
               (ins1, ins2) =>
                 ins1.createdAt.getTime() - ins2.createdAt.getTime(),
             )[0].ins,
-            isSeen: !!notification && notification.createdAt >= notif.createdAt,
+            isSeen: user && user?.lastReadNotification >= notif.createdAt,
           };
         }
 
         return {
           ...notif,
-          isSeen: !!notification && notification.createdAt >= notif.createdAt,
+          isSeen: user && user?.lastReadNotification >= notif.createdAt,
         };
       }),
     );
@@ -208,22 +204,16 @@ export class NotificationService {
   }
 
   async countUnreadNotifications(user: User): Promise<number | undefined> {
-    const { id, lastReadNotificationID, lastReadRequest } = user;
+    const { id, lastReadNotification, lastReadRequest } = user;
 
     this.logger.log(`Counting unread notificaions for user ${user.id}`);
     const dataQuery: Prisma.NotificationCountArgs = notificationFeedCount(id);
-    if (lastReadNotificationID) {
-      this.logger.log(
-        `Counting notifications newer than notification ${lastReadNotificationID}`,
-      );
-      const notification = await this.getById({ id: lastReadNotificationID });
-      dataQuery.where = {
-        ...dataQuery.where,
-        createdAt: {
-          gt: notification?.createdAt,
-        },
-      };
-    }
+    dataQuery.where = {
+      ...dataQuery.where,
+      createdAt: {
+        gt: lastReadNotification,
+      },
+    };
     const unreadNotif = await this.prisma.notification.count(dataQuery);
 
     this.logger.log(`Counting unread requests for user ${user.id}`);

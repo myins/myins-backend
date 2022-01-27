@@ -353,7 +353,7 @@ export class UserService {
         id: userID,
       },
       data: {
-        lastReadNotificationID: notifID,
+        lastReadNotification: new Date(),
       },
     });
   }

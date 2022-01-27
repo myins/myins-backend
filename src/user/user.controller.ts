@@ -380,7 +380,7 @@ export class UserController {
         sandboxToken: null,
         lastAcceptedTermsAndConditionsVersion: null,
         lastAcceptedPrivacyPolicyVersion: null,
-        lastReadNotificationID: null,
+        lastReadNotification: new Date(),
         disabledNotifications: [],
         disabledBiometryINSIds: [],
         disabledAllBiometry: false,
