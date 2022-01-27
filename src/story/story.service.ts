@@ -185,6 +185,12 @@ export class StoryService {
             insId: insID,
           },
         },
+        likes: {
+          where: {
+            id: userID,
+            insId: insID,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
@@ -319,6 +325,12 @@ export class StoryService {
           },
         },
         views: {
+          where: {
+            id: userID,
+            insId: insID,
+          },
+        },
+        likes: {
           where: {
             id: userID,
             insId: insID,
