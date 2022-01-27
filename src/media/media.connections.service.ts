@@ -14,11 +14,15 @@ export class MediaConnectionsService {
     return this.prismaService.userStoryMediaLikeConnection.findMany(params);
   }
 
-  async countViews(params: Prisma.UserStoryMediaViewConnectionCountArgs) {
+  async countViews(
+    params: Prisma.UserStoryMediaViewConnectionCountArgs,
+  ): Promise<number> {
     return this.prismaService.userStoryMediaViewConnection.count(params);
   }
 
-  async countLikes(params: Prisma.UserStoryMediaLikeConnectionCountArgs) {
+  async countLikes(
+    params: Prisma.UserStoryMediaLikeConnectionCountArgs,
+  ): Promise<number> {
     return this.prismaService.userStoryMediaLikeConnection.count(params);
   }
 }
