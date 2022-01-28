@@ -84,12 +84,10 @@ export class OnboardingController {
     const post = await this.postService.createPost({
       content: content,
       totalMediaContent: totalMediaContent,
-      inses: {
-        create: [
-          {
-            id: ins.id,
-          },
-        ],
+      ins: {
+        connect: {
+          id: ins.id,
+        },
       },
     });
 
@@ -166,11 +164,7 @@ export class OnboardingController {
 
     const post = await this.postService.posts({
       where: {
-        inses: {
-          some: {
-            id: insID,
-          },
-        },
+        insId: insID,
         id: body.entityID,
       },
     });

@@ -1,9 +1,11 @@
 import {
+  INS,
   NotificationSource,
   Post,
   PostContent,
   Prisma,
   Story,
+  StoryInsConnection,
 } from '.prisma/client';
 import {
   BadRequestException,
@@ -18,10 +20,6 @@ import { ChatService } from 'src/chat/chat.service';
 import { InsService } from 'src/ins/ins.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
-import {
-  PostStoryWithInsesAndCountMedia,
-  PostStoryWithInsesAndCountMediaInclude,
-} from 'src/prisma-queries-helper/post-include-inses-and-count-media';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { StoryService } from 'src/story/story.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -98,14 +96,26 @@ export class MediaService {
         {
           id: entityID,
         },
-        <Prisma.StoryInclude>PostStoryWithInsesAndCountMediaInclude,
+        {
+          _count: {
+            select: {
+              mediaContent: true,
+            },
+          },
+        },
       );
     } else {
       entityPossibleNull = await this.postService.post(
         {
           id: entityID,
         },
-        <Prisma.PostInclude>PostStoryWithInsesAndCountMediaInclude,
+        {
+          _count: {
+            select: {
+              mediaContent: true,
+            },
+          },
+        },
       );
     }
     const entity = entityPossibleNull;
@@ -124,8 +134,14 @@ export class MediaService {
       );
     }
 
-    const existingContent =
-      (<PostStoryWithInsesAndCountMedia>entity)._count?.mediaContent ?? 0;
+    const castedEntityWithCount = <
+      (Post | Story) & {
+        _count: {
+          mediaContent: number;
+        };
+      }
+    >entity;
+    const existingContent = castedEntityWithCount._count?.mediaContent ?? 0;
     if (existingContent + 1 > entity.totalMediaContent) {
       this.logger.error('There are too many medias attached already!');
       throw new BadRequestException(
@@ -177,7 +193,7 @@ export class MediaService {
     );
     const toRet = await this.create({
       content: dataURL,
-      post: !isStoryEntity
+      posts: !isStoryEntity
         ? {
             connect: {
               id: entityID,
@@ -198,6 +214,7 @@ export class MediaService {
       isHighlight,
     });
 
+    let inses: INS[] = [];
     // Time to update the post's pending state. This is a transaction in case we add async loading
     // And 2 pictures get uploaded at aprox the same time.
     await this.prismaService.$transaction(async () => {
@@ -209,14 +226,26 @@ export class MediaService {
           {
             id: entity.id,
           },
-          <Prisma.StoryInclude>PostStoryWithInsesAndCountMediaInclude,
+          {
+            _count: {
+              select: {
+                mediaContent: true,
+              },
+            },
+          },
         );
       } else {
         transactionEntityPossibleNull = await this.postService.post(
           {
             id: entity.id,
           },
-          <Prisma.PostInclude>PostStoryWithInsesAndCountMediaInclude,
+          {
+            _count: {
+              select: {
+                mediaContent: true,
+              },
+            },
+          },
         );
       }
       const transactionEntity = transactionEntityPossibleNull;
@@ -235,9 +264,15 @@ export class MediaService {
         return;
       }
 
+      const castedTransactionEntityWithCount = <
+        (Post | Story) & {
+          _count: {
+            mediaContent: number;
+          };
+        }
+      >transactionEntity;
       const realMediaCount =
-        (<PostStoryWithInsesAndCountMedia>transactionEntity)._count
-          ?.mediaContent ?? 0;
+        castedTransactionEntityWithCount._count?.mediaContent ?? 0;
       const isReady = realMediaCount >= transactionEntity.totalMediaContent;
 
       if (!isReady) {
@@ -261,7 +296,20 @@ export class MediaService {
           where: {
             id: entity.id,
           },
-          include: <Prisma.StoryInclude>PostStoryWithInsesAndCountMediaInclude,
+          include: {
+            inses: {
+              select: {
+                id: true,
+                createdAt: true,
+                ins: true,
+              },
+            },
+            _count: {
+              select: {
+                mediaContent: true,
+              },
+            },
+          },
         });
       } else {
         updatedEntity = await this.postService.updatePost({
@@ -271,15 +319,42 @@ export class MediaService {
           where: {
             id: entity.id,
           },
-          include: <Prisma.PostInclude>PostStoryWithInsesAndCountMediaInclude,
+          include: {
+            ins: {
+              select: {
+                id: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: {
+                mediaContent: true,
+              },
+            },
+          },
         });
       }
 
-      if (
-        updatedEntity.authorId &&
-        (<PostStoryWithInsesAndCountMedia>updatedEntity).inses.length
-      ) {
-        const inses = (<PostStoryWithInsesAndCountMedia>updatedEntity).inses;
+      if (updatedEntity.authorId) {
+        if (isStoryEntity) {
+          const castedUpdatedStoryEntity = <
+            Story & {
+              inses: (StoryInsConnection & {
+                ins: INS;
+              })[];
+            }
+          >updatedEntity;
+          inses = castedUpdatedStoryEntity.inses.map(
+            (insConnection) => insConnection.ins,
+          );
+        } else {
+          const castedUpdatedStoryEntity = <
+            Post & {
+              ins: INS;
+            }
+          >updatedEntity;
+          inses.push(castedUpdatedStoryEntity.ins);
+        }
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -295,65 +370,71 @@ export class MediaService {
           return { id: connection.userId };
         });
 
-        if (isStoryEntity) {
-          this.logger.log(`Creating notification for adding story ${toRet.id}`);
-          await this.notificationService.createNotification({
-            source: NotificationSource.STORY,
-            targets: {
-              connect: targetIDs,
-            },
-            author: {
-              connect: {
-                id: updatedEntity.authorId,
+        if (targetIDs.length) {
+          if (isStoryEntity) {
+            this.logger.log(
+              `Creating notification for adding story ${toRet.id}`,
+            );
+            await this.notificationService.createNotification({
+              source: NotificationSource.STORY,
+              targets: {
+                connect: targetIDs,
               },
-            },
-            story: {
-              connect: {
-                id: updatedEntity.id,
+              author: {
+                connect: {
+                  id: updatedEntity.authorId,
+                },
               },
-            },
-          });
-        } else {
-          this.logger.log(`Creating notification for adding post ${toRet.id}`);
-          await this.notificationService.createNotification({
-            source: NotificationSource.POST,
-            targets: {
-              connect: targetIDs,
-            },
-            author: {
-              connect: {
-                id: updatedEntity.authorId,
+              story: {
+                connect: {
+                  id: updatedEntity.id,
+                },
               },
-            },
-            post: {
-              connect: {
-                id: updatedEntity.id,
+            });
+          } else {
+            this.logger.log(
+              `Creating notification for adding post ${toRet.id}`,
+            );
+            await this.notificationService.createNotification({
+              source: NotificationSource.POST,
+              targets: {
+                connect: targetIDs,
               },
-            },
-          });
+              author: {
+                connect: {
+                  id: updatedEntity.authorId,
+                },
+              },
+              post: {
+                connect: {
+                  id: updatedEntity.id,
+                },
+              },
+            });
 
-          this.logger.log(
-            `Send message by user ${updatedEntity.authorId} in inses 
+            this.logger.log(
+              `Send message by user ${updatedEntity.authorId} in inses 
             ${inses.map((ins: { id: string }) => ins.id)} with new posts ${
-              updatedEntity.id
-            }`,
-          );
-          await this.chatService.sendMessageWhenPost(
-            inses.map((ins: { id: string }) => ins.id),
-            updatedEntity.authorId,
-            updatedEntity.id,
-          );
+                updatedEntity.id
+              }`,
+            );
+            await this.chatService.sendMessageWhenPost(
+              inses.map((ins: { id: string }) => ins.id),
+              updatedEntity.authorId,
+              updatedEntity.id,
+            );
+          }
         }
       }
     });
 
     if (postInfo.setCover && !postInfo.isVideo) {
       this.logger.log(
-        `Updating inses ${(<PostStoryWithInsesAndCountMedia>entity).inses.map(
+        `Updating inses ${inses.map(
           (ins) => ins.id,
         )}. Setting cover '${dataURL}'`,
       );
-      for (const eachINS of (<PostStoryWithInsesAndCountMedia>entity).inses) {
+      for (const eachINS of inses) {
         await this.insService.update({
           where: {
             id: eachINS.id,

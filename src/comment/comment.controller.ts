@@ -17,7 +17,8 @@ import {
   User,
   Post as PostModel,
   UserRole,
-  PostInsConnection,
+  INS,
+  UserInsConnection,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
@@ -121,15 +122,13 @@ export class CommentController {
     const post = await this.postService.post(
       { id: postID },
       {
-        inses: {
-          where: {
-            ins: {
-              members: {
-                some: {
-                  userId: user.id,
-                  role: {
-                    not: UserRole.PENDING,
-                  },
+        ins: {
+          include: {
+            members: {
+              where: {
+                userId: user.id,
+                role: {
+                  not: UserRole.PENDING,
                 },
               },
             },
@@ -144,10 +143,12 @@ export class CommentController {
 
     const castedPost = <
       PostModel & {
-        inses: PostInsConnection[];
+        ins: INS & {
+          members: UserInsConnection[];
+        };
       }
     >post;
-    if (!castedPost.inses.length) {
+    if (!castedPost.ins.members.length) {
       this.logger.error(`You're not allowed to comment on that post!`);
       throw new BadRequestException(
         "You're not allowed to comment on that post!",

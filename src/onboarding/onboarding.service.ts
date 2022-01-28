@@ -87,11 +87,7 @@ export class OnboardingService {
       );
       await this.postService.updateManyPosts({
         where: {
-          inses: {
-            some: {
-              id: castedIns.id,
-            },
-          },
+          insId: castedIns.id,
           authorId: null,
         },
         data: {

@@ -10,7 +10,7 @@ import {
   Comment,
   UserPostLikeConnection,
   UserCommentLikeConnection,
-  PostInsConnection,
+  INS,
 } from '@prisma/client';
 
 @Injectable()
@@ -58,23 +58,17 @@ export class InsCleanMediaService {
       where: {
         authorId: userId,
         post: {
-          inses: {
-            some: {
-              id: insId,
-            },
-          },
+          insId: insId,
         },
       },
       include: {
         post: {
           include: {
-            inses: {
-              where: {
-                ins: {
-                  members: {
-                    some: {
-                      userId: userId,
-                    },
+            ins: {
+              include: {
+                members: {
+                  where: {
+                    userId: userId,
                   },
                 },
               },
@@ -89,12 +83,12 @@ export class InsCleanMediaService {
     const castedMyComments = <
       (Comment & {
         post: Post & {
-          inses: PostInsConnection[];
+          ins: INS;
         };
       })[]
     >myComments;
     castedMyComments.map(async (comment) => {
-      if (comment.post.inses.length === 1) {
+      if (comment.post.ins) {
         deleteCommentIDs.push(comment.id);
       }
     });
@@ -121,23 +115,17 @@ export class InsCleanMediaService {
       where: {
         userId,
         post: {
-          inses: {
-            some: {
-              id: insId,
-            },
-          },
+          insId: insId,
         },
       },
       include: {
         post: {
           include: {
-            inses: {
-              where: {
-                ins: {
-                  members: {
-                    some: {
-                      userId: userId,
-                    },
+            ins: {
+              include: {
+                members: {
+                  where: {
+                    userId: userId,
                   },
                 },
               },
@@ -155,12 +143,12 @@ export class InsCleanMediaService {
     const castedMyLikePosts = <
       (UserPostLikeConnection & {
         post: Post & {
-          inses: PostInsConnection[];
+          ins: INS;
         };
       })[]
     >myLikePosts;
     castedMyLikePosts.map(async (likePost) => {
-      if (likePost.post.inses.length === 1) {
+      if (likePost.post.ins) {
         deleteLikePostsIDs.push({
           userId: likePost.userId,
           postId: likePost.postId,
@@ -196,11 +184,7 @@ export class InsCleanMediaService {
         userId,
         comment: {
           post: {
-            inses: {
-              some: {
-                id: insId,
-              },
-            },
+            insId: insId,
           },
         },
       },
@@ -209,13 +193,11 @@ export class InsCleanMediaService {
           include: {
             post: {
               include: {
-                inses: {
-                  where: {
-                    ins: {
-                      members: {
-                        some: {
-                          userId: userId,
-                        },
+                ins: {
+                  include: {
+                    members: {
+                      where: {
+                        userId: userId,
                       },
                     },
                   },
@@ -236,13 +218,13 @@ export class InsCleanMediaService {
       (UserCommentLikeConnection & {
         comment: Comment & {
           post: Post & {
-            inses: PostInsConnection[];
+            ins: INS;
           };
         };
       })[]
     >myLikeComments;
     castedMyLikeComments.map(async (likeComment) => {
-      if (likeComment.comment.post.inses.length === 1) {
+      if (likeComment.comment.post.ins) {
         deleteLikeCommentsIDs.push({
           userId: likeComment.userId,
           commentId: likeComment.commentId,
@@ -276,11 +258,7 @@ export class InsCleanMediaService {
     const myPosts = await this.postService.posts({
       where: {
         authorId: userId,
-        inses: {
-          some: {
-            id: insId,
-          },
-        },
+        insId: insId,
       },
     });
 

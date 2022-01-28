@@ -379,12 +379,12 @@ async function main() {
       },
       pending: false,
       totalMediaContent: 5,
-      inses: {
-        create: { id: firstINS.id },
+      ins: {
+        connect: { id: firstINS.id },
       },
     },
     include: {
-      inses: true,
+      ins: true,
     },
   });
   const targetIDsFirstPostNotification = (
@@ -463,21 +463,14 @@ async function main() {
       },
       pending: false,
       totalMediaContent: 5,
-      inses: {
-        createMany: {
-          data: [
-            {
-              id: firstINS.id,
-            },
-            {
-              id: secondINS.id,
-            },
-          ],
+      ins: {
+        connect: {
+          id: secondINS.id,
         },
       },
     },
     include: {
-      inses: true,
+      ins: true,
     },
   });
   const targetIDsSecondPostNotification = (
@@ -614,7 +607,7 @@ async function main() {
     include: {
       post: {
         include: {
-          inses: true,
+          ins: true,
         },
       },
     },
@@ -669,7 +662,7 @@ async function main() {
     include: {
       post: {
         include: {
-          inses: true,
+          ins: true,
         },
       },
     },
@@ -719,9 +712,7 @@ async function main() {
   });
   await prisma.userInsConnection.updateMany({
     where: {
-      insId: {
-        in: secondPost.inses.map((ins) => ins.id),
-      },
+      insId: secondPost.ins.id,
       userId: firstUser.id,
     },
     data: {
@@ -770,9 +761,7 @@ async function main() {
   });
   await prisma.userInsConnection.updateMany({
     where: {
-      insId: {
-        in: firstPost.inses.map((ins) => ins.id),
-      },
+      insId: firstPost.ins.id,
       userId: thirdUser.id,
     },
     data: {
@@ -821,9 +810,7 @@ async function main() {
   });
   await prisma.userInsConnection.updateMany({
     where: {
-      insId: {
-        in: secondComment.post.inses.map((ins) => ins.id),
-      },
+      insId: secondComment.post.ins.id,
       userId: secondUser.id,
     },
     data: {
@@ -874,9 +861,7 @@ async function main() {
   });
   await prisma.userInsConnection.updateMany({
     where: {
-      insId: {
-        in: thirdComment.post.inses.map((ins) => ins.id),
-      },
+      insId: thirdComment.post.ins.id,
       userId: firstUser.id,
     },
     data: {
@@ -927,9 +912,7 @@ async function main() {
   });
   await prisma.userInsConnection.updateMany({
     where: {
-      insId: {
-        in: thirdComment.post.inses.map((ins) => ins.id),
-      },
+      insId: thirdComment.post.ins.id,
       userId: thirdUser.id,
     },
     data: {

@@ -221,11 +221,9 @@ export class InsController {
     this.logger.log(`Getting media for ins ${id} by user ${userID}`);
     return this.mediaService.getMedias({
       where: {
-        post: {
-          inses: {
-            some: {
-              id: id,
-            },
+        posts: {
+          some: {
+            insId: id,
           },
         },
       },

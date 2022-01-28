@@ -60,16 +60,12 @@ export class PostLikeController {
     const postIfValid = await this.postService.posts({
       where: {
         id: postID,
-        inses: {
-          some: {
-            ins: {
-              members: {
-                some: {
-                  userId: userID,
-                  role: {
-                    not: UserRole.PENDING,
-                  },
-                },
+        ins: {
+          members: {
+            some: {
+              userId: userID,
+              role: {
+                not: UserRole.PENDING,
               },
             },
           },

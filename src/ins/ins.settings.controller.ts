@@ -119,12 +119,12 @@ export class InsSettingsController {
     let message = 'User cannot be removed from this INS because is admin!';
 
     if (!isAdmin) {
-      if (!data.keepData) {
-        this.logger.log(
-          `Cleaning media that belongs to member ${userId} from ins ${insId}`,
-        );
-        await this.insCleanMediaService.cleanMedia(userId, insId);
-      }
+      // if (!data.keepData) {
+      //   this.logger.log(
+      //     `Cleaning media that belongs to member ${userId} from ins ${insId}`,
+      //   );
+      //   await this.insCleanMediaService.cleanMedia(userId, insId);
+      // }
 
       this.logger.log(`Removing member ${userId} from ins ${insId}`);
       await this.userConnectionService.removeMember({
