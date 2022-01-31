@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   NotificationSource,
   PostContent,
@@ -181,6 +182,7 @@ export class MediaConnectionsController {
 
   @Post(':id/ins/:insId/view')
   @UseGuards(JwtAuthGuard)
+  @Throttle(120, 30) // limit, ttl. limit = cate request-uri pana crapa,  ttl = cat tine minte un request
   @ApiTags('media')
   async viewMedia(
     @PrismaUser('id') userID: string,
