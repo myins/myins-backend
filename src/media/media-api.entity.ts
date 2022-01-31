@@ -7,9 +7,8 @@ import {
 } from 'class-validator';
 
 export class AttachMediaAPI {
-  @IsString()
-  @IsOptional()
-  entityID: string;
+  @ArrayNotEmpty()
+  entitiesIDs: string[];
 
   @IsString()
   @IsOptional()

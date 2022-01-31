@@ -119,7 +119,9 @@ export class OnboardingController {
     },
     @Body() body: AttachMediaWithClaimTokenAPI,
   ) {
-    this.logger.log(`Attach media with claim token to post ${body.entityID}`);
+    this.logger.log(
+      `Attach media with claim token to post ${body.entitiesIDs}`,
+    );
     const firstFiles = files.file;
     const thumbnailFiles = files.thumbnail;
     if (!firstFiles) {
@@ -165,11 +167,13 @@ export class OnboardingController {
     const post = await this.postService.posts({
       where: {
         insId: insID,
-        id: body.entityID,
+        id: {
+          in: body.entitiesIDs,
+        },
       },
     });
 
-    if (!post || post.length == 0) {
+    if (!post.length) {
       this.logger.error('This is not your post!');
       throw new BadRequestException('This is not your post!');
     }
@@ -178,7 +182,7 @@ export class OnboardingController {
       return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        body.entityID,
+        body.entitiesIDs,
         false,
         false,
         null,

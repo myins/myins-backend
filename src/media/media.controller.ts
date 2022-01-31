@@ -197,8 +197,8 @@ export class MediaController {
     const isStoryEntity = body.isStoryEntity === 'true';
     const isHighlight = body.isHighlight === 'true';
     this.logger.log(
-      `Attach media to ${isStoryEntity ? 'story' : 'post'} ${
-        body.entityID
+      `Attach media to ${isStoryEntity ? 'story' : 'posts'} ${
+        body.entitiesIDs
       } by user ${userID}`,
     );
     const firstFiles = files.file;
@@ -232,7 +232,7 @@ export class MediaController {
       return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        body.entityID,
+        body.entitiesIDs,
         isStoryEntity,
         isHighlight,
         userID,
