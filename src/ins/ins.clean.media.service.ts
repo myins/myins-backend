@@ -4,14 +4,6 @@ import { CommentService } from 'src/comment/comment.service';
 import { PostLikeService } from 'src/post/post.like.service';
 import { CommentLikeService } from 'src/comment/comment.like.service';
 import { PostService } from 'src/post/post.service';
-import { InsService } from './ins.service';
-import {
-  Post,
-  Comment,
-  UserPostLikeConnection,
-  UserCommentLikeConnection,
-  INS,
-} from '@prisma/client';
 
 @Injectable()
 export class InsCleanMediaService {
@@ -23,11 +15,15 @@ export class InsCleanMediaService {
     private readonly postService: PostService,
     private readonly postLikeService: PostLikeService,
     private readonly commentLikeService: CommentLikeService,
-    private readonly insService: InsService,
   ) {}
 
   async cleanMedia(userId: string, insId: string) {
     return this.prismaService.$transaction(async () => {
+      this.logger.log(
+        `Cleaning the posts that the user ${userId} had in ins ${insId}`,
+      );
+      await this.cleanPosts(userId, insId);
+
       this.logger.log(
         `Cleaning the comments from user ${userId} in ins ${insId}`,
       );
@@ -42,238 +38,72 @@ export class InsCleanMediaService {
         `Cleaning the like of the comments that the user ${userId} gave in ins ${insId}`,
       );
       await this.cleanLikeComments(userId, insId);
-
-      this.logger.log(
-        `Cleaning the posts that the user ${userId} had in ins ${insId}`,
-      );
-      await this.cleanPosts(userId, insId);
     });
-  }
-
-  async cleanComments(userId: string, insId: string) {
-    this.logger.log(
-      `Getting all comments that belongs to user ${userId} and to all posts from ins ${insId}`,
-    );
-    const myComments = await this.commentService.comments({
-      where: {
-        authorId: userId,
-        post: {
-          insId: insId,
-        },
-      },
-      include: {
-        post: {
-          include: {
-            ins: {
-              include: {
-                members: {
-                  where: {
-                    userId: userId,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    this.logger.log('Checking if any comments should be remove');
-    const deleteCommentIDs: string[] = [];
-    const castedMyComments = <
-      (Comment & {
-        post: Post & {
-          ins: INS;
-        };
-      })[]
-    >myComments;
-    castedMyComments.map(async (comment) => {
-      if (comment.post.ins) {
-        deleteCommentIDs.push(comment.id);
-      }
-    });
-
-    if (deleteCommentIDs.length) {
-      this.logger.log(`Removing comments ${deleteCommentIDs}`);
-      await this.commentService.deleteManyComments({
-        where: {
-          id: {
-            in: deleteCommentIDs,
-          },
-        },
-      });
-    }
-
-    this.logger.log(`Successfully cleaned ${deleteCommentIDs.length} comments`);
-  }
-
-  async cleanLikePosts(userId: string, insId: string) {
-    this.logger.log(
-      `Getting all like of the posts that belongs to user ${userId} and to all posts from ins ${insId}`,
-    );
-    const myLikePosts = await this.postLikeService.postLikes({
-      where: {
-        userId,
-        post: {
-          insId: insId,
-        },
-      },
-      include: {
-        post: {
-          include: {
-            ins: {
-              include: {
-                members: {
-                  where: {
-                    userId: userId,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    this.logger.log('Checking if any like of post should be remove');
-    const deleteLikePostsIDs: {
-      userId: string;
-      postId: string;
-    }[] = [];
-    const castedMyLikePosts = <
-      (UserPostLikeConnection & {
-        post: Post & {
-          ins: INS;
-        };
-      })[]
-    >myLikePosts;
-    castedMyLikePosts.map(async (likePost) => {
-      if (likePost.post.ins) {
-        deleteLikePostsIDs.push({
-          userId: likePost.userId,
-          postId: likePost.postId,
-        });
-      }
-    });
-
-    if (deleteLikePostsIDs.length) {
-      this.logger.log(`Removing like of posts ${deleteLikePostsIDs}`);
-      await this.prismaService.$transaction(async () => {
-        deleteLikePostsIDs.forEach(async (likePost) => {
-          await this.postLikeService.deleteLike({
-            userId_postId: {
-              postId: likePost.postId,
-              userId: likePost.userId,
-            },
-          });
-        });
-      });
-    }
-
-    this.logger.log(
-      `Successfully cleaned ${deleteLikePostsIDs.length} like of posts`,
-    );
-  }
-
-  async cleanLikeComments(userId: string, insId: string) {
-    this.logger.log(
-      `Getting all like of the comments that belongs to user ${userId} and to all posts from ins ${insId}`,
-    );
-    const myLikeComments = await this.commentLikeService.commentLikes({
-      where: {
-        userId,
-        comment: {
-          post: {
-            insId: insId,
-          },
-        },
-      },
-      include: {
-        comment: {
-          include: {
-            post: {
-              include: {
-                ins: {
-                  include: {
-                    members: {
-                      where: {
-                        userId: userId,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    this.logger.log('Checking if any like of comment should be remove');
-    const deleteLikeCommentsIDs: {
-      userId: string;
-      commentId: string;
-    }[] = [];
-    const castedMyLikeComments = <
-      (UserCommentLikeConnection & {
-        comment: Comment & {
-          post: Post & {
-            ins: INS;
-          };
-        };
-      })[]
-    >myLikeComments;
-    castedMyLikeComments.map(async (likeComment) => {
-      if (likeComment.comment.post.ins) {
-        deleteLikeCommentsIDs.push({
-          userId: likeComment.userId,
-          commentId: likeComment.commentId,
-        });
-      }
-    });
-
-    if (deleteLikeCommentsIDs.length) {
-      this.logger.log(`Removing like of comments ${deleteLikeCommentsIDs}`);
-      await this.prismaService.$transaction(async () => {
-        deleteLikeCommentsIDs.forEach(async (likeComment) => {
-          await this.commentLikeService.deleteLike({
-            userId_commentId: {
-              commentId: likeComment.commentId,
-              userId: likeComment.userId,
-            },
-          });
-        });
-      });
-    }
-
-    this.logger.log(
-      `Successfully cleaned ${deleteLikeCommentsIDs.length} likes of posts`,
-    );
   }
 
   async cleanPosts(userId: string, insId: string) {
     this.logger.log(
-      `Getting all posts that belongs to user ${userId} in ins ${insId}`,
+      `Removing posts that belongs to user ${userId} from ins ${insId}`,
     );
-    const myPosts = await this.postService.posts({
+    const myPosts = await this.postService.deleteManyPosts({
       where: {
         authorId: userId,
         insId: insId,
       },
     });
 
-    this.logger.log(`Removing ins ${insId} from every post`);
-    this.insService.update({
+    this.logger.log(`Successfully cleaned ${myPosts.count} posts`);
+  }
+
+  async cleanComments(userId: string, insId: string) {
+    this.logger.log(
+      `Removing comments that belongs to user ${userId} and to any post from ins ${insId}`,
+    );
+    const myComments = await this.commentService.deleteManyComments({
       where: {
-        id: insId,
-      },
-      data: {
-        posts: {
-          deleteMany: myPosts.map((myPost) => ({ id: myPost.id })),
+        authorId: userId,
+        post: {
+          insId: insId,
         },
       },
     });
 
-    this.logger.log(`Successfully removed posts from ins ${insId}`);
+    this.logger.log(`Successfully cleaned ${myComments.count} comments`);
+  }
+
+  async cleanLikePosts(userId: string, insId: string) {
+    this.logger.log(
+      `Removing likes of post that belongs to user ${userId} and to any post from ins ${insId}`,
+    );
+    const myLikesPost = await this.postLikeService.deleteLikes({
+      where: {
+        userId: userId,
+        post: {
+          insId: insId,
+        },
+      },
+    });
+
+    this.logger.log(`Successfully cleaned ${myLikesPost.count} like of posts`);
+  }
+
+  async cleanLikeComments(userId: string, insId: string) {
+    this.logger.log(
+      `Removing likes of comment that belongs to user ${userId} and to any post from ins ${insId}`,
+    );
+    const myLikesComment = await this.commentLikeService.deleteLikes({
+      where: {
+        userId: userId,
+        comment: {
+          post: {
+            insId: insId,
+          },
+        },
+      },
+    });
+
+    this.logger.log(
+      `Successfully cleaned ${myLikesComment.count} likes of comments`,
+    );
   }
 }
