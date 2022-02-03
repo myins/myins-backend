@@ -298,7 +298,7 @@ export class InsAdminController {
     @Body() data: DeletePostFromINSAPI,
   ) {
     this.logger.log(
-      `Deciding action for reported post ${postID} by user ${userID}`,
+      `Deciding action for reported post ${postID} by admin user ${userID}`,
     );
 
     const post = await this.postService.post({
@@ -319,7 +319,7 @@ export class InsAdminController {
     }
 
     if (data.isDeleted) {
-      this.logger.log(`Deleting post ${postID} by user ${userID}`);
+      this.logger.log(`Deleting post ${postID} by admin user ${userID}`);
       const post = await this.postService.deletePost(
         {
           id: postID,
@@ -334,7 +334,7 @@ export class InsAdminController {
       );
 
       this.logger.log(
-        `Removing media from post ${postID} by user ${userID} if not has any other related post`,
+        `Removing media from post ${postID} by admin user ${userID} if not has any other related post`,
       );
       const castedPost = <
         PostModel & {
@@ -360,7 +360,7 @@ export class InsAdminController {
 
       if (post.authorId && post.authorId !== userID) {
         this.logger.log(
-          `Creating notification for removing post ${postID} by user ${userID}`,
+          `Creating notification for removing post ${postID} by admin user ${userID}`,
         );
         await this.notificationService.createNotification({
           source: NotificationSource.DELETED_POST_BY_ADMIN,
@@ -390,7 +390,7 @@ export class InsAdminController {
       return omit(castedPost, 'mediaContent');
     } else {
       this.logger.log(
-        `Removing reporting for post ${postID} by user ${userID}`,
+        `Removing reporting for post ${postID} by admin user ${userID}`,
       );
       return this.postService.updatePost({
         where: {
@@ -408,7 +408,7 @@ export class InsAdminController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins-admin')
   async deleteReportedPosts(@PrismaUser('id') userID: string) {
-    this.logger.log(`Deleting all reported posts by user ${userID}`);
+    this.logger.log(`Deleting all reported posts by admin user ${userID}`);
 
     const insesAdmin = await this.insService.inses({
       where: {
@@ -430,6 +430,13 @@ export class InsAdminController {
           not: null,
         },
       },
+      include: {
+        mediaContent: {
+          include: {
+            posts: true,
+          },
+        },
+      },
     });
 
     await this.postService.deleteManyPosts({
@@ -446,7 +453,7 @@ export class InsAdminController {
     this.logger.log(
       `Removing media from post ${deletedPosts.map(
         (post) => post.id,
-      )} by user ${userID} if not has any other related post`,
+      )} by admin user ${userID} if not has any other related post`,
     );
     const castedDeletedPosts = <
       (PostModel & {
@@ -476,7 +483,7 @@ export class InsAdminController {
       deletedPosts.map(async (post) => {
         if (post.authorId && post.authorId !== userID) {
           this.logger.log(
-            `Creating notification for removing post ${post.id} from by user ${userID}`,
+            `Creating notification for removing post ${post.id} by admin user ${userID}`,
           );
           await this.notificationService.createNotification({
             source: NotificationSource.DELETED_POST_BY_ADMIN,
