@@ -15,4 +15,8 @@ export class PostLikeService {
   async deleteLike(where: Prisma.UserPostLikeConnectionWhereUniqueInput) {
     return this.prisma.userPostLikeConnection.delete({ where });
   }
+
+  async deleteLikes(params: Prisma.UserPostLikeConnectionDeleteManyArgs) {
+    return this.prisma.userPostLikeConnection.deleteMany(params);
+  }
 }

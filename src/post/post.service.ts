@@ -49,21 +49,8 @@ export class PostService {
           createdAt: desc ? 'desc' : 'asc',
         },
       },
-      inses: {
-        where: {
-          ins: {
-            members: {
-              some: {
-                userId: userID,
-              },
-            },
-          },
-        },
-        include: {
-          ins: {
-            select: ShallowINSSelect,
-          },
-        },
+      ins: {
+        select: ShallowINSSelect,
       },
       author: {
         select: ShallowUserSelect,
@@ -84,6 +71,10 @@ export class PostService {
     return this.prisma.post.findMany(params);
   }
 
+  async count(params: Prisma.PostCountArgs): Promise<number> {
+    return this.prisma.post.count(params);
+  }
+
   async createPost(data: Prisma.PostCreateInput): Promise<Post> {
     return this.prisma.post.create({
       data,
@@ -98,9 +89,13 @@ export class PostService {
     return this.prisma.post.updateMany(params);
   }
 
-  async deletePost(where: Prisma.PostWhereUniqueInput): Promise<Post> {
+  async deletePost(
+    where: Prisma.PostWhereUniqueInput,
+    include?: Prisma.PostInclude,
+  ): Promise<Post> {
     return this.prisma.post.delete({
       where,
+      include,
     });
   }
 

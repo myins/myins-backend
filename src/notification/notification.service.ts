@@ -5,7 +5,6 @@ import {
   NotificationSource,
   User,
   UserRole,
-  PostInsConnection,
   Post,
   INS,
   Story,
@@ -114,22 +113,19 @@ export class NotificationService {
           const castedNotif = <
             Notification & {
               post: Post & {
-                inses: (PostInsConnection & {
-                  ins: INS & {
-                    members: UserInsConnection[];
-                  };
-                })[];
+                ins: INS & {
+                  members: UserInsConnection[];
+                };
               };
             }
           >notif;
 
+          const post = (<NotificationFeedWithoutPost>notif).post;
           return {
             ...notif,
             post: {
-              ...(<NotificationFeedWithoutPost>notif).post,
-              inses: castedNotif.post.inses.map((insConnection) => {
-                return omit(insConnection.ins, 'members');
-              }),
+              ...(post ? omit(post, 'ins') : post),
+              inses: [omit(castedNotif.post.ins, 'members')],
             },
             isSeen: user && user?.lastReadNotification >= notif.createdAt,
           };
@@ -290,7 +286,7 @@ export class NotificationService {
             where: {
               posts: {
                 some: {
-                  postId: notif.postId,
+                  id: notif.postId,
                 },
               },
               members: {

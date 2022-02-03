@@ -28,6 +28,10 @@ export class CommentLikeService {
     return this.prisma.userCommentLikeConnection.delete({ where });
   }
 
+  async deleteLikes(params: Prisma.UserCommentLikeConnectionDeleteManyArgs) {
+    return this.prisma.userCommentLikeConnection.deleteMany(params);
+  }
+
   async likeComment(userID: string, commentID: string) {
     this.logger.log(
       `Updating comment ${commentID}. Adding like connection with user ${userID}`,

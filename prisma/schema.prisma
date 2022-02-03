@@ -56,9 +56,6 @@ model PostContent {
   content   String // Link to raw file
   thumbnail String? // Thumbnail, if it's a video
 
-  post   Post?   @relation(name: "post", fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String?
-
   story   Story?  @relation(name: "story", fields: [storyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   storyId String?
 
@@ -66,6 +63,7 @@ model PostContent {
   height Int
 
   isHighlight Boolean                        @default(false)
+  posts       Post[]
   likes       UserStoryMediaLikeConnection[]
   views       UserStoryMediaViewConnection[]
 
@@ -78,9 +76,11 @@ model Post {
   createdAt    DateTime      @default(now())
   edited       Boolean       @default(false)
   content      String?
-  mediaContent PostContent[] @relation(name: "post")
+  mediaContent PostContent[]
   author       User?         @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   authorId     String? // Optional because of guest posts, see onboarding service
+  ins          INS           @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  insId        String
   comments     Comment[]
 
   pending           Boolean @default(true)
@@ -88,7 +88,9 @@ model Post {
 
   notifications Notification[]
   likes         UserPostLikeConnection[]
-  inses         PostInsConnection[]
+
+  reportedAt      DateTime?
+  reportedByUsers String[]
 }
 
 model UserPostLikeConnection {
@@ -204,7 +206,7 @@ model INS {
   shareCode String  @unique
 
   members             UserInsConnection[]
-  posts               PostInsConnection[]
+  posts               Post[]
   stories             StoryInsConnection[]
   invitedPhoneNumbers String[]
   notifications       Notification[]
@@ -244,20 +246,6 @@ model StoryInsConnection {
   createdAt DateTime @default(now())
 
   @@id([storyId, id])
-}
-
-model PostInsConnection {
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  postId String
-  ins    INS    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id     String
-
-  createdAt DateTime @default(now())
-
-  reportedAt      DateTime?
-  reportedByUsers String[]
-
-  @@id([postId, id])
 }
 
 model CurrentVersions {

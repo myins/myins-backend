@@ -42,7 +42,9 @@ export class StoryController {
         createdAt: {
           lt: date,
         },
-        postId: null,
+        storyId: {
+          not: null,
+        },
       },
     });
     this.logger.log('[Cron] Removing stories with no media');

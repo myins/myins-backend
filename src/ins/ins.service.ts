@@ -2,7 +2,6 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import {
   INS,
   Post,
-  PostInsConnection,
   Prisma,
   User,
   UserInsConnection,
@@ -160,7 +159,7 @@ export class InsService {
     take: number,
     onlyMine: boolean,
   ): Promise<Post[]> {
-    const posts = await this.postService.posts({
+    return this.postService.posts({
       skip: skip,
       take: take,
       include: this.postService.richPostInclude(userID),
@@ -168,32 +167,11 @@ export class InsService {
         createdAt: 'desc',
       },
       where: {
-        inses: {
-          some: {
-            id: insID,
-          },
-        },
+        insId: insID,
         pending: false,
         authorId: onlyMine ? userID : undefined,
       },
     });
-    const castedPosts = <
-      (Post & {
-        inses: (PostInsConnection & {
-          ins: INS;
-        })[];
-      })[]
-    >posts;
-    const returnPosts = await Promise.all(
-      castedPosts.map((post) => {
-        return {
-          ...post,
-          inses: post.inses.map((insConnection) => insConnection.ins),
-        };
-      }),
-    );
-
-    return returnPosts;
   }
 
   async membersForIns(

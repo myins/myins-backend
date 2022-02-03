@@ -1,10 +1,10 @@
 import {
   NotificationSource,
-  PostInsConnection,
   Prisma,
   UserRole,
   Post as PostModel,
   INS,
+  PostContent,
 } from '.prisma/client';
 import {
   Body,
@@ -23,10 +23,12 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { MediaService } from 'src/media/media.service';
 import { NotificationService } from 'src/notification/notification.service';
-import { PostConnectionService } from 'src/post/post.connection.service';
+import { PostService } from 'src/post/post.service';
 import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { omit } from 'src/util/omit';
 import {
   ChangeNameAPI,
   DeletePostFromINSAPI,
@@ -44,7 +46,8 @@ export class InsAdminController {
     private readonly insService: InsService,
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
-    private readonly postConnectionService: PostConnectionService,
+    private readonly postService: PostService,
+    private readonly mediaService: MediaService,
   ) {}
 
   @Post('change')
@@ -235,8 +238,8 @@ export class InsAdminController {
       },
     });
 
-    const whereQuery: Prisma.PostInsConnectionWhereInput = {
-      id: {
+    const whereQuery: Prisma.PostWhereInput = {
+      insId: {
         in: adminInses.map((ins) => ins.id),
       },
       reportedAt: {
@@ -245,41 +248,35 @@ export class InsAdminController {
     };
 
     this.logger.log(`Counting all reported post for admin ${userID}`);
-    const countReportedPosts = await this.postConnectionService.count({
+    const countReportedPosts = await this.postService.count({
       where: whereQuery,
     });
 
     this.logger.log(`Getting reported post for admin ${userID}`);
-    const reportedPostConnections =
-      await this.postConnectionService.getInsConnections({
-        where: whereQuery,
-        include: {
-          post: {
-            include: {
-              mediaContent: true,
-            },
-          },
-          ins: {
-            select: ShallowINSSelect,
-          },
+    const reportedPosts = await this.postService.posts({
+      where: whereQuery,
+      include: {
+        mediaContent: true,
+        ins: {
+          select: ShallowINSSelect,
         },
-        orderBy: {
-          reportedAt: 'desc',
-        },
-        skip,
-        take,
-      });
+      },
+      orderBy: {
+        reportedAt: 'desc',
+      },
+      skip,
+      take,
+    });
 
-    const castedReportedPostsConnections = <
-      (PostInsConnection & {
-        post: PostModel;
+    const castedReportedPosts = <
+      (PostModel & {
         ins: INS;
       })[]
-    >reportedPostConnections;
+    >reportedPosts;
 
-    const toRetData = castedReportedPostsConnections.map((reportedPost) => {
+    const toRetData = castedReportedPosts.map((reportedPost) => {
       return {
-        post: reportedPost.post,
+        post: omit(reportedPost, 'ins'),
         ins: reportedPost.ins,
         createdAt: reportedPost.reportedAt,
         countUsers: reportedPost.reportedByUsers.length,
@@ -292,75 +289,84 @@ export class InsAdminController {
     };
   }
 
-  @Delete(':id/post/:postID')
+  @Delete('/report/post/:postID')
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins-admin')
   async deletePostFromINS(
-    @Param('id') insID: string,
     @Param('postID') postID: string,
     @PrismaUser('id') userID: string,
     @Body() data: DeletePostFromINSAPI,
   ) {
     this.logger.log(
-      `Deciding action for reported post ${postID} from ins ${insID} by user ${userID}`,
+      `Deciding action for reported post ${postID} by admin user ${userID}`,
     );
 
-    const isAdmin = await this.insAdminService.isAdmin(userID, insID);
+    const post = await this.postService.post({
+      id: postID,
+    });
+    if (!post?.reportedAt) {
+      this.logger.error(`Post is no longer reported in ins ${post?.insId}!`);
+      throw new BadRequestException('Post is no longer reported in INS!');
+    }
+    const isAdmin = await this.insAdminService.isAdmin(userID, post?.insId);
     if (!isAdmin) {
-      this.logger.error(`You're not allowed to delete post from ins ${insID}!`);
+      this.logger.error(
+        `You're not allowed to delete post from ins ${post.insId}!`,
+      );
       throw new BadRequestException(
         "You're not allowed to delete post from this INS!",
       );
     }
 
-    const connection = await this.postConnectionService.get({
-      postId_id: {
-        id: insID,
-        postId: postID,
-      },
-    });
-    if (!connection?.reportedAt) {
-      this.logger.error(`Post is no longer reported in ins ${insID}!`);
-      throw new BadRequestException('Post is no longer reported in INS!');
-    }
-
     if (data.isDeleted) {
-      this.logger.log(
-        `Deleting post ${postID} from ins ${insID} by user ${userID}`,
-      );
-      const postConnection = await this.postConnectionService.delete(
+      this.logger.log(`Deleting post ${postID} by admin user ${userID}`);
+      const post = await this.postService.deletePost(
         {
-          postId_id: {
-            id: insID,
-            postId: postID,
-          },
+          id: postID,
         },
         {
-          post: {
-            select: {
-              authorId: true,
+          mediaContent: {
+            include: {
+              posts: true,
             },
           },
         },
       );
 
-      const castedPostConnection = <
-        PostInsConnection & {
-          post: PostModel;
+      this.logger.log(
+        `Removing media from post ${postID} by admin user ${userID} if not has any other related post`,
+      );
+      const castedPost = <
+        PostModel & {
+          mediaContent: (PostContent & {
+            posts: PostModel[];
+          })[];
         }
-      >postConnection;
-      if (
-        castedPostConnection.post.authorId &&
-        castedPostConnection.post.authorId !== userID
-      ) {
+      >post;
+      const deletedMediasIDs: string[] = [];
+      castedPost.mediaContent.map((media) => {
+        if (media.posts.length === 1) {
+          deletedMediasIDs.push(media.id);
+        }
+      });
+
+      await this.mediaService.deleteMany({
+        where: {
+          id: {
+            in: deletedMediasIDs,
+          },
+        },
+      });
+
+      if (post.authorId && post.authorId !== userID) {
         this.logger.log(
-          `Creating notification for removing post ${postID} from ins ${insID} by user ${userID}`,
+          `Creating notification for removing post ${postID} by admin user ${userID}`,
         );
         await this.notificationService.createNotification({
           source: NotificationSource.DELETED_POST_BY_ADMIN,
           targets: {
             connect: {
-              id: castedPostConnection.post.authorId,
+              id: post.authorId,
             },
           },
           author: {
@@ -375,23 +381,20 @@ export class InsAdminController {
           },
           ins: {
             connect: {
-              id: insID,
+              id: post.insId,
             },
           },
         });
       }
 
-      return postConnection;
+      return omit(castedPost, 'mediaContent');
     } else {
       this.logger.log(
-        `Removing reporting for post ${postID} from ins ${insID} by user ${userID}`,
+        `Removing reporting for post ${postID} by admin user ${userID}`,
       );
-      return this.postConnectionService.update({
+      return this.postService.updatePost({
         where: {
-          postId_id: {
-            id: insID,
-            postId: postID,
-          },
+          id: postID,
         },
         data: {
           reportedAt: null,
@@ -401,11 +404,11 @@ export class InsAdminController {
     }
   }
 
-  @Delete('/posts/report')
+  @Delete('/report/posts')
   @UseGuards(JwtAuthGuard)
   @ApiTags('ins-admin')
   async deleteReportedPosts(@PrismaUser('id') userID: string) {
-    this.logger.log(`Deleting all reported posts by user ${userID}`);
+    this.logger.log(`Deleting all reported posts by admin user ${userID}`);
 
     const insesAdmin = await this.insService.inses({
       where: {
@@ -418,9 +421,9 @@ export class InsAdminController {
       },
     });
 
-    const deletedPosts = await this.postConnectionService.getInsConnections({
+    const deletedPosts = await this.postService.posts({
       where: {
-        id: {
+        insId: {
           in: insesAdmin.map((ins) => ins.id),
         },
         reportedAt: {
@@ -428,17 +431,17 @@ export class InsAdminController {
         },
       },
       include: {
-        post: {
-          select: {
-            authorId: true,
+        mediaContent: {
+          include: {
+            posts: true,
           },
         },
       },
     });
 
-    await this.postConnectionService.deleteMany({
+    await this.postService.deleteManyPosts({
       where: {
-        id: {
+        insId: {
           in: insesAdmin.map((ins) => ins.id),
         },
         reportedAt: {
@@ -447,25 +450,46 @@ export class InsAdminController {
       },
     });
 
+    this.logger.log(
+      `Removing media from post ${deletedPosts.map(
+        (post) => post.id,
+      )} by admin user ${userID} if not has any other related post`,
+    );
     const castedDeletedPosts = <
-      (PostInsConnection & {
-        post: PostModel;
+      (PostModel & {
+        mediaContent: (PostContent & {
+          posts: PostModel[];
+        })[];
       })[]
     >deletedPosts;
+    const deletedMediasIDs: string[] = [];
+    castedDeletedPosts.map((post) => {
+      post.mediaContent.map((media) => {
+        if (media.posts.length === 1) {
+          deletedMediasIDs.push(media.id);
+        }
+      });
+    });
+
+    await this.mediaService.deleteMany({
+      where: {
+        id: {
+          in: deletedMediasIDs,
+        },
+      },
+    });
+
     await Promise.all(
-      castedDeletedPosts.map(async (postConnection) => {
-        if (
-          postConnection.post.authorId &&
-          postConnection.post.authorId !== userID
-        ) {
+      deletedPosts.map(async (post) => {
+        if (post.authorId && post.authorId !== userID) {
           this.logger.log(
-            `Creating notification for removing post ${postConnection.postId} from ins ${postConnection.id} by user ${userID}`,
+            `Creating notification for removing post ${post.id} by admin user ${userID}`,
           );
           await this.notificationService.createNotification({
             source: NotificationSource.DELETED_POST_BY_ADMIN,
             targets: {
               connect: {
-                id: postConnection.post.authorId,
+                id: post.authorId,
               },
             },
             author: {
@@ -475,12 +499,12 @@ export class InsAdminController {
             },
             post: {
               connect: {
-                id: postConnection.postId,
+                id: post.id,
               },
             },
             ins: {
               connect: {
-                id: postConnection.id,
+                id: post.insId,
               },
             },
           });

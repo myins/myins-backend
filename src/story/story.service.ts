@@ -314,7 +314,7 @@ export class StoryService {
       id: insID,
     });
 
-    const medias = await this.mediaService.getMedias({
+    let medias = await this.mediaService.getMedias({
       where: this.storyMediaWhereQuery(insID, highlight, null),
       include: {
         story: {
@@ -341,6 +341,7 @@ export class StoryService {
         createdAt: 'asc',
       },
     });
+    medias = medias.filter((media) => !media.excludedInses.includes(insID));
 
     const castedMedias = <
       (PostContent & {

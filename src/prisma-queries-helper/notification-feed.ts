@@ -36,29 +36,16 @@ const includeQuery = (targetId: string) => {
     },
     post: {
       include: {
-        inses: {
-          where: {
-            ins: {
-              members: {
-                some: {
-                  userId: targetId,
-                },
-              },
-            },
-          },
-          include: {
-            ins: {
-              select: {
-                id: true,
-                name: true,
-                cover: true,
-                shareCode: true,
-                createdAt: true,
-                members: {
-                  where: {
-                    userId: targetId,
-                  },
-                },
+        ins: {
+          select: {
+            id: true,
+            name: true,
+            cover: true,
+            shareCode: true,
+            createdAt: true,
+            members: {
+              where: {
+                userId: targetId,
               },
             },
           },
@@ -123,29 +110,16 @@ const includeQueryWithoutPost = (targetId: string) => {
     },
     post: {
       select: {
-        inses: {
-          where: {
-            ins: {
-              members: {
-                some: {
-                  userId: targetId,
-                },
-              },
-            },
-          },
-          include: {
-            ins: {
-              select: {
-                id: true,
-                name: true,
-                cover: true,
-                shareCode: true,
-                createdAt: true,
-                members: {
-                  where: {
-                    userId: targetId,
-                  },
-                },
+        ins: {
+          select: {
+            id: true,
+            name: true,
+            cover: true,
+            shareCode: true,
+            createdAt: true,
+            members: {
+              where: {
+                userId: targetId,
               },
             },
           },

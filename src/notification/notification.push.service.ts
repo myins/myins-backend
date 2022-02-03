@@ -266,7 +266,7 @@ export class NotificationPushService {
               ins: {
                 posts: {
                   some: {
-                    postId: normalNotif.post.connect.id,
+                    id: normalNotif.post.connect.id,
                   },
                 },
                 members: {
@@ -420,7 +420,7 @@ export class NotificationPushService {
               },
               posts: {
                 some: {
-                  postId: normalNotif.post.connect.id,
+                  id: normalNotif.post.connect.id,
                 },
               },
             },
@@ -525,7 +525,7 @@ export class NotificationPushService {
         body = `${pushNotif.author?.firstName} ${pushNotif.author?.lastName} invited you to join ${pushNotif.ins?.name} ins!`;
         break;
       case PushNotificationSource.REPORT_ADMIN:
-        body = `This post has been reported by ${
+        body = `This post has been reported by ${pushNotif.countUsers} ${
           pushNotif.countUsers && pushNotif.countUsers > 1 ? 'users' : 'user'
         } as being inappropriate in ${pushNotif.ins?.name} ins!`;
         break;

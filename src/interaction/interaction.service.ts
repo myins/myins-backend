@@ -1,9 +1,4 @@
-import {
-  Post,
-  UserInsConnection,
-  Comment,
-  PostInsConnection,
-} from '.prisma/client';
+import { Post, UserInsConnection, Comment } from '.prisma/client';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CommentService } from 'src/comment/comment.service';
 import { PostService } from 'src/post/post.service';
@@ -36,37 +31,20 @@ export class InteractionService {
   }
 
   async interactPost(userId: string, postId: string) {
-    const postWithIns = await this.postService.post(
-      {
-        id: postId,
-      },
-      {
-        inses: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    );
+    const postWithIns = await this.postService.post({
+      id: postId,
+    });
     if (!postWithIns) {
       this.logger.error('Invalid post ID!');
       throw new BadRequestException('Invalid post ID!');
     }
 
-    const castedPost = <
-      Post & {
-        inses: PostInsConnection[];
-      }
-    >postWithIns;
-    const insIDs = castedPost.inses.map((each) => each.id);
     this.logger.log(
-      `Incrementing interaction between user ${userId} and inses ${insIDs}`,
+      `Incrementing interaction between user ${userId} and ins ${postWithIns.insId}`,
     );
     return this.userConnectionService.updateMany({
       where: {
-        insId: {
-          in: insIDs,
-        },
+        insId: postWithIns.insId,
         userId: userId,
       },
       data: {
@@ -83,15 +61,7 @@ export class InteractionService {
         id: commentId,
       },
       {
-        post: {
-          select: {
-            inses: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
+        post: true,
       },
     );
     if (!comment) {
@@ -101,20 +71,15 @@ export class InteractionService {
 
     const castedComment = <
       Comment & {
-        post: Post & {
-          inses: PostInsConnection[];
-        };
+        post: Post;
       }
     >comment;
-    const insIDs = castedComment.post.inses.map((each) => each.id);
     this.logger.log(
-      `Incrementing interaction between user ${userId} and inses ${insIDs}`,
+      `Incrementing interaction between user ${userId} and inses ${castedComment.post.insId}`,
     );
     return this.userConnectionService.updateMany({
       where: {
-        insId: {
-          in: insIDs,
-        },
+        insId: castedComment.post.insId,
         userId: userId,
       },
       data: {

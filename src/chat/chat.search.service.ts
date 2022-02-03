@@ -76,9 +76,7 @@ export class ChatSearchService {
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(`Error searching for messages! + ${stringErr}`);
-      throw new BadRequestException(
-        `Error searching for messages! + ${stringErr}`,
-      );
+      throw new BadRequestException(`Error searching for messages!`);
     }
 
     return {
