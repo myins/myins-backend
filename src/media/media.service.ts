@@ -158,18 +158,16 @@ export class MediaService {
       }
     });
 
-    let thumbnailURL: string | undefined = undefined;
-    const ext = path.extname(file.originalname);
-    const randomUUID = uuid.v4();
-    const entityName = `${isStoryEntity ? 'story' : 'post'}_${
-      entitiesIDs[0]
-    }_${randomUUID}${ext}`;
+    console.log('file', file);
+    console.log('thumbnail', thumbnail);
 
+    let thumbnailURL: string | undefined = undefined;
+    const randomUUID = uuid.v4();
     if (postInfo.isVideo && thumbnail) {
+      const extThumbnail = path.extname(thumbnail.originalname);
       const thumbnailName = `${isStoryEntity ? 'story' : 'post'}_${
         entitiesIDs[0]
-      }_thumb_${randomUUID}.jpg`;
-
+      }_thumb_${randomUUID}${extThumbnail}`;
       let x = thumbnail;
       x = {
         ...x,
@@ -184,6 +182,10 @@ export class MediaService {
       );
     }
 
+    const ext = path.extname(file.originalname);
+    const entityName = `${isStoryEntity ? 'story' : 'post'}_${
+      entitiesIDs[0]
+    }_${randomUUID}${ext}`;
     let x = file;
     x = {
       ...x,
