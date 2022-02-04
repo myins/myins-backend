@@ -253,6 +253,13 @@ export class PostController {
           in: data.postIDs,
         },
       },
+      include: {
+        mediaContent: {
+          include: {
+            posts: true,
+          },
+        },
+      },
     });
     posts.forEach((post) => {
       if (post.authorId !== userID) {
