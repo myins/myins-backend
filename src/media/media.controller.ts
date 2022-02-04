@@ -411,6 +411,7 @@ export class MediaController {
       },
     });
 
+    const deletedStoryIDs: string[] = [];
     await Promise.all(
       storyIDs.map(async (storyID) => {
         const remainingMedia = await this.mediaService.getMedias({
@@ -422,10 +423,18 @@ export class MediaController {
           this.logger.log(
             `No media remaining for story ${storyID}. Deleting story`,
           );
-          await this.storyService.deleteStory({ id: storyID });
+          deletedStoryIDs.push(storyID);
         }
       }),
     );
+
+    await this.storyService.deleteMany({
+      where: {
+        id: {
+          in: deletedStoryIDs,
+        },
+      },
+    });
 
     this.logger.log('Story medias deleted');
     return {
