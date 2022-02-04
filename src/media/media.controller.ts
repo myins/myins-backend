@@ -197,8 +197,8 @@ export class MediaController {
     const isStoryEntity = body.isStoryEntity === 'true';
     const isHighlight = body.isHighlight === 'true';
     this.logger.log(
-      `Attach media to ${isStoryEntity ? 'story' : 'post'} ${
-        body.entityID
+      `Attach media to ${isStoryEntity ? 'story' : 'posts'} ${
+        body.entitiesIDs
       } by user ${userID}`,
     );
     const firstFiles = files.file;
@@ -232,7 +232,7 @@ export class MediaController {
       return this.mediaService.attachMedia(
         file,
         thumbnailFiles ? thumbnailFiles[0] : undefined,
-        body.entityID,
+        body.entitiesIDs,
         isStoryEntity,
         isHighlight,
         userID,
@@ -298,65 +298,60 @@ export class MediaController {
     @Param('id') mediaID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const media = await this.mediaService.getMediaById({
-      id: mediaID,
-    });
-    if (!media || (!media.postId && !media.storyId)) {
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        posts: true,
+      },
+    );
+    const castedMedia = <
+      PostContent & {
+        posts: PostModel[];
+      }
+    >media;
+    if (!media || (!castedMedia.posts.length && !media.storyId)) {
       this.logger.error(`Could not find media ${mediaID}!`);
       throw new NotFoundException('Could not find this media!');
     }
-
-    let entityPossibleNull: PostModel | Story | null = null;
     if (media.storyId) {
-      entityPossibleNull = await this.storyService.story({
-        id: media.storyId,
+      await this.deleteStoryMedias(userID, {
+        storyIDs: [media.id],
       });
-    } else if (media.postId) {
-      entityPossibleNull = await this.postService.post({
-        id: media.postId,
-      });
-    }
-    const entity = entityPossibleNull;
-    if (!entity) {
-      this.logger.error(
-        `Could not find ${media.storyId ? 'story' : 'post'} ${
-          media.storyId ?? media.postId
-        }!`,
-      );
-      throw new NotFoundException(
-        `Could not find ${media.storyId ? 'story' : 'post'}!`,
-      );
-    }
-    if (userID && entity.authorId && entity.authorId !== userID) {
-      this.logger.error(`That's not your ${media.storyId ? 'story' : 'post'}!`);
-      throw new BadRequestException(
-        `That's not your ${media.storyId ? 'story' : 'post'}!`,
-      );
-    }
+    } else {
+      if (castedMedia.posts.length === 1) {
+        await this.mediaService.deleteMedia({
+          id: media.id,
+        });
 
-    this.logger.log(
-      `Deleting media ${mediaID} from ${media.storyId ? 'story' : 'post'} ${
-        entity.id
-      } by user ${userID}`,
-    );
-    await this.mediaService.deleteMedia({ id: mediaID });
-
-    const remainingMedia = await this.mediaService.getMedias({
-      where: {
-        postId: media.postId ? entity.id : undefined,
-        storyId: media.storyId ? entity.id : undefined,
-      },
-    });
-    if (!remainingMedia.length) {
-      this.logger.log(
-        `No media remaining for ${media.storyId ? 'story' : 'post'} ${
-          entity.id
-        }. Deleting ${media.storyId ? 'story' : 'post'} by user ${userID}`,
-      );
-      if (media.postId) {
-        await this.postService.deletePost({ id: entity.id });
+        const mediasWithPost = await this.mediaService.getMedias({
+          where: {
+            posts: {
+              some: {
+                id: castedMedia.posts[0].id,
+              },
+            },
+          },
+        });
+        if (!mediasWithPost.length) {
+          await this.postService.deletePost({
+            id: castedMedia.posts[0].id,
+          });
+        }
       } else {
-        await this.storyService.deleteStory({ id: entity.id });
+        await this.mediaService.updateMedia({
+          where: {
+            id: media.id,
+          },
+          data: {
+            posts: {
+              disconnect: {
+                id: castedMedia.posts[0].id,
+              },
+            },
+          },
+        });
       }
     }
 

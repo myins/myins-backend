@@ -20,17 +20,13 @@ export class PostFeedService {
         createdAt: 'desc',
       },
       where: {
-        inses: !onlyMine
+        ins: !onlyMine
           ? {
-              some: {
-                ins: {
-                  members: {
-                    some: {
-                      userId: userID,
-                      role: {
-                        not: UserRole.PENDING,
-                      },
-                    },
+              members: {
+                some: {
+                  userId: userID,
+                  role: {
+                    not: UserRole.PENDING,
                   },
                 },
               },

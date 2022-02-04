@@ -14,11 +14,9 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import {
   INS,
-  NotificationSource,
   Post,
   Post as PostModel,
-  PostInsConnection,
-  Prisma,
+  PostContent,
   UserInsConnection,
   UserRole,
 } from '@prisma/client';
@@ -27,18 +25,15 @@ import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { PostService } from 'src/post/post.service';
 import { PatchCommentAPI } from 'src/comment/comment-api.entity';
 import { PrismaUser } from 'src/decorators/user.decorator';
-import { DeletePostsAPI, SharePostAPI } from './post-api.entity';
-import { InsService } from 'src/ins/ins.service';
-import { ChatService } from 'src/chat/chat.service';
-import { NotificationService } from 'src/notification/notification.service';
-import { UserConnectionService } from 'src/user/user.connection.service';
-import { PostConnectionService } from './post.connection.service';
+import { DeletePostsAPI } from './post-api.entity';
 import {
   NotificationPushService,
   PushExtraNotification,
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { UserService } from 'src/user/user.service';
+import { omit } from 'src/util/omit';
+import { MediaService } from 'src/media/media.service';
 
 @Controller('post')
 @UseInterceptors(NotFoundInterceptor)
@@ -47,13 +42,9 @@ export class PostController {
 
   constructor(
     private readonly postService: PostService,
-    private readonly insService: InsService,
-    private readonly chatService: ChatService,
-    private readonly notificationService: NotificationService,
     private readonly notificationPushService: NotificationPushService,
-    private readonly userConnectionService: UserConnectionService,
     private readonly userService: UserService,
-    private readonly postConnectionService: PostConnectionService,
+    private readonly mediaService: MediaService,
   ) {}
 
   @Get(':id')
@@ -70,19 +61,7 @@ export class PostController {
       throw new NotFoundException('Could not find this post!');
     }
 
-    const castedPost = <
-      Post & {
-        inses: (PostInsConnection & {
-          ins: INS;
-        })[];
-      }
-    >post;
-    const returnPost = {
-      ...castedPost,
-      inses: castedPost.inses.map((insConnection) => insConnection.ins),
-    };
-
-    return returnPost;
+    return post;
   }
 
   @Patch(':id')
@@ -125,67 +104,48 @@ export class PostController {
     });
   }
 
-  @Patch(':id/ins/:insID/report')
+  @Patch(':id/report')
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts')
   async reportPost(
     @Param('id') postID: string,
-    @Param('insID') insID: string,
     @PrismaUser('id') userID: string,
   ) {
-    const ins = await this.insService.ins(
+    const post = await this.postService.post(
       {
-        id: insID,
+        id: postID,
       },
       {
-        posts: {
-          where: {
-            postId: postID,
-          },
-        },
-        members: {
-          where: {
-            userId: userID,
+        ins: {
+          include: {
+            members: {
+              where: {
+                userId: userID,
+              },
+            },
           },
         },
       },
     );
-    const castedINS = <
-      INS & {
-        posts: PostInsConnection[];
-        members: UserInsConnection[];
+
+    const castedPost = <
+      Post & {
+        ins: INS & {
+          members: UserInsConnection[];
+        };
       }
-    >ins;
-    if (!castedINS || !castedINS.posts.length || !castedINS.members.length) {
+    >post;
+    if (!castedPost || !castedPost.ins || !castedPost.ins.members.length) {
       this.logger.error(`You're not allowed to report post ${postID}!`);
       throw new BadRequestException("You're not allowed to report this post!");
     }
 
-    const postConnection = await this.postConnectionService.get(
-      {
-        postId_id: {
-          id: insID,
-          postId: postID,
-        },
-      },
-      {
-        post: {
-          include: {
-            mediaContent: true,
-          },
-        },
-      },
-    );
-
-    if (postConnection?.reportedByUsers.includes(userID)) {
-      return postConnection;
+    if (castedPost.reportedByUsers.includes(userID)) {
+      return omit(castedPost, 'ins');
     } else {
-      const toRet = await this.postConnectionService.update({
+      const toRet = await this.postService.updatePost({
         where: {
-          postId_id: {
-            id: insID,
-            postId: postID,
-          },
+          id: postID,
         },
         data: {
           reportedAt: new Date(),
@@ -196,18 +156,13 @@ export class PostController {
       });
 
       this.logger.log(
-        `Creating push notification for requesting access in ins ${castedINS.id}`,
+        `Creating push notification for reporting post ${castedPost.id}`,
       );
-      const castedPostConnection = <
-        PostInsConnection & {
-          post: Post;
-        }
-      >postConnection;
       const insesAdmin = await this.userService.users({
         where: {
           inses: {
             some: {
-              insId: insID,
+              insId: castedPost.insId,
               role: UserRole.ADMIN,
             },
           },
@@ -215,8 +170,8 @@ export class PostController {
       });
       const dataPush: PushExtraNotification = {
         source: PushNotificationSource.REPORT_ADMIN,
-        ins: ins,
-        post: castedPostConnection.post,
+        ins: castedPost.ins,
+        post: omit(castedPost, 'ins'),
         targets: [insesAdmin[0].id],
         countUsers: toRet.reportedByUsers.length,
       };
@@ -246,7 +201,43 @@ export class PostController {
     }
 
     this.logger.log(`Deleting post ${postID} by user ${userID}`);
-    return this.postService.deletePost({ id: postID });
+    const deletedPost = await this.postService.deletePost(
+      { id: postID },
+      {
+        mediaContent: {
+          include: {
+            posts: true,
+          },
+        },
+      },
+    );
+
+    this.logger.log(
+      `Removing media from post ${postID} by user ${userID} if not has any other related post`,
+    );
+    const castedDeletedPost = <
+      Post & {
+        mediaContent: (PostContent & {
+          posts: Post[];
+        })[];
+      }
+    >deletedPost;
+    const deletedMediasIDs: string[] = [];
+    castedDeletedPost.mediaContent.map((media) => {
+      if (media.posts.length === 1) {
+        deletedMediasIDs.push(media.id);
+      }
+    });
+
+    await this.mediaService.deleteMany({
+      where: {
+        id: {
+          in: deletedMediasIDs,
+        },
+      },
+    });
+
+    return omit(castedDeletedPost, 'mediaContent');
   }
 
   @Delete()
@@ -260,6 +251,13 @@ export class PostController {
       where: {
         id: {
           in: data.postIDs,
+        },
+      },
+      include: {
+        mediaContent: {
+          include: {
+            posts: true,
+          },
         },
       },
     });
@@ -281,112 +279,36 @@ export class PostController {
       },
     });
 
+    this.logger.log(
+      `Removing media from post ${data.postIDs} by user ${userID} if not has any other related post`,
+    );
+    const castedDeletedPosts = <
+      (Post & {
+        mediaContent: (PostContent & {
+          posts: Post[];
+        })[];
+      })[]
+    >posts;
+    const deletedMediasIDs: string[] = [];
+    castedDeletedPosts.map((post) => {
+      post.mediaContent.map((media) => {
+        if (media.posts.length === 1) {
+          deletedMediasIDs.push(media.id);
+        }
+      });
+    });
+
+    await this.mediaService.deleteMany({
+      where: {
+        id: {
+          in: deletedMediasIDs,
+        },
+      },
+    });
+
     this.logger.log('Posts successfully deleted');
     return {
       message: 'Posts successfully deleted',
-    };
-  }
-
-  @Patch(':id/share')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('posts')
-  async sharePost(
-    @Param('id') postID: string,
-    @PrismaUser('id') userID: string,
-    @Body() shareData: SharePostAPI,
-  ) {
-    const { ins } = shareData;
-    this.logger.log(`Sharing post ${postID} in inses ${ins} by user ${userID}`);
-    const post = await this.postService.post({
-      id: postID,
-    });
-    if (!post) {
-      this.logger.error(`Could not find post ${postID}!`);
-      throw new NotFoundException('Could not find this post!');
-    }
-    if (post.authorId !== userID) {
-      this.logger.error(`You're not allowed to share post ${postID}!`);
-      throw new BadRequestException("You're not allowed to share this post!");
-    }
-
-    const inses = (
-      await this.insService.insesSelectIDs({
-        members: {
-          some: {
-            userId: userID,
-          },
-        },
-      })
-    ).map((each) => each.id);
-    for (const each of ins) {
-      if (!inses.includes(each)) {
-        this.logger.error("You're not allowed to post to one of that INS!");
-        throw new BadRequestException(
-          "You're not allowed to post to one of that INS!",
-        );
-      }
-    }
-
-    this.logger.log(
-      `Updating post ${postID}. Adding connections with inses ${ins}`,
-    );
-    await this.postService.updatePost({
-      where: {
-        id: postID,
-      },
-      data: {
-        inses: {
-          createMany: {
-            data: ins.map((insId) => ({ id: insId })),
-          },
-        },
-      },
-    });
-
-    this.logger.log(`Creating notification for adding post ${postID}`);
-    const targetIDs = (
-      await this.userConnectionService.getConnections({
-        where: {
-          insId: {
-            in: ins,
-          },
-          userId: {
-            not: userID,
-          },
-        },
-      })
-    ).map((connection) => {
-      return { id: connection.userId };
-    });
-    const notifMetadata = {
-      insesIDs: ins,
-    } as Prisma.JsonObject;
-    await this.notificationService.createNotification({
-      source: NotificationSource.POST,
-      targets: {
-        connect: targetIDs,
-      },
-      author: {
-        connect: {
-          id: userID,
-        },
-      },
-      post: {
-        connect: {
-          id: post.id,
-        },
-      },
-      metadata: notifMetadata,
-    });
-
-    this.logger.log(
-      `Send message by user ${userID} in inses ${ins} with new post ${postID}`,
-    );
-    await this.chatService.sendMessageWhenPost(ins, userID, postID);
-
-    this.logger.log('Post shared');
-    return {
-      message: 'Post shared!',
     };
   }
 }
