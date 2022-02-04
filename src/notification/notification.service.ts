@@ -86,7 +86,6 @@ export class NotificationService {
           NotificationSource.LIKE_POST,
           NotificationSource.COMMENT,
           NotificationSource.LIKE_COMMENT,
-          NotificationSource.DELETED_POST_BY_ADMIN,
         ];
         if (notificationsWithPostInses.includes(notif.source)) {
           const metadata = notif.metadata as Prisma.JsonObject;

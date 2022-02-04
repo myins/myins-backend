@@ -18,6 +18,7 @@ import {
   User,
   UserRole,
   Post as PostModel,
+  Prisma,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
@@ -357,6 +358,9 @@ export class PostCreateController {
         ).map((connection) => {
           return { id: connection.userId };
         });
+        const notifMetadata = {
+          insesIDs: ins,
+        } as Prisma.JsonObject;
         await this.notificationService.createNotification({
           source: NotificationSource.POST,
           targets: {
@@ -372,6 +376,7 @@ export class PostCreateController {
               id: post.id,
             },
           },
+          metadata: notifMetadata,
         });
 
         this.logger.log(
