@@ -158,9 +158,6 @@ export class MediaService {
       }
     });
 
-    console.log('file', file);
-    console.log('thumbnail', thumbnail);
-
     let thumbnailURL: string | undefined = undefined;
     const randomUUID = uuid.v4();
     if (postInfo.isVideo && thumbnail) {
