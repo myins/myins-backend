@@ -374,11 +374,6 @@ export class InsAdminController {
               id: userID,
             },
           },
-          post: {
-            connect: {
-              id: postID,
-            },
-          },
           ins: {
             connect: {
               id: post.insId,
@@ -495,11 +490,6 @@ export class InsAdminController {
             author: {
               connect: {
                 id: userID,
-              },
-            },
-            post: {
-              connect: {
-                id: post.id,
               },
             },
             ins: {
