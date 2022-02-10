@@ -448,23 +448,25 @@ export class InsController {
           invitedPhoneNumbers: [],
         };
 
-        this.logger.log(
-          `Creating notification for pending ins ${insNotification.id} for user ${user.id}`,
-        );
-        await this.notificationService.createNotification({
-          source: NotificationSource.PENDING_INS,
-          targets: {
-            connect: { id: user.id },
-          },
-          author: {
-            connect: { id: user.id },
-          },
-          ins: {
-            connect: {
-              id: insNotification.id,
+        setTimeout(async () => {
+          this.logger.log(
+            `Creating notification for pending ins ${insNotification.id} for user ${user.id}`,
+          );
+          await this.notificationService.createNotification({
+            source: NotificationSource.PENDING_INS,
+            targets: {
+              connect: { id: user.id },
             },
-          },
-        });
+            author: {
+              connect: { id: user.id },
+            },
+            ins: {
+              connect: {
+                id: insNotification.id,
+              },
+            },
+          });
+        }, 1000);
 
         this.logger.log(
           `Creating push notification for requesting access in ins ${insNotification.id}`,

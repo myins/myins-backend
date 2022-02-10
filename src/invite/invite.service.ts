@@ -201,38 +201,40 @@ export class InviteService {
       },
     });
 
-    await Promise.all(
-      data.map(async (dataCreate) => {
-        this.logger.log(
-          `Creating notification for pending ins ${castedINS.id} for user ${dataCreate.userId}`,
-        );
-        await this.notificationService.createNotification({
-          source: NotificationSource.PENDING_INS,
-          targets: {
-            connect: { id: dataCreate.userId },
-          },
-          author: {
-            connect: { id: dataCreate.userId },
-          },
-          ins: {
-            connect: {
-              id: castedINS.id,
+    setTimeout(async () => {
+      await Promise.all(
+        data.map(async (dataCreate) => {
+          this.logger.log(
+            `Creating notification for pending ins ${castedINS.id} for user ${dataCreate.userId}`,
+          );
+          await this.notificationService.createNotification({
+            source: NotificationSource.PENDING_INS,
+            targets: {
+              connect: { id: dataCreate.userId },
             },
-          },
-        });
+            author: {
+              connect: { id: dataCreate.userId },
+            },
+            ins: {
+              connect: {
+                id: castedINS.id,
+              },
+            },
+          });
 
-        this.logger.log(
-          `Creating push notification for requesting access in ins ${castedINS.id}`,
-        );
-        const dataPush: PushExtraNotification = {
-          source: PushNotificationSource.REQUEST_FOR_ME,
-          author: await this.userService.shallowUser({ id: userID }),
-          ins: castedINS,
-          targets: [dataCreate.userId],
-        };
-        await this.notificationPushService.pushNotification(dataPush);
-      }),
-    );
+          this.logger.log(
+            `Creating push notification for requesting access in ins ${castedINS.id}`,
+          );
+          const dataPush: PushExtraNotification = {
+            source: PushNotificationSource.REQUEST_FOR_ME,
+            author: await this.userService.shallowUser({ id: userID }),
+            ins: castedINS,
+            targets: [dataCreate.userId],
+          };
+          await this.notificationPushService.pushNotification(dataPush);
+        }),
+      );
+    }, 1000);
   }
 
   async invitesList(
