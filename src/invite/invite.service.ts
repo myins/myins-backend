@@ -238,7 +238,7 @@ export class InviteService {
           });
         }),
       );
-    }, 5000);
+    }, 1000);
   }
 
   async invitesList(
