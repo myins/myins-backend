@@ -201,6 +201,21 @@ export class InviteService {
       },
     });
 
+    await Promise.all(
+      data.map(async (dataCreate) => {
+        this.logger.log(
+          `Creating push notification for requesting access in ins ${castedINS.id}`,
+        );
+        const dataPush: PushExtraNotification = {
+          source: PushNotificationSource.REQUEST_FOR_ME,
+          author: await this.userService.shallowUser({ id: userID }),
+          ins: castedINS,
+          targets: [dataCreate.userId],
+        };
+        await this.notificationPushService.pushNotification(dataPush);
+      }),
+    );
+
     setTimeout(async () => {
       await Promise.all(
         data.map(async (dataCreate) => {
@@ -221,17 +236,6 @@ export class InviteService {
               },
             },
           });
-
-          this.logger.log(
-            `Creating push notification for requesting access in ins ${castedINS.id}`,
-          );
-          const dataPush: PushExtraNotification = {
-            source: PushNotificationSource.REQUEST_FOR_ME,
-            author: await this.userService.shallowUser({ id: userID }),
-            ins: castedINS,
-            targets: [dataCreate.userId],
-          };
-          await this.notificationPushService.pushNotification(dataPush);
         }),
       );
     }, 5000);
