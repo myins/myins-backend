@@ -466,7 +466,7 @@ export class InsController {
               },
             },
           });
-        }, 1000);
+        }, 5000);
 
         this.logger.log(
           `Creating push notification for requesting access in ins ${insNotification.id}`,

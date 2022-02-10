@@ -234,7 +234,7 @@ export class InviteService {
           await this.notificationPushService.pushNotification(dataPush);
         }),
       );
-    }, 1000);
+    }, 5000);
   }
 
   async invitesList(
