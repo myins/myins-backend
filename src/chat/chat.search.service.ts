@@ -34,6 +34,7 @@ export class ChatSearchService {
     let messageFilters: MessageFilters = data.mediaTypes
       ? {
           'attachments.type': { $in: data.mediaTypes },
+          'attachments.title_link': { $eq: undefined },
         }
       : {};
     messageFilters = data.autocomplete?.length
