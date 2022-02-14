@@ -73,6 +73,14 @@ export class ChatSearchService {
         messageFilters,
         options,
       );
+      search.results.map((message) => {
+        message.message.attachments = message.message.attachments?.filter(
+          (attachment) => !attachment.title_link,
+        );
+      });
+      search.results = search.results.filter(
+        (message) => message.message.attachments?.length,
+      );
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(`Error searching for messages! + ${stringErr}`);
