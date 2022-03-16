@@ -22,6 +22,7 @@ import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
 import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
+import { isProd } from 'src/util/is-prod';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
@@ -539,15 +540,17 @@ export class NotificationPushService {
       target,
     );
 
+    const theToken = isProd()
+      ? 'com.squid40.prod.myins'
+      : 'com.squid40.dev.myins';
+
     return {
       title: 'MyINS',
       body: body,
       badge: unreadNotif ? unreadNotif + 1 : 1,
       contentAvailable: true,
       mutableContent: 1,
-      topic: target.sandboxToken
-        ? 'com.squid40.dev.myins'
-        : 'com.squid40.dev.myins',
+      topic: theToken,
       custom: {
         ...clean(source),
       },
