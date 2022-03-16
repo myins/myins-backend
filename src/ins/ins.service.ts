@@ -385,10 +385,6 @@ export class InsService {
       return result;
     };
 
-    if (isProd()) {
-      return makeRandom();
-    }
-
     const res = await fetch(
       `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${process.env.FIREBASE_API_KEY}`,
       {
