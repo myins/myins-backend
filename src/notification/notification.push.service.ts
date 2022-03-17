@@ -540,9 +540,7 @@ export class NotificationPushService {
       target,
     );
 
-    const theToken = isProd()
-      ? 'com.squid40.prod.myins'
-      : 'com.squid40.dev.myins';
+    const theToken = isProd() ? 'uk.co.myins.myins' : 'com.squid40.dev.myins';
 
     return {
       title: 'MyINS',
