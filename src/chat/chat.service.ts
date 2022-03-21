@@ -362,42 +362,18 @@ export class ChatService {
       this.logger.error('Story media not found!');
       throw new NotFoundException('Story media not found!');
     }
-
-    const receiver: User = (<
-      PostContent & {
-        story: Story & {
-          author: User;
-        };
-      }
-    >media).story.author;
     this.logger.log(
-      `Getting channel 1 to 1 between user ${userID} and user ${receiver.id}`,
+      `Getting INS channel ${data.insID}`,
     );
-    let channel;
     const channels = await this.getChannelsINS({
-      members: {
-        $eq: [userID, receiver.id],
+      id: {
+        $eq: data.insID
       },
       insChannel: {
-        $eq: false,
+        $eq: true,
       },
     });
-    channel = channels[0];
-    if (!channel) {
-      this.logger.log(
-        `Channel between user ${userID} and user ${receiver.id} does not exists. Creating channel`,
-      );
-      await this.createOneToOneChannel(userID, receiver.id);
-      const channelsOneToOne = await this.getChannelsINS({
-        members: {
-          $eq: [userID, receiver.id],
-        },
-        insChannel: {
-          $eq: false,
-        },
-      });
-      channel = channelsOneToOne[0];
-    }
+    let channel = channels[0];
     if (channel.id) {
       const createdAt = new Date(media.createdAt);
       const expiryDate = new Date(createdAt.setDate(createdAt.getDate() + 1));

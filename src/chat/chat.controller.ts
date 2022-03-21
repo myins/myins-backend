@@ -54,7 +54,7 @@ export class ChatController {
     );
     const allINses = await this.insService.insesWithAdmin();
     await Promise.all(
-      allINses.map(async (ins) => {
+      allINses.map(async (ins: { members: string | any[]; id: any; }) => {
         if (ins.members.length) {
           this.logger.log(
             `Create channel for ins ${ins.id} by user stream ${ins.members[0].userId} if not exists`,
