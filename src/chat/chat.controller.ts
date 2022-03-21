@@ -45,33 +45,33 @@ export class ChatController {
     };
   }
 
-  @Post('migration')
-  @UseGuards(JwtAuthGuard)
-  @ApiTags('chat')
-  async migration() {
-    this.logger.log(
-      'Create channel for all inses and stream user for all users',
-    );
-    const allINses = await this.insService.insesWithAdmin();
-    await Promise.all(
-      allINses.map(async (ins: { members: string | any[]; id: any; }) => {
-        if (ins.members.length) {
-          this.logger.log(
-            `Create channel for ins ${ins.id} by user stream ${ins.members[0].userId} if not exists`,
-          );
-          await this.chatService.createChannelINSWithMembersIfNotExists(
-            ins,
-            ins.members[0].userId,
-          );
-        }
-      }),
-    );
+  // @Post('migration')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiTags('chat')
+  // async migration() {
+  //   this.logger.log(
+  //     'Create channel for all inses and stream user for all users',
+  //   );
+  //   const allINses = await this.insService.insesWithAdmin();
+  //   await Promise.all(
+  //     allINses.map(async (ins: { members: string | any[]; id: any; }) => {
+  //       if (ins.members.length) {
+  //         this.logger.log(
+  //           `Create channel for ins ${ins.id} by user stream ${ins.members[0].userId} if not exists`,
+  //         );
+  //         await this.chatService.createChannelINSWithMembersIfNotExists(
+  //           ins,
+  //           ins.members[0].userId,
+  //         );
+  //       }
+  //     }),
+  //   );
 
-    this.logger.log('Successfully migrated data');
-    return {
-      message: 'Successfully migrated data',
-    };
-  }
+  //   this.logger.log('Successfully migrated data');
+  //   return {
+  //     message: 'Successfully migrated data',
+  //   };
+  // }
 
   @Post('search')
   @UseGuards(JwtAuthGuard)
