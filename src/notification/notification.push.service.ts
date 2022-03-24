@@ -27,6 +27,7 @@ import { PostService } from 'src/post/post.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { CommentService } from 'src/comment/comment.service';
 import { StoryService } from 'src/story/story.service';
+import { NotificationCache, NotificationCacheService } from './notification.cache.service';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
@@ -91,12 +92,15 @@ export class NotificationPushService {
     private readonly postService: PostService,
     private readonly commentService: CommentService,
     private readonly storyService: StoryService,
+    private readonly cacheService: NotificationCacheService,
   ) {}
 
   async pushNotification(
     notif: Prisma.NotificationCreateInput | PushExtraNotification,
   ) {
     const usersIDs = await this.getUsersIDsBySource(notif);
+
+    const prismaCache = await this.cacheService.getDBCache(notif)
 
     await Promise.all(
       usersIDs.map(async (userID) => {
@@ -146,7 +150,7 @@ export class NotificationPushService {
               },
             };
           }
-          const notifBody = await this.constructNotificationBody(target, notif);
+          const notifBody = await this.constructNotificationBody(target, notif, prismaCache);
           const result = await this.pushData(
             target.pushToken,
             target?.sandboxToken ?? false,
@@ -362,9 +366,11 @@ export class NotificationPushService {
     return isMute;
   }
 
+  // This function should not be allowed to be async!! Discuss
   async constructNotificationBody(
     target: User,
     source: Prisma.NotificationCreateInput | PushExtraNotification,
+    prismaCache: NotificationCache
   ): Promise<PushNotifications.Data> {
     const normalNotif = <Prisma.NotificationCreateInput>source;
     const pushNotif = <PushExtraNotification>source;
@@ -377,19 +383,8 @@ export class NotificationPushService {
 
     switch (source.source) {
       case NotificationSource.LIKE_POST:
-        const authorLikePost = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const postLikePost = await this.postService.post(
-          {
-            id: normalNotif.post?.connect?.id,
-          },
-          {
-            author: {
-              select: ShallowUserSelect,
-            },
-          },
-        );
+        const authorLikePost = prismaCache.authorLikePost
+        const postLikePost = prismaCache.postLikePost
         const castedPostLikePost = <
           Post & {
             author: User;
