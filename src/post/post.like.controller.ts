@@ -24,6 +24,7 @@ import { InteractionService } from 'src/interaction/interaction.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { omit } from 'src/util/omit';
 import { PostLikeService } from './post.like.service';
 import { PostService } from './post.service';
@@ -38,6 +39,7 @@ export class PostLikeController {
     private readonly notificationService: NotificationService,
     private readonly interactionService: InteractionService,
     private readonly postLikeService: PostLikeService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Get(':id/likes')
@@ -153,29 +155,39 @@ export class PostLikeController {
       );
       await this.interactionService.interactPost(user.id, toRet.id);
 
-      if (post.authorId !== user.id) {
-        this.logger.log(
-          `Creating notification for liking post ${postID} by user ${user.id}`,
-        );
-        await this.notificationService.createNotification({
-          source: NotificationSource.LIKE_POST,
-          targets: {
-            connect: {
-              id: post.authorId,
+      this.logger.log(
+        `Creating notification for liking post ${postID} by user ${user.id}`,
+      );
+
+      const targetIDs = (
+        await this.userConnectionService.getConnections({
+          where: {
+            insId: post.insId,
+            userId: {
+              not: user.id,
             },
           },
-          author: {
-            connect: {
-              id: user.id,
-            },
+        })
+      ).map((connection) => {
+        return { id: connection.userId };
+      });
+
+      await this.notificationService.createNotification({
+        source: NotificationSource.LIKE_POST,
+        targets: {
+          connect: targetIDs,
+        },
+        author: {
+          connect: {
+            id: user.id,
           },
-          post: {
-            connect: {
-              id: toRet.id,
-            },
+        },
+        post: {
+          connect: {
+            id: toRet.id,
           },
-        });
-      }
+        },
+      });
 
       return toRet;
     }

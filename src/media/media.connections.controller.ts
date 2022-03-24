@@ -24,6 +24,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { omit } from 'src/util/omit';
 import { MediaConnectionsService } from './media.connections.service';
 import { MediaService } from './media.service';
@@ -36,6 +37,7 @@ export class MediaConnectionsController {
     private readonly mediaService: MediaService,
     private readonly notificationService: NotificationService,
     private readonly mediaConnectionsService: MediaConnectionsService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Get(':id/ins/:insId/views')
@@ -341,16 +343,28 @@ export class MediaConnectionsController {
         },
       });
 
-      if (castedMedia.story.authorId !== userID) {
+      if (toRet.storyId) {
         this.logger.log(
           `Creating notification for liking story media ${toRet.id} by user ${userID}`,
         );
+
+        const targetIDs = (
+          await this.userConnectionService.getConnections({
+            where: {
+              insId: insId,
+              userId: {
+                not: userID,
+              },
+            },
+          })
+        ).map((connection) => {
+          return { id: connection.userId };
+        });
+
         await this.notificationService.createNotification({
           source: NotificationSource.LIKE_STORY,
           targets: {
-            connect: {
-              id: castedMedia.story.authorId,
-            },
+            connect: targetIDs,
           },
           author: {
             connect: {
@@ -360,6 +374,11 @@ export class MediaConnectionsController {
           storyMedia: {
             connect: {
               id: toRet.id,
+            },
+          },
+          story: {
+            connect: {
+              id: toRet.storyId,
             },
           },
           ins: {

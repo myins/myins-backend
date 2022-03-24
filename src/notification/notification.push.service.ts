@@ -14,6 +14,7 @@ import {
   NotificationSource,
   Post,
   Prisma,
+  Story,
   User,
   UserRole,
 } from '.prisma/client';
@@ -22,6 +23,10 @@ import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
 import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
+import { PostService } from 'src/post/post.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
+import { CommentService } from 'src/comment/comment.service';
+import { StoryService } from 'src/story/story.service';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
@@ -83,6 +88,9 @@ export class NotificationPushService {
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
+    private readonly postService: PostService,
+    private readonly commentService: CommentService,
+    private readonly storyService: StoryService,
   ) {}
 
   async pushNotification(
@@ -169,10 +177,6 @@ export class NotificationPushService {
     };
 
     switch (notif.source) {
-      case NotificationSource.LIKE_POST:
-      case NotificationSource.LIKE_COMMENT:
-      case NotificationSource.LIKE_STORY:
-      case NotificationSource.COMMENT:
       case NotificationSource.JOIN_INS_REJECTED:
       case NotificationSource.CHANGE_ADMIN:
       case NotificationSource.PENDING_INS:
@@ -185,12 +189,16 @@ export class NotificationPushService {
       case NotificationSource.POST:
       case NotificationSource.STORY:
       case NotificationSource.JOINED_INS:
+      case NotificationSource.COMMENT:
+      case NotificationSource.LIKE_POST:
+      case NotificationSource.LIKE_COMMENT:
+      case NotificationSource.LIKE_STORY:
         const ids = (<Array<Prisma.UserWhereUniqueInput>>(
           normalNotif.targets?.connect
         ))
           .map((connect) => connect.id)
           .filter((id) => id !== undefined);
-        usersIDs = <Array<string>>ids;
+        usersIDs = [...new Set(<Array<string>>ids)];
         break;
       case NotificationSource.MESSAGE:
         this.logger.error(
@@ -372,25 +380,109 @@ export class NotificationPushService {
         const authorLikePost = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        body = `${authorLikePost?.firstName} ${authorLikePost?.lastName} liked your post!`;
+        const postLikePost = await this.postService.post(
+          {
+            id: normalNotif.post?.connect?.id,
+          },
+          {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        );
+        const castedPostLikePost = <
+          Post & {
+            author: User;
+          }
+        >postLikePost;
+        body = `${authorLikePost?.firstName} ${
+          authorLikePost?.lastName
+        } liked ${
+          castedPostLikePost.author.id === target.id
+            ? 'your'
+            : `${castedPostLikePost.author.firstName} ${castedPostLikePost.author.lastName}'s`
+        } post!`;
         break;
       case NotificationSource.LIKE_COMMENT:
         const authorLikeComment = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        body = `${authorLikeComment?.firstName} ${authorLikeComment?.lastName} liked your comment!`;
+        const commentLikeComment = await this.commentService.comment(
+          {
+            id: normalNotif.comment?.connect?.id,
+          },
+          {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        );
+        const castedCommentLikeComment = <
+          Comment & {
+            author: User;
+          }
+        >(<unknown>commentLikeComment);
+        body = `${authorLikeComment?.firstName} ${
+          authorLikeComment?.lastName
+        } liked ${
+          castedCommentLikeComment.author.id === target.id
+            ? 'your'
+            : `${castedCommentLikeComment.author.firstName} ${castedCommentLikeComment.author.lastName}'s`
+        } comment!`;
         break;
       case NotificationSource.LIKE_STORY:
         const authorLikeStory = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        body = `${authorLikeStory?.firstName} ${authorLikeStory?.lastName} liked your story!`;
+        const storyLikeStory = await this.storyService.story(
+          {
+            id: normalNotif.story?.connect?.id,
+          },
+          {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        );
+        const castedStoryLikeStory = <
+          Story & {
+            author: User;
+          }
+        >storyLikeStory;
+        body = `${authorLikeStory?.firstName} ${
+          authorLikeStory?.lastName
+        } liked ${
+          castedStoryLikeStory.author.id === target.id
+            ? 'your'
+            : `${castedStoryLikeStory.author.firstName} ${castedStoryLikeStory.author.lastName}'s`
+        } story!`;
         break;
       case NotificationSource.COMMENT:
         const authorComment = await this.userService.shallowUser({
           id: normalNotif.author.connect?.id,
         });
-        body = `${authorComment?.firstName} ${authorComment?.lastName} left a comment!`;
+        const postComment = await this.postService.post(
+          {
+            id: normalNotif.post?.connect?.id,
+          },
+          {
+            author: {
+              select: ShallowUserSelect,
+            },
+          },
+        );
+        const castedPostComment = <
+          Post & {
+            author: User;
+          }
+        >postComment;
+        body = `${authorComment?.firstName} ${
+          authorComment?.lastName
+        } left a comment to ${
+          castedPostComment.author.id === target.id
+            ? 'your'
+            : `${castedPostComment.author.firstName} ${castedPostComment.author.lastName}'s`
+        } post!`;
         break;
       case NotificationSource.POST:
         const authorPost = await this.userService.shallowUser({

@@ -219,6 +219,7 @@ export class UserService {
     this.logger.log(
       `Creating notification for joining ins ${insId} by user ${userId}`,
     );
+
     const targetIDs = (
       await this.userConnectionService.getConnections({
         where: {
@@ -233,6 +234,7 @@ export class UserService {
     ).map((connection) => {
       return { id: connection.userId };
     });
+
     await this.notificationService.createNotification({
       source: NotificationSource.JOINED_INS,
       targets: {
