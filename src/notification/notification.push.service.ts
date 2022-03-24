@@ -22,12 +22,10 @@ import { UserService } from 'src/user/user.service';
 import { InsService } from 'src/ins/ins.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { NotificationService } from './notification.service';
-import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
-import { PostService } from 'src/post/post.service';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
-import { CommentService } from 'src/comment/comment.service';
-import { StoryService } from 'src/story/story.service';
-import { NotificationCache, NotificationCacheService } from './notification.cache.service';
+import {
+  NotificationCache,
+  NotificationCacheService,
+} from './notification.cache.service';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',
@@ -89,9 +87,6 @@ export class NotificationPushService {
     private readonly userConnectionService: UserConnectionService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
-    private readonly postService: PostService,
-    private readonly commentService: CommentService,
-    private readonly storyService: StoryService,
     private readonly cacheService: NotificationCacheService,
   ) {}
 
@@ -100,7 +95,9 @@ export class NotificationPushService {
   ) {
     const usersIDs = await this.getUsersIDsBySource(notif);
 
-    const prismaCache = await this.cacheService.getDBCache(notif)
+    const prismaCache = await this.cacheService.getDBCache(
+      <Prisma.NotificationCreateInput>notif,
+    );
 
     await Promise.all(
       usersIDs.map(async (userID) => {
@@ -150,7 +147,11 @@ export class NotificationPushService {
               },
             };
           }
-          const notifBody = await this.constructNotificationBody(target, notif, prismaCache);
+          const notifBody = await this.constructNotificationBody(
+            target,
+            notif,
+            prismaCache,
+          );
           const result = await this.pushData(
             target.pushToken,
             target?.sandboxToken ?? false,
@@ -370,7 +371,7 @@ export class NotificationPushService {
   async constructNotificationBody(
     target: User,
     source: Prisma.NotificationCreateInput | PushExtraNotification,
-    prismaCache: NotificationCache
+    prismaCache: NotificationCache,
   ): Promise<PushNotifications.Data> {
     const normalNotif = <Prisma.NotificationCreateInput>source;
     const pushNotif = <PushExtraNotification>source;
@@ -383,8 +384,8 @@ export class NotificationPushService {
 
     switch (source.source) {
       case NotificationSource.LIKE_POST:
-        const authorLikePost = prismaCache.authorLikePost
-        const postLikePost = prismaCache.postLikePost
+        const authorLikePost = prismaCache.author;
+        const postLikePost = prismaCache.post;
         const castedPostLikePost = <
           Post & {
             author: User;
@@ -399,19 +400,8 @@ export class NotificationPushService {
         } post!`;
         break;
       case NotificationSource.LIKE_COMMENT:
-        const authorLikeComment = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const commentLikeComment = await this.commentService.comment(
-          {
-            id: normalNotif.comment?.connect?.id,
-          },
-          {
-            author: {
-              select: ShallowUserSelect,
-            },
-          },
-        );
+        const authorLikeComment = prismaCache.author;
+        const commentLikeComment = prismaCache.comment;
         const castedCommentLikeComment = <
           Comment & {
             author: User;
@@ -426,19 +416,8 @@ export class NotificationPushService {
         } comment!`;
         break;
       case NotificationSource.LIKE_STORY:
-        const authorLikeStory = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const storyLikeStory = await this.storyService.story(
-          {
-            id: normalNotif.story?.connect?.id,
-          },
-          {
-            author: {
-              select: ShallowUserSelect,
-            },
-          },
-        );
+        const authorLikeStory = prismaCache.author;
+        const storyLikeStory = prismaCache.story;
         const castedStoryLikeStory = <
           Story & {
             author: User;
@@ -453,19 +432,8 @@ export class NotificationPushService {
         } story!`;
         break;
       case NotificationSource.COMMENT:
-        const authorComment = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const postComment = await this.postService.post(
-          {
-            id: normalNotif.post?.connect?.id,
-          },
-          {
-            author: {
-              select: ShallowUserSelect,
-            },
-          },
-        );
+        const authorComment = prismaCache.author;
+        const postComment = prismaCache.post;
         const castedPostComment = <
           Post & {
             author: User;
@@ -480,20 +448,13 @@ export class NotificationPushService {
         } post!`;
         break;
       case NotificationSource.POST:
-        const authorPost = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
+        const authorPost = prismaCache.author;
         let inses: INS[] = [];
         const metadataPost = normalNotif.metadata as Prisma.JsonObject;
         if (metadataPost?.insesIDs) {
-          inses = await this.insService.inses({
-            where: {
-              id: {
-                in: <string[]>metadataPost.insesIDs,
-              },
-            },
-            select: ShallowINSSelect,
-          });
+          if (prismaCache.inses) {
+            inses = prismaCache.inses;
+          }
         } else if (normalNotif.post?.connect?.id) {
           inses = await this.insService.inses({
             where: {
@@ -520,12 +481,8 @@ export class NotificationPushService {
         }!`;
         break;
       case NotificationSource.JOINED_INS:
-        const authorInsJoined = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const insJoined = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
+        const authorInsJoined = prismaCache.author;
+        const insJoined = prismaCache.ins;
         if (normalNotif.author.connect?.id === target.id) {
           body = `You joined ${insJoined?.name} ins!`;
         } else {
@@ -533,46 +490,30 @@ export class NotificationPushService {
         }
         break;
       case NotificationSource.JOIN_INS_REJECTED:
-        const insJoinRejected = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
+        const insJoinRejected = prismaCache.ins;
         body = `Your request to access ${insJoinRejected?.name} ins has been declined!`;
         break;
       case NotificationSource.CHANGE_ADMIN:
-        const authorChangeAdmin = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const insChangeAdmin = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
+        const authorChangeAdmin = prismaCache.author;
+        const insChangeAdmin = prismaCache.ins;
         body = `You have been assigned as Admin in ${insChangeAdmin?.name} ins by ${authorChangeAdmin?.firstName} ${authorChangeAdmin?.lastName}!`;
         break;
       case NotificationSource.DELETED_INS:
-        const authorDeletedIns = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
+        const authorDeletedIns = prismaCache.author;
         const metadata = normalNotif.metadata as Prisma.JsonObject;
         body = `${authorDeletedIns?.firstName} ${authorDeletedIns?.lastName} deleted ${metadata?.deletedInsName} ins!`;
         break;
       case NotificationSource.PENDING_INS:
-        const insPendingIns = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
+        const insPendingIns = prismaCache.ins;
         body = `You are now a pending user for ${insPendingIns?.name} ins!`;
         break;
       case NotificationSource.DELETED_POST_BY_ADMIN:
-        const authorDeletedPostByAdmin = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
-        const insDeletedPostByAdmin = await this.insService.ins({
-          id: normalNotif.ins?.connect?.id,
-        });
+        const authorDeletedPostByAdmin = prismaCache.author;
+        const insDeletedPostByAdmin = prismaCache.ins;
         body = `Your post was deleted by ${authorDeletedPostByAdmin?.firstName} ${authorDeletedPostByAdmin?.lastName} from ins ${insDeletedPostByAdmin?.name} due to inappropriate content!`;
         break;
       case NotificationSource.STORY:
-        const authorStory = await this.userService.shallowUser({
-          id: normalNotif.author.connect?.id,
-        });
+        const authorStory = prismaCache.author;
         if (normalNotif.story?.connect?.id) {
           const inses = await this.insService.inses({
             where: {
