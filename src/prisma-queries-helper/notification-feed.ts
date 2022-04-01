@@ -23,6 +23,7 @@ const includeQuery = (targetId: string) => {
     comment: {
       select: {
         content: true,
+        authorId: true,
       },
     },
     ins: {
