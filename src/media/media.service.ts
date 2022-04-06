@@ -374,7 +374,7 @@ export class MediaService {
               inses.push(castedUpdatedStoryEntity.ins);
             }
 
-            let targetIDs = (
+            const targetIDs = (
               await this.userConnectionService.getConnections({
                 where: {
                   insId: {
@@ -389,7 +389,6 @@ export class MediaService {
               return { id: connection.userId };
             });
 
-            targetIDs = Array.from(new Set(targetIDs));
             if (targetIDs.length) {
               if (isStoryEntity) {
                 this.logger.log(

@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
 import {
   NotificationSource,
+  Post,
   Prisma,
   UserCommentLikeConnection,
 } from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 
 @Injectable()
 export class CommentLikeService {
@@ -16,6 +18,7 @@ export class CommentLikeService {
     private readonly prisma: PrismaService,
     private readonly commentService: CommentService,
     private readonly notifsService: NotificationService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   async commentLikes(
@@ -45,36 +48,54 @@ export class CommentLikeService {
           },
         },
       },
+      include: {
+        post: true,
+      },
     });
 
-    if (toRet.authorId !== userID) {
-      this.logger.log(
-        `Creating notification for liking comment ${commentID} by user ${userID}`,
-      );
-      await this.notifsService.createNotification({
-        source: NotificationSource.LIKE_COMMENT,
-        targets: {
-          connect: {
-            id: toRet.authorId,
+    this.logger.log(
+      `Creating notification for liking comment ${commentID} by user ${userID}`,
+    );
+
+    const castedComment = <
+      Comment & {
+        post: Post;
+      }
+    >(<unknown>toRet);
+    const targetIDs = (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: castedComment.post.insId,
+          userId: {
+            not: userID,
           },
         },
-        author: {
-          connect: {
-            id: userID,
-          },
+      })
+    ).map((connection) => {
+      return { id: connection.userId };
+    });
+
+    await this.notifsService.createNotification({
+      source: NotificationSource.LIKE_COMMENT,
+      targets: {
+        connect: targetIDs,
+      },
+      author: {
+        connect: {
+          id: userID,
         },
-        post: {
-          connect: {
-            id: toRet.postId,
-          },
+      },
+      post: {
+        connect: {
+          id: toRet.postId,
         },
-        comment: {
-          connect: {
-            id: commentID,
-          },
+      },
+      comment: {
+        connect: {
+          id: commentID,
         },
-      });
-    }
+      },
+    });
 
     return toRet;
   }

@@ -401,6 +401,7 @@ export class InsController {
         this.logger.log(
           `Creating notification for joining ins ${theINS.id} by user ${user.id}`,
         );
+
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -410,6 +411,7 @@ export class InsController {
         ).map((connection) => {
           return { id: connection.userId };
         });
+
         await this.notificationService.createNotification({
           source: NotificationSource.JOINED_INS,
           targets: {
@@ -469,6 +471,7 @@ export class InsController {
         this.logger.log(
           `Creating push notification for requesting access in ins ${insNotification.id}`,
         );
+
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -482,6 +485,7 @@ export class InsController {
             },
           })
         ).map((connection) => connection.userId);
+
         const data: PushExtraNotification = {
           source: PushNotificationSource.REQUEST_FOR_OTHER_USER,
           author: await this.userService.shallowUser({ id: user.id }),

@@ -220,6 +220,7 @@ export class PostCreateController {
     await Promise.all(
       toRet.map(async (post) => {
         this.logger.log(`Creating notification for adding post ${post.id}`);
+
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -232,6 +233,7 @@ export class PostCreateController {
         ).map((connection) => {
           return { id: connection.userId };
         });
+
         await this.notificationService.createNotification({
           source: NotificationSource.POST,
           targets: {
@@ -346,6 +348,7 @@ export class PostCreateController {
     await Promise.all(
       newPosts.map(async (post) => {
         this.logger.log(`Creating notification for adding post ${post.id}`);
+
         const targetIDs = (
           await this.userConnectionService.getConnections({
             where: {
@@ -358,6 +361,7 @@ export class PostCreateController {
         ).map((connection) => {
           return { id: connection.userId };
         });
+
         const notifMetadata = {
           insesIDs: ins,
         } as Prisma.JsonObject;

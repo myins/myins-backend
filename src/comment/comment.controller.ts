@@ -25,6 +25,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InteractionService } from 'src/interaction/interaction.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
+import { UserConnectionService } from 'src/user/user.connection.service';
 import { UserService } from 'src/user/user.service';
 import { CreateCommentAPI, PatchCommentAPI } from './comment-api.entity';
 import { CommentService } from './comment.service';
@@ -39,6 +40,7 @@ export class CommentController {
     private readonly commentService: CommentService,
     private readonly notificationService: NotificationService,
     private readonly interactionService: InteractionService,
+    private readonly userConnectionService: UserConnectionService,
   ) {}
 
   @Patch(':id')
@@ -185,34 +187,44 @@ export class CommentController {
     );
     await this.interactionService.interactComment(user.id, toRet.id);
 
-    if (post.authorId !== user.id) {
-      this.logger.log(
-        `Creating notification for adding comment ${toRet.id} by user ${user.id}`,
-      );
-      await this.notificationService.createNotification({
-        source: NotificationSource.COMMENT,
-        targets: {
-          connect: {
-            id: post.authorId,
+    this.logger.log(
+      `Creating notification for adding comment ${toRet.id} by user ${user.id}`,
+    );
+
+    const targetIDs = (
+      await this.userConnectionService.getConnections({
+        where: {
+          insId: post.insId,
+          userId: {
+            not: user.id,
           },
         },
-        author: {
-          connect: {
-            id: user.id,
-          },
+      })
+    ).map((connection) => {
+      return { id: connection.userId };
+    });
+
+    await this.notificationService.createNotification({
+      source: NotificationSource.COMMENT,
+      targets: {
+        connect: targetIDs,
+      },
+      author: {
+        connect: {
+          id: user.id,
         },
-        comment: {
-          connect: {
-            id: toRet.id,
-          },
+      },
+      comment: {
+        connect: {
+          id: toRet.id,
         },
-        post: {
-          connect: {
-            id: post.id,
-          },
+      },
+      post: {
+        connect: {
+          id: post.id,
         },
-      });
-    }
+      },
+    });
 
     this.logger.log('Successfully created comment');
     return toRet;
