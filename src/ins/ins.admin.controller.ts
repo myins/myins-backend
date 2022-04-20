@@ -185,11 +185,11 @@ export class InsAdminController {
     const connections = await this.userConnectionService.getConnections({
       where: {
         insId: insID,
-        role: {
-          not: UserRole.PENDING,
-        },
         userId: {
           not: userID,
+        },
+        role: {
+          not: UserRole.PENDING,
         },
       },
     });

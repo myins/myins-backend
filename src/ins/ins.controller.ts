@@ -406,6 +406,9 @@ export class InsController {
           await this.userConnectionService.getConnections({
             where: {
               insId: theINS.id,
+              role: {
+                not: UserRole.PENDING,
+              },
             },
           })
         ).map((connection) => {

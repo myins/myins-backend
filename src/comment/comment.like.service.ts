@@ -5,6 +5,7 @@ import {
   Post,
   Prisma,
   UserCommentLikeConnection,
+  UserRole,
 } from 'prisma/prisma-client';
 import { CommentService } from './comment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -68,6 +69,9 @@ export class CommentLikeService {
           insId: castedComment.post.insId,
           userId: {
             not: userID,
+          },
+          role: {
+            not: UserRole.PENDING,
           },
         },
       })

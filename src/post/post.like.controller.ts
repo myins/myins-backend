@@ -166,6 +166,9 @@ export class PostLikeController {
             userId: {
               not: user.id,
             },
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         })
       ).map((connection) => {

@@ -130,7 +130,10 @@ export class NotificationService {
           };
         }
 
-        if (notif.source === NotificationSource.STORY || notif.source == NotificationSource.LIKE_STORY) {
+        if (
+          notif.source === NotificationSource.STORY ||
+          notif.source == NotificationSource.LIKE_STORY
+        ) {
           const castedNotif = <
             Notification & {
               story: Story & {

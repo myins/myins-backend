@@ -6,6 +6,7 @@ import {
   Prisma,
   Story,
   StoryInsConnection,
+  UserRole,
 } from '.prisma/client';
 import {
   BadRequestException,
@@ -382,6 +383,9 @@ export class MediaService {
                   },
                   userId: {
                     not: updatedEntity.authorId,
+                  },
+                  role: {
+                    not: UserRole.PENDING,
                   },
                 },
               })

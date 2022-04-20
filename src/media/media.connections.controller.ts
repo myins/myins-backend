@@ -17,6 +17,7 @@ import {
   Story,
   StoryInsConnection,
   User,
+  UserRole,
   UserStoryMediaLikeConnection,
   UserStoryMediaViewConnection,
 } from '@prisma/client';
@@ -354,6 +355,9 @@ export class MediaConnectionsController {
               insId: insId,
               userId: {
                 not: userID,
+              },
+              role: {
+                not: UserRole.PENDING,
               },
             },
           })

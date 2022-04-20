@@ -212,6 +212,9 @@ export class UserController {
             await this.userConnectionService.getConnections({
               where: {
                 insId: ins.id,
+                role: {
+                  not: UserRole.PENDING,
+                },
               },
             })
           ).map((connection) => {

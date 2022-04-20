@@ -198,6 +198,9 @@ export class CommentController {
           userId: {
             not: user.id,
           },
+          role: {
+            not: UserRole.PENDING,
+          },
         },
       })
     ).map((connection) => {

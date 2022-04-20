@@ -228,6 +228,9 @@ export class PostCreateController {
               userId: {
                 not: user.id,
               },
+              role: {
+                not: UserRole.PENDING,
+              },
             },
           })
         ).map((connection) => {
@@ -355,6 +358,9 @@ export class PostCreateController {
               insId: post.insId,
               userId: {
                 not: userID,
+              },
+              role: {
+                not: UserRole.PENDING,
               },
             },
           })
