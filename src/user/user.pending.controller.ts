@@ -55,7 +55,10 @@ export class UserPendingController {
         },
       },
     });
-    const insIDs = userConnections.map((connection) => connection.insId);
+    let insIDs = userConnections.map((connection) => connection.insId);
+    if (insIDs.length === 0) {
+      insIDs = ['invalidInsID'];
+    }
     const countPendingUsers = await this.prisma.$queryRaw<
       { count: number }[]
     >(Prisma.sql`SELECT count(*) FROM "public"."UserInsConnection" as uic
