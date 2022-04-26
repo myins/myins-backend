@@ -26,7 +26,6 @@ import {
   NotificationCache,
   NotificationCacheService,
 } from './notification.cache.service';
-import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { isProd } from 'src/util/is-prod';
 
 export enum PushNotificationSource {
