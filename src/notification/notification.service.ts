@@ -141,6 +141,7 @@ export class NotificationService {
                   ins: INS;
                 })[];
               };
+              ins: INS;
             }
           >notif;
 
@@ -152,10 +153,12 @@ export class NotificationService {
                 return insConnection.ins;
               }),
             },
-            ins: castedNotif.story.inses.sort(
-              (ins1, ins2) =>
-                ins1.createdAt.getTime() - ins2.createdAt.getTime(),
-            )[0].ins,
+            ins: castedNotif.insId
+              ? castedNotif.ins
+              : castedNotif.story.inses.sort(
+                  (ins1, ins2) =>
+                    ins1.createdAt.getTime() - ins2.createdAt.getTime(),
+                )[0].ins,
             isSeen: user && user?.lastReadNotification >= notif.createdAt,
           };
         }
@@ -191,7 +194,7 @@ export class NotificationService {
     data: Prisma.NotificationCreateInput,
   ): Promise<Notification> {
     try {
-      await this.pushService.pushNotification(data);
+      await this.pushService.pushNotification({ ...data });
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(`Error pushing device notifications! + ${stringErr}`);
