@@ -245,6 +245,11 @@ export class NotificationPushService {
       case NotificationSource.CHANGE_ADMIN:
       case NotificationSource.PENDING_INS:
       case NotificationSource.DELETED_POST_BY_ADMIN:
+      case NotificationSource.LIKE_POST:
+      case NotificationSource.LIKE_COMMENT:
+      case NotificationSource.COMMENT:
+      case NotificationSource.POST:
+      case NotificationSource.LIKE_STORY:
         if (normalNotif.ins?.connect?.id && user?.id) {
           const connectionNormalNotif =
             await this.userConnectionService.getConnection({
@@ -270,33 +275,6 @@ export class NotificationPushService {
           isMute = !!connectionPushNotif?.muteUntil;
         }
         break;
-      case NotificationSource.LIKE_POST:
-      case NotificationSource.LIKE_COMMENT:
-      case NotificationSource.COMMENT:
-      case NotificationSource.POST:
-        if (normalNotif.post?.connect?.id && user?.id) {
-          const connections = await this.userConnectionService.getConnections({
-            where: {
-              ins: {
-                posts: {
-                  some: {
-                    id: normalNotif.post.connect.id,
-                  },
-                },
-                members: {
-                  some: {
-                    userId: user.id,
-                  },
-                },
-              },
-              muteUntil: null,
-            },
-          });
-          if (connections.length) {
-            isMute = false;
-          }
-        }
-        break;
       case NotificationSource.MESSAGE:
         this.logger.error(
           `Cannot create a notification of type ${NotificationSource.MESSAGE}`,
@@ -316,47 +294,13 @@ export class NotificationPushService {
                     storyId: normalNotif.story.connect.id,
                   },
                 },
-                members: {
-                  some: {
-                    userId: user.id,
-                  },
-                },
               },
+              userId: user.id,
               muteUntil: null,
             },
           });
-          if (connections.length) {
-            isMute = false;
-          }
-        }
-        break;
-      case NotificationSource.LIKE_STORY:
-        if (normalNotif.storyMedia?.connect?.id && user?.id) {
-          const connections = await this.userConnectionService.getConnections({
-            where: {
-              ins: {
-                stories: {
-                  some: {
-                    story: {
-                      mediaContent: {
-                        some: {
-                          id: normalNotif.storyMedia.connect.id,
-                        },
-                      },
-                    },
-                  },
-                },
-                members: {
-                  some: {
-                    userId: user.id,
-                  },
-                },
-              },
-              muteUntil: null,
-            },
-          });
-          if (connections.length) {
-            isMute = false;
+          if (!connections.length) {
+            isMute = true;
           }
         }
         break;
@@ -524,6 +468,7 @@ export class NotificationPushService {
                   role: {
                     not: UserRole.PENDING,
                   },
+                  muteUntil: null,
                 },
               },
               stories: {

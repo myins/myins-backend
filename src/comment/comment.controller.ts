@@ -227,6 +227,11 @@ export class CommentController {
           id: post.id,
         },
       },
+      ins: {
+        connect: {
+          id: post.insId,
+        },
+      },
     });
 
     this.logger.log('Successfully created comment');

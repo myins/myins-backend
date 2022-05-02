@@ -190,6 +190,11 @@ export class PostLikeController {
             id: toRet.id,
           },
         },
+        ins: {
+          connect: {
+            id: toRet.insId,
+          },
+        },
       });
 
       return toRet;

@@ -99,6 +99,11 @@ export class CommentLikeService {
           id: commentID,
         },
       },
+      ins: {
+        connect: {
+          id: castedComment.post.insId,
+        },
+      },
     });
 
     return toRet;

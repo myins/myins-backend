@@ -433,6 +433,11 @@ export class MediaService {
                       id: updatedEntity.id,
                     },
                   },
+                  ins: {
+                    connect: {
+                      id: (<Post>updatedEntity).insId,
+                    },
+                  },
                 });
 
                 this.logger.log(

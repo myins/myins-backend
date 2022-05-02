@@ -252,6 +252,11 @@ export class PostCreateController {
               id: post.id,
             },
           },
+          ins: {
+            connect: {
+              id: post.insId,
+            },
+          },
         });
 
         this.logger.log(
@@ -384,6 +389,11 @@ export class PostCreateController {
           post: {
             connect: {
               id: post.id,
+            },
+          },
+          ins: {
+            connect: {
+              id: post.insId,
             },
           },
           metadata: notifMetadata,
