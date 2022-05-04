@@ -14,7 +14,11 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserConnectionService } from 'src/user/user.connection.service';
-import { SearchMessgesAPI, SendMessageToStoryAPI } from './chat-api.entity';
+import {
+  ClearedHistoryAPI,
+  SearchMessgesAPI,
+  SendMessageToStoryAPI,
+} from './chat-api.entity';
 import { ChatSearchService } from './chat.search.service';
 import { ChatService } from './chat.service';
 
@@ -120,6 +124,42 @@ export class ChatController {
     this.logger.log('Successfully sent message from story');
     return {
       message: 'Successfully sent message from story',
+    };
+  }
+
+  @Post('cleared-history')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('chat')
+  async clearedHistory(
+    @PrismaUser('id') userID: string,
+    @Body() data: ClearedHistoryAPI,
+  ) {
+    this.logger.log(
+      `Cleared history for channel ${data.channelID} by user ${userID}`,
+    );
+    try {
+      await this.userConnectionService.update({
+        where: {
+          userId_insId: {
+            userId: userID,
+            insId: data.channelID,
+          },
+        },
+        data: {
+          lastClearedAt: new Date(),
+        },
+      });
+    } catch (e) {
+      const stringErr: string = <string>e;
+      this.logger.error(`Error clearing history! + ${stringErr}`);
+      throw new BadRequestException(
+        "You're not allowed to clear history for this INS!",
+      );
+    }
+
+    this.logger.log('Successfully cleared history');
+    return {
+      message: 'Successfully cleared history',
     };
   }
 }
