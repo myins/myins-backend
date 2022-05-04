@@ -20,7 +20,11 @@ export class ChatSearchService {
     );
   }
 
-  async searchMessages(userID: string, data: SearchMessgesAPI) {
+  async searchMessages(
+    userID: string,
+    data: SearchMessgesAPI,
+    lastClearedAt: Date | null | undefined,
+  ) {
     const channelFilters: ChannelFilters = data.channelId
       ? {
           id: { $eq: data.channelId },
@@ -73,13 +77,29 @@ export class ChatSearchService {
         messageFilters,
         options,
       );
+
       search.results.map((message) => {
-        message.message.attachments = message.message.attachments?.filter(
-          (attachment) => !attachment.title_link,
-        );
+        if (message.message.attachments?.length) {
+          if (lastClearedAt) {
+            const createdAtDate = message.message.created_at
+              ? new Date(message.message.created_at)
+              : null;
+            if (createdAtDate && createdAtDate < lastClearedAt) {
+              message.message.args = 'shouldDelete';
+              return;
+            }
+          }
+
+          message.message.attachments = message.message.attachments?.filter(
+            (attachment) => !attachment.title_link,
+          );
+          if (!message.message.attachments.length) {
+            message.message.args = 'shouldDelete';
+          }
+        }
       });
       search.results = search.results.filter(
-        (message) => message.message.attachments?.length,
+        (message) => message.message.args !== 'shouldDelete',
       );
     } catch (e) {
       const stringErr: string = <string>e;
