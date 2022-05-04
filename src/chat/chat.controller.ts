@@ -84,14 +84,14 @@ export class ChatController {
     @PrismaUser('id') userID: string,
     @Body() data: SearchMessgesAPI,
   ) {
+    let connection;
     if (data.channelId) {
-      const connection =
-        await this.userConnectionService.getNotPendingConnection({
-          userId_insId: {
-            insId: data.channelId,
-            userId: userID,
-          },
-        });
+      connection = await this.userConnectionService.getNotPendingConnection({
+        userId_insId: {
+          insId: data.channelId,
+          userId: userID,
+        },
+      });
       if (!connection) {
         this.logger.error(
           "You're not allowed to search messages in this channel!",
@@ -106,7 +106,11 @@ export class ChatController {
         data,
       )} by user ${userID}`,
     );
-    return this.chatSearchService.searchMessages(userID, data);
+    return this.chatSearchService.searchMessages(
+      userID,
+      data,
+      connection?.lastClearedAt,
+    );
   }
 
   @Post('story-message')
