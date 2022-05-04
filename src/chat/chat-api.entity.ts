@@ -46,3 +46,9 @@ export class SendMessageToStoryAPI {
   @IsNotEmpty()
   message: string;
 }
+
+export class ClearedHistoryAPI {
+  @IsString()
+  @IsNotEmpty()
+  channelID: string;
+}

@@ -223,9 +223,10 @@ model UserInsConnection {
   ins    INS    @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   insId  String
 
-  interactions Int       @default(0)
-  pinned       Boolean   @default(false)
-  muteUntil    DateTime?
+  interactions  Int       @default(0)
+  pinned        Boolean   @default(false)
+  muteUntil     DateTime?
+  lastClearedAt DateTime?
 
   role UserRole @default(MEMBER)
 
