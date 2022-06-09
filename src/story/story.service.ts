@@ -233,13 +233,13 @@ export class StoryService {
         const views = await this.mediaConnectionsService.countViews({
           where: {
             storyMediaId: media.id,
-            insId: myIns.id,
+            insId: insID,
           },
         });
         const likes = await this.mediaConnectionsService.countLikes({
           where: {
             storyMediaId: media.id,
-            insId: myIns.id,
+            insId: insID,
           },
         });
 

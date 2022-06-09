@@ -23,6 +23,7 @@ import {
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
+import { InsService } from 'src/ins/ins.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserConnectionService } from 'src/user/user.connection.service';
@@ -39,6 +40,7 @@ export class MediaConnectionsController {
     private readonly notificationService: NotificationService,
     private readonly mediaConnectionsService: MediaConnectionsService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly insService: InsService,
   ) {}
 
   @Get(':id/ins/:insId/views')
@@ -86,10 +88,18 @@ export class MediaConnectionsController {
       throw new NotFoundException('Not your story!');
     }
 
+    let myInsID: string | undefined = insId;
+    const ins = await this.insService.ins({
+      id: insId,
+    });
+    if (!ins) {
+      myInsID = undefined;
+    }
+
     const views = await this.mediaConnectionsService.getViews({
       where: {
         storyMediaId: mediaID,
-        insId: insId,
+        insId: myInsID,
         user: {
           isDeleted: false,
         },
@@ -157,10 +167,18 @@ export class MediaConnectionsController {
       throw new NotFoundException('Not your story!');
     }
 
+    let myInsID: string | undefined = insId;
+    const ins = await this.insService.ins({
+      id: insId,
+    });
+    if (!ins) {
+      myInsID = undefined;
+    }
+
     const likes = await this.mediaConnectionsService.getLikes({
       where: {
         storyMediaId: mediaID,
-        insId: insId,
+        insId: myInsID,
         user: {
           isDeleted: false,
         },
