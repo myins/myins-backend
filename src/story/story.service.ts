@@ -90,6 +90,7 @@ export class StoryService {
                 insId: insID,
               },
             },
+            stickers: true,
           },
         },
       },
@@ -191,6 +192,7 @@ export class StoryService {
             insId: insID,
           },
         },
+        stickers: true,
       },
       orderBy: {
         createdAt: 'asc',
@@ -336,6 +338,7 @@ export class StoryService {
             insId: insID,
           },
         },
+        stickers: true,
       },
       orderBy: {
         createdAt: 'asc',

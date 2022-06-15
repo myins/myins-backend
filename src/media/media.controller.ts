@@ -90,6 +90,7 @@ export class MediaController {
             id: true,
           },
         },
+        stickers: true,
         story: {
           include: {
             author: {
