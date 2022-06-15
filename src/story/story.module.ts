@@ -5,6 +5,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserModule } from 'src/user/user.module';
 import { StoryController } from './story.controller';
 import { StoryService } from './story.service';
+import { StoryStickersService } from './story.stickers.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { StoryService } from './story.service';
     forwardRef(() => UserModule),
   ],
   controllers: [StoryController],
-  providers: [StoryService],
-  exports: [StoryService],
+  providers: [StoryService, StoryStickersService],
+  exports: [StoryService, StoryStickersService],
 })
 export class StoryModule {}

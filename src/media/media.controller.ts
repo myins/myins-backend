@@ -242,6 +242,7 @@ export class MediaController {
           isVideo: isVideoPost,
           setCover: false,
         },
+        body.stickers,
       );
     } catch (err) {
       this.logger.error('Error attaching media to post!');

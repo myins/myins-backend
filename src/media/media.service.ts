@@ -23,6 +23,7 @@ import { NotificationService } from 'src/notification/notification.service';
 import { PostService } from 'src/post/post.service';
 import { StorageContainer, StorageService } from 'src/storage/storage.service';
 import { StoryService } from 'src/story/story.service';
+import { StoryStickersService } from 'src/story/story.stickers.service';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import * as uuid from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
@@ -42,6 +43,7 @@ export class MediaService {
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly storyStickersService: StoryStickersService,
   ) {}
 
   async getMediaById(
@@ -90,6 +92,7 @@ export class MediaService {
     isHighlight: boolean,
     userID: string | null,
     postInfo: PostInformation,
+    stickers?: string[],
   ) {
     let entities: Post[] | Story[] | null = null;
     if (isStoryEntity) {
@@ -224,6 +227,19 @@ export class MediaService {
       isVideo: postInfo.isVideo,
       isHighlight,
     });
+
+    if (isStoryEntity && stickers?.length && stickers?.length > 0) {
+      this.logger.log(
+        `Creating ${stickers.length} stickers for story ${entitiesIDs}`,
+      );
+      const dataStoryStickers = stickers.map((sticker) => {
+        return {
+          ...JSON.parse(sticker),
+          storyMediaId: toRet.id,
+        };
+      });
+      await this.storyStickersService.createMany(dataStoryStickers);
+    }
 
     await Promise.all(
       entities.map(async (entity: Post | Story) => {

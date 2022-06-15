@@ -1,4 +1,5 @@
 import {
+  ArrayMinSize,
   ArrayNotEmpty,
   IsBoolean,
   IsNotEmpty,
@@ -25,6 +26,10 @@ export class AttachMediaAPI {
   @IsString()
   @IsNotEmpty()
   height: string;
+
+  @ArrayMinSize(0)
+  @IsOptional()
+  stickers: string[];
 }
 
 export class AttachMediaWithClaimTokenAPI extends AttachMediaAPI {
