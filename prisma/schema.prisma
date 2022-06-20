@@ -264,6 +264,8 @@ model StoryStickers {
   value            String
   subType          String?
   rotation         Decimal
+  scaleX           Decimal?
+  scaleY           Decimal?
 }
 
 model CurrentVersions {
