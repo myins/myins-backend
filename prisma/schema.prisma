@@ -270,6 +270,7 @@ model StoryStickers {
   //Text values
   normalizedFontSize Decimal?
   textAlign String?
+  font String?
   color String?
 }
 
