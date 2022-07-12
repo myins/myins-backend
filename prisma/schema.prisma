@@ -266,6 +266,11 @@ model StoryStickers {
   rotation         Decimal
   scaleX           Decimal?
   scaleY           Decimal?
+
+  //Text values
+  normalizedFontSize Decimal?
+  textAlign String?
+  color String?
 }
 
 model CurrentVersions {
