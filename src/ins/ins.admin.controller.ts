@@ -256,7 +256,11 @@ export class InsAdminController {
     const reportedPosts = await this.postService.posts({
       where: whereQuery,
       include: {
-        mediaContent: true,
+        mediaContent: {
+          include: {
+            stickers: true,
+          },
+        },
         ins: {
           select: ShallowINSSelect,
         },

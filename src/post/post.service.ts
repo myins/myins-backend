@@ -48,6 +48,9 @@ export class PostService {
         orderBy: {
           createdAt: desc ? 'desc' : 'asc',
         },
+        include: {
+          stickers: true,
+        },
       },
       ins: {
         select: ShallowINSSelect,

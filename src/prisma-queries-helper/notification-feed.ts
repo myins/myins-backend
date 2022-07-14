@@ -51,13 +51,21 @@ const includeQuery = (targetId: string) => {
             },
           },
         },
-        mediaContent: true,
+        mediaContent: {
+          include: {
+            stickers: true,
+          },
+        },
       },
     },
     storyMedia: true,
     story: {
       include: {
-        mediaContent: true,
+        mediaContent: {
+          include: {
+            stickers: true,
+          },
+        },
         inses: {
           where: {
             ins: {
@@ -130,7 +138,11 @@ const includeQueryWithoutPost = (targetId: string) => {
     storyMedia: true,
     story: {
       include: {
-        mediaContent: true,
+        mediaContent: {
+          include: {
+            stickers: true,
+          },
+        },
         inses: {
           where: {
             ins: {

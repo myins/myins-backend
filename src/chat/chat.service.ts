@@ -1,4 +1,4 @@
-import { INS, PostContent, Story, User } from '.prisma/client';
+import { INS, User } from '.prisma/client';
 import {
   BadRequestException,
   forwardRef,
@@ -356,24 +356,23 @@ export class ChatService {
             },
           },
         },
+        stickers: true,
       },
     );
     if (!media) {
       this.logger.error('Story media not found!');
       throw new NotFoundException('Story media not found!');
     }
-    this.logger.log(
-      `Getting INS channel ${data.insID}`,
-    );
+    this.logger.log(`Getting INS channel ${data.insID}`);
     const channels = await this.getChannelsINS({
       id: {
-        $eq: data.insID
+        $eq: data.insID,
       },
       insChannel: {
         $eq: true,
       },
     });
-    let channel = channels[0];
+    const channel = channels[0];
     if (channel.id) {
       const createdAt = new Date(media.createdAt);
       const expiryDate = new Date(createdAt.setDate(createdAt.getDate() + 1));

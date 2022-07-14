@@ -19,6 +19,7 @@ import {
   UserRole,
   Post as PostModel,
   Prisma,
+  StoryStickers,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
@@ -158,6 +159,7 @@ export class PostCreateController {
             authorId: true,
           },
         },
+        stickers: true,
       },
     });
     medias.forEach((media) => {
@@ -200,6 +202,11 @@ export class PostCreateController {
     );
     await Promise.all(
       medias.map(async (media) => {
+        const mediaCast = <
+          PostContent & {
+            stickers: StoryStickers[];
+          }
+        >media;
         await this.mediaService.create({
           content: media.content,
           posts: {
@@ -213,6 +220,28 @@ export class PostCreateController {
           width: media.width,
           height: media.height,
           isVideo: media.isVideo,
+          stickers: {
+            createMany: {
+              data: mediaCast.stickers.map((sticker) => {
+                return {
+                  normalizedHeight: sticker.normalizedHeight,
+                  normalizedWidth: sticker.normalizedWidth,
+                  normalizedX: sticker.normalizedX,
+                  normalizedY: sticker.normalizedY,
+                  rotation: sticker.rotation,
+                  type: sticker.type,
+                  value: sticker.value,
+                  color: sticker.color,
+                  font: sticker.font,
+                  normalizedFontSize: sticker.normalizedFontSize,
+                  scaleX: sticker.scaleX,
+                  scaleY: sticker.scaleY,
+                  subType: sticker.subType,
+                  textAlign: sticker.textAlign,
+                };
+              }),
+            },
+          },
         });
       }),
     );
