@@ -194,6 +194,7 @@ export class InsController {
     @PrismaUser('id') userID: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    @Query('withoutVideos') withoutVideos: boolean,
   ) {
     if (Number.isNaN(skip) || Number.isNaN(take)) {
       this.logger.error('Invalid skip / take values!');
@@ -226,6 +227,7 @@ export class InsController {
             insId: id,
           },
         },
+        isVideo: withoutVideos ? false : undefined,
       },
       skip,
       take,
