@@ -6,7 +6,6 @@ import {
   StreamChat,
 } from 'stream-chat';
 import { SearchMessgesAPI } from './chat-api.entity';
-import { ChatService } from './chat.service';
 
 @Injectable()
 export class ChatSearchService {
@@ -14,7 +13,7 @@ export class ChatSearchService {
 
   private streamChat: StreamChat;
 
-  constructor(private chatService: ChatService) {
+  constructor() {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
       process.env.GET_STREAM_API_SECRET,
