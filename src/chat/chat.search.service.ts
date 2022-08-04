@@ -78,7 +78,7 @@ export class ChatSearchService {
     const channel = (
       await this.chatService.getChannelsINS({ id: data.channelId })
     )[0];
-    this.logger.error(`chaaaaaaaaaaaaaaaaaaaaaaaaa ${channel}`);
+    this.logger.error(`chaaaaaaaaaaaaaaaaaaaaaaaaa ${JSON.stringify(channel)}`);
     try {
       search = await this.streamChat.search(
         channelFilters,
