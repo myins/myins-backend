@@ -71,7 +71,9 @@ export class ChatSearchService {
     }
 
     let search = null;
-    this.logger.error(`chaaaaaaaaaaaaaaaaaaaaaaaaa ${channelFilters}`);
+    this.logger.error(
+      `chaaaaaaaaaaaaaaaaaaaaaaaaa ${JSON.stringify(channelFilters)}`,
+    );
     try {
       search = await this.streamChat.search(
         channelFilters,
