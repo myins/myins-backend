@@ -6,6 +6,7 @@ import {
   StreamChat,
 } from 'stream-chat';
 import { SearchMessgesAPI } from './chat-api.entity';
+import { ChatService } from './chat.service';
 
 @Injectable()
 export class ChatSearchService {
@@ -13,7 +14,7 @@ export class ChatSearchService {
 
   private streamChat: StreamChat;
 
-  constructor() {
+  constructor(private chatService: ChatService) {
     this.streamChat = StreamChat.getInstance(
       process.env.GET_STREAM_API_KEY || '',
       process.env.GET_STREAM_API_SECRET,
@@ -74,6 +75,10 @@ export class ChatSearchService {
     this.logger.error(
       `chaaaaaaaaaaaaaaaaaaaaaaaaa ${JSON.stringify(channelFilters)}`,
     );
+    const channel = (
+      await this.chatService.getChannelsINS({ id: data.channelId })
+    )[0];
+    this.logger.error(`chaaaaaaaaaaaaaaaaaaaaaaaaa ${channel}`);
     try {
       search = await this.streamChat.search(
         channelFilters,
