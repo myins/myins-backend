@@ -11,7 +11,6 @@ import {
   StoryInsConnection,
   UserInsConnection,
 } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { UserService } from 'src/user/user.service';
 import { NotificationPushService } from './notification.push.service';
 import {
@@ -24,6 +23,7 @@ import { omit } from 'src/util/omit';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { InsService } from 'src/ins/ins.service';
 import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class NotificationService {

@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   ChannelFilters,
+  LiteralStringForUnion,
   MessageFilters,
+  SearchAPIResponse,
   SearchOptions,
   StreamChat,
+  UnknownType,
 } from 'stream-chat';
 import { SearchMessgesAPI } from './chat-api.entity';
 
@@ -70,7 +73,14 @@ export class ChatSearchService {
       options.next = data.next;
     }
 
-    let search = null;
+    let search: SearchAPIResponse<
+      UnknownType,
+      UnknownType,
+      LiteralStringForUnion,
+      UnknownType,
+      UnknownType,
+      UnknownType
+    > | null = null;
     try {
       search = await this.streamChat.search(
         channelFilters,
@@ -101,6 +111,35 @@ export class ChatSearchService {
       search.results = search.results.filter(
         (message) => message.message.args !== 'shouldDelete',
       );
+
+      if (data.unwrappedAttachments) {
+        search.results.forEach((message, index) => {
+          if (message.message.args === 'isAdded') {
+            return;
+          }
+          if (
+            message.message.attachments?.length &&
+            message.message.attachments?.length > 1
+          ) {
+            message.message.attachments.forEach(
+              (attachment, indexAttachments) => {
+                const newMessage = {
+                  message: {
+                    ...message.message,
+                    attachments: [attachment],
+                    args: 'isAdded',
+                  },
+                };
+                search?.results.splice(index + indexAttachments, 0, newMessage);
+              },
+            );
+            search?.results.splice(
+              index + message.message.attachments.length,
+              1,
+            );
+          }
+        });
+      }
     } catch (e) {
       const stringErr: string = <string>e;
       this.logger.error(`Error searching for messages! + ${stringErr}`);

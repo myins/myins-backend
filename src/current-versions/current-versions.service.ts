@@ -4,8 +4,8 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ChangeCurrentVersionsAPI, Links } from './current-versions-api.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CurrentVersionsService {

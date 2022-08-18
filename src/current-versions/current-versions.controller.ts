@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentVersionsService } from './current-versions.service';
 import { ChangeCurrentVersionsAPI } from './current-versions-api.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('current-versions')
 export class CurrentVersionsController {

@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma, UserInsConnection, UserRole } from '@prisma/client';
-import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 
 @Injectable()
 export class UserConnectionService {

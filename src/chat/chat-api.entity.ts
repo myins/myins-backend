@@ -31,6 +31,10 @@ export class SearchMessgesAPI {
   @IsBoolean()
   @IsOptional()
   onlyMine: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  unwrappedAttachments: boolean;
 }
 
 export class SendMessageToStoryAPI {

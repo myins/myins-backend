@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, Comment } from '@prisma/client';
-import { PostService } from 'src/post/post.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class CommentService {

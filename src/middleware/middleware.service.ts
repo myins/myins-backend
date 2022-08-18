@@ -1,8 +1,8 @@
 import { INS, User, UserInsConnection } from '.prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
-import { ChatService } from 'src/chat/chat.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Channel } from 'stream-chat';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class MiddlewareService {

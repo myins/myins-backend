@@ -1,7 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from 'src/user/user.module';
 import { SjwtService } from './sjwt.service';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [

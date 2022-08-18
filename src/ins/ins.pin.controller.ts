@@ -1,8 +1,8 @@
 import { Controller, Logger, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('ins')
 export class InsPinController {

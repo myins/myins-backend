@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TwilioModule } from 'nestjs-twilio';
-import { PrismaModule } from 'src/prisma/prisma.module';
 import { SmsController } from './sms.controller';
 import { SmsService } from './sms.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 if (process.env.NODE_ENV !== 'production') require('dotenv').config(); // This fixes env variables on dev
 

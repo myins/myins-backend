@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
-import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShallowINSSelect } from 'src/prisma-queries-helper/shallow-ins-select';
 
 @Injectable()
 export class PostService {

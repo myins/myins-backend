@@ -7,7 +7,7 @@ import { ChatSearchService } from './chat.search.service';
 import { ChatService } from './chat.service';
 
 @Module({
-  imports: [forwardRef(() => UserModule), InsModule, MediaModule],
+  imports: [forwardRef(() => UserModule), MediaModule, InsModule],
   controllers: [ChatController],
   providers: [ChatService, ChatSearchService],
   exports: [ChatService],

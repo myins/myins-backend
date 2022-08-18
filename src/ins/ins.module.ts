@@ -18,11 +18,11 @@ import { InsSettingsController } from './ins.settings.controller';
   imports: [
     PrismaModule,
     StorageModule,
-    CommentModule,
     forwardRef(() => UserModule),
     PostModule,
     NotificationModule,
     MediaModule,
+    CommentModule,
   ],
   controllers: [
     InsController,
