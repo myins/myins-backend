@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import {
   INS,
   Post,
+  PostContent,
   Prisma,
   User,
   UserInsConnection,
@@ -22,7 +23,6 @@ import {
   ShallowINSSelect,
   ShallowINSSelectID,
 } from 'src/prisma-queries-helper/shallow-ins-select';
-import { isProd } from 'src/util/is-prod';
 
 @Injectable()
 export class InsService {
@@ -158,8 +158,9 @@ export class InsService {
     skip: number,
     take: number,
     onlyMine: boolean,
+    unwrapped: boolean,
   ): Promise<Post[]> {
-    return this.postService.posts({
+    const posts = await this.postService.posts({
       skip: skip,
       take: take,
       include: this.postService.richPostInclude(userID),
@@ -172,6 +173,37 @@ export class InsService {
         authorId: onlyMine ? userID : undefined,
       },
     });
+
+    const returnPosts = <
+      (Post & {
+        mediaContent: PostContent[];
+        isAdded: boolean;
+      })[]
+    >[];
+    if (unwrapped) {
+      const castPosts = <
+        (Post & {
+          mediaContent: PostContent[];
+          isAdded: boolean;
+        })[]
+      >posts;
+      castPosts.forEach((post) => {
+        if (post.mediaContent.length > 1) {
+          post.mediaContent.forEach((media) => {
+            const newPost = {
+              ...post,
+              mediaContent: [media],
+              isAdded: true,
+            };
+            returnPosts.push(newPost);
+          });
+        } else {
+          returnPosts.push(post);
+        }
+      });
+    }
+
+    return unwrapped ? returnPosts : posts;
   }
 
   async membersForIns(

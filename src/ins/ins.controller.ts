@@ -156,6 +156,7 @@ export class InsController {
     @Query('skip') skip: number,
     @Query('take') take: number,
     @Query('onlyMine') onlyMine: boolean,
+    @Query('unwrapped') unwrapped: boolean,
   ) {
     if (Number.isNaN(skip) || Number.isNaN(take)) {
       this.logger.error('Invalid skip / take values!');
@@ -183,7 +184,14 @@ export class InsController {
     this.logger.log(
       `Getting posts with all media for ins ${id} by user ${userID}`,
     );
-    return this.insService.mediaForIns(userID, id, skip, take, onlyMine);
+    return this.insService.mediaForIns(
+      userID,
+      id,
+      skip,
+      take,
+      onlyMine,
+      unwrapped,
+    );
   }
 
   @Get(':id/media-unwrapped')
