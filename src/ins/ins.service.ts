@@ -192,6 +192,7 @@ export class InsService {
           post.mediaContent.forEach((media) => {
             const newPost = {
               ...post,
+              totalMediaContent: 1,
               mediaContent: [media],
               isAdded: true,
             };
