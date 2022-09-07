@@ -37,6 +37,10 @@ export class InsService {
     private readonly userService: UserService,
   ) {}
 
+  async countINS(params: Prisma.INSCountArgs): Promise<number> {
+    return this.prismaService.iNS.count(params);
+  }
+
   async createINS(data: Prisma.INSCreateInput): Promise<INS> {
     // Retry it a couple of times in case the code is taken
     return retry(

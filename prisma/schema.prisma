@@ -9,9 +9,10 @@ generator client {
 }
 
 model User {
-  id                  String  @id @default(uuid())
-  phoneNumber         String  @unique
-  phoneNumberVerified Boolean @default(false)
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now())
+  phoneNumber         String   @unique
+  phoneNumberVerified Boolean  @default(false)
   password            String
   firstName           String
   lastName            String
@@ -269,9 +270,9 @@ model StoryStickers {
 
   //Text values
   normalizedFontSize Decimal?
-  textAlign String?
-  font String?
-  color String?
+  textAlign          String?
+  font               String?
+  color              String?
 }
 
 model CurrentVersions {

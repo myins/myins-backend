@@ -127,6 +127,10 @@ export class UserService {
     return this.users(params);
   }
 
+  async countUsers(params: Prisma.UserCountArgs): Promise<number> {
+    return this.prisma.user.count(params);
+  }
+
   async createUser(data: Prisma.UserCreateInput, inses: INS[]) {
     const newUserModel = await this.prisma.user.create({
       data,

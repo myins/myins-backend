@@ -12,6 +12,8 @@ import { UserConnectionService } from './user.connection.service';
 import { UserController } from './user.controller';
 import { UserNotificationsController } from './user.notifications.controller';
 import { UserPendingController } from './user.pending.controller';
+import { UserReportingController } from './user.reporting.controller';
+import { UserReportingService } from './user.reporting.service';
 import { UserService } from './user.service';
 import { UserVersionsController } from './user.versions.controller';
 
@@ -32,8 +34,9 @@ import { UserVersionsController } from './user.versions.controller';
     UserVersionsController,
     UserNotificationsController,
     UserBiometricsController,
+    UserReportingController,
   ],
-  providers: [UserService, UserConnectionService],
+  providers: [UserService, UserConnectionService, UserReportingService],
   exports: [UserService, UserConnectionService],
 })
 export class UserModule {}

@@ -11,6 +11,7 @@ import { InsAdminService } from './ins.admin.service';
 import { InsCleanMediaService } from './ins.clean.media.service';
 import { InsController } from './ins.controller';
 import { InsPinController } from './ins.pin.controller';
+import { InsReportingController } from './ins.reporting.controller';
 import { InsService } from './ins.service';
 import { InsSettingsController } from './ins.settings.controller';
 
@@ -29,6 +30,7 @@ import { InsSettingsController } from './ins.settings.controller';
     InsAdminController,
     InsPinController,
     InsSettingsController,
+    InsReportingController,
   ],
   providers: [InsService, InsAdminService, InsCleanMediaService],
   exports: [InsService],
