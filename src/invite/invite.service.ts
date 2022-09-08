@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AnalyticsType,
   INS,
   NotificationSource,
   Prisma,
@@ -22,6 +23,7 @@ import {
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { isProd } from 'src/util/is-prod';
+import { AnalyticsService } from 'src/analytics/analytics.service';
 
 @Injectable()
 export class InviteService {
@@ -34,6 +36,7 @@ export class InviteService {
     private readonly userConnectionService: UserConnectionService,
     private readonly notificationService: NotificationService,
     private readonly notificationPushService: NotificationPushService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async inviteExternalUser(
@@ -121,6 +124,12 @@ export class InviteService {
         theINS[0].id,
         otherUsersPhoneNumbers,
       );
+
+      this.logger.log(`Adding analytic because inviting non users`);
+      await this.analyticsService.createAnalytic({
+        type: AnalyticsType.INVITE_NON_USER,
+        count: otherUsersPhoneNumbers.length,
+      });
     }
   }
 
@@ -239,6 +248,12 @@ export class InviteService {
         }),
       );
     }, 2000);
+
+    this.logger.log(`Adding analytic because inviting myins users`);
+    await this.analyticsService.createAnalytic({
+      type: AnalyticsType.INVITE_MYINS_USER,
+      count: data.length,
+    });
   }
 
   async invitesList(

@@ -11,6 +11,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { AnalyticsType } from '@prisma/client';
+import { AnalyticsService } from 'src/analytics/analytics.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -29,6 +31,7 @@ export class UserPendingController {
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly userConnectionService: UserConnectionService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   @Get()
@@ -218,6 +221,11 @@ export class UserPendingController {
         `Approving user ${data.userID} in ins ${data.insID} by user ${id}`,
       );
       await this.userService.approveUser(data.userID, data.insID);
+
+      this.logger.log(`Adding analytic because accepting myins users`);
+      await this.analyticsService.createAnalytic({
+        type: AnalyticsType.ACCEPTED_MYINS_USER,
+      });
     }
 
     this.logger.log('User successfully approved');

@@ -23,6 +23,7 @@ import { MiddlewareModule } from './middleware/middleware.module';
 import { InteractionModule } from './interaction/interaction.module';
 import { MediaModule } from './media/media.module';
 import { StoryModule } from './story/story.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { StoryModule } from './story/story.module';
     InteractionModule,
     MediaModule,
     StoryModule,
+    AnalyticsModule,
   ],
   providers: [
     {

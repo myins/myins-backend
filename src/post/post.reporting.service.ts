@@ -10,7 +10,7 @@ export class PostReportingService {
 
   constructor(private readonly postService: PostService) {}
 
-  async getTotalPosts(type: number, startDate: Date, endDate: Date) {
+  async getTotalPosts(type: PERIODS, startDate: Date, endDate: Date) {
     const dates = getDatesByType(type, startDate, endDate);
     if (type === PERIODS.allTime) {
       dates.gteValue = (
@@ -26,39 +26,43 @@ export class PostReportingService {
       )[0].createdAt;
     }
 
-    const createdAtQuery = {
-      gte: dates.gteValue,
-      lte: dates.lteValue,
-    };
-    const postsCount = await this.postService.count({
-      where: {
-        createdAt: createdAtQuery,
-        pending: false,
-      },
-    });
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: dates.gteValue,
+        lte: dates.lteValue,
+      };
+      const postsCount = await this.postService.count({
+        where: {
+          createdAt: createdAtQuery,
+          pending: false,
+        },
+      });
 
-    const postsGroupByCreatedFrom = await this.postService.groupBy(
-      ['createdFrom'],
-      {
-        createdAt: createdAtQuery,
-        pending: false,
-      },
-    );
+      const postsGroupByCreatedFrom = await this.postService.groupBy(
+        ['createdFrom'],
+        {
+          createdAt: createdAtQuery,
+          pending: false,
+        },
+      );
 
-    return {
-      total: postsCount,
-      home:
-        postsGroupByCreatedFrom.find(
-          (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.HOME,
-        )?._count._all ?? 0,
-      ins:
-        postsGroupByCreatedFrom.find(
-          (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.INS,
-        )?._count._all ?? 0,
-      story:
-        postsGroupByCreatedFrom.find(
-          (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.STORY,
-        )?._count._all ?? 0,
-    };
+      return {
+        total: postsCount,
+        home:
+          postsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.HOME,
+          )?._count._all ?? 0,
+        ins:
+          postsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.INS,
+          )?._count._all ?? 0,
+        story:
+          postsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.STORY,
+          )?._count._all ?? 0,
+      };
+    }
+
+    return 0;
   }
 }

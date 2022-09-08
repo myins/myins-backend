@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AnalyticsModule } from 'src/analytics/analytics.module';
 import { ChatModule } from 'src/chat/chat.module';
 import { CurrentVersionsModule } from 'src/current-versions/current-versions.module';
 import { InsModule } from 'src/ins/ins.module';
@@ -27,6 +28,7 @@ import { UserVersionsController } from './user.versions.controller';
     InsModule,
     ChatModule,
     NotificationModule,
+    AnalyticsModule,
   ],
   controllers: [
     UserPendingController,

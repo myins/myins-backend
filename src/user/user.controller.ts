@@ -15,7 +15,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { NotificationSource, Prisma, User, UserRole } from '@prisma/client';
+import {
+  AnalyticsType,
+  NotificationSource,
+  Prisma,
+  User,
+  UserRole,
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -36,6 +42,7 @@ import {
 import { UserConnectionService } from './user.connection.service';
 import * as uuid from 'uuid';
 import { ChatService } from 'src/chat/chat.service';
+import { AnalyticsService } from 'src/analytics/analytics.service';
 
 @Controller('user')
 @UseInterceptors(NotFoundInterceptor)
@@ -50,6 +57,7 @@ export class UserController {
     private readonly insService: InsService,
     private readonly notificationService: NotificationService,
     private readonly chatService: ChatService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   @Get('cloudfront-token')
@@ -240,6 +248,12 @@ export class UserController {
         }),
       );
 
+      this.logger.log(`Adding analytic because accepting non users`);
+      await this.analyticsService.createAnalytic({
+        type: AnalyticsType.ACCEPTED_NON_USER,
+        count: inses.length,
+      });
+
       return createdUser;
     } catch (error) {
       this.logger.error('Error creating user!');
@@ -358,6 +372,11 @@ export class UserController {
     this.logger.log(`Deleting user ${userId}`);
     await this.userService.deleteUser({ id: userId });
 
+    this.logger.log(`Adding analytic because deleting user ${user.id}`);
+    await this.analyticsService.createAnalytic({
+      type: AnalyticsType.DELETED_ACCOUNT,
+    });
+
     this.logger.log('User successfully deleted');
     return {
       message: 'User successfully deleted',
@@ -403,6 +422,11 @@ export class UserController {
 
     this.logger.log(`Removing user stream ${user.id}`);
     await this.chatService.deleteStreamUser(user.id);
+
+    this.logger.log(`Adding analytic because deleting user ${user.id}`);
+    await this.analyticsService.createAnalytic({
+      type: AnalyticsType.DELETED_ACCOUNT,
+    });
 
     this.logger.log('Successfully updated user as a MyINS user');
     return {

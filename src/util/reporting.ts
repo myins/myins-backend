@@ -2,7 +2,7 @@ import * as moment from 'moment';
 import { PERIODS } from './enums';
 
 export const getDatesByType = (
-  type: number,
+  type: PERIODS,
   startDate: Date,
   endDate: Date,
 ) => {
@@ -21,9 +21,58 @@ export const getDatesByType = (
   return { gteValue, lteValue };
 };
 
+export const getPrevDatesByType = (
+  type: PERIODS,
+  gteValue: Date,
+  lteValue: Date | undefined,
+) => {
+  const newGteDate = new Date(gteValue);
+  if (type === PERIODS.range && lteValue) {
+    lteValue.setSeconds(lteValue.getSeconds() + 1);
+    newGteDate.setDate(
+      gteValue.getDate() - (lteValue.getDate() - gteValue.getDate()),
+    );
+  } else {
+    newGteDate.setDate(gteValue.getDate() - type);
+  }
+  const newLteDate =
+    type === PERIODS.range
+      ? new Date(gteValue.setSeconds(gteValue.getSeconds() - 1))
+      : type === PERIODS.past24h
+      ? moment().add(-type, 'days').toDate()
+      : moment().startOf('day').add(-type, 'days').toDate();
+
+  return { gteValue: newGteDate, lteValue: newLteDate };
+};
+
+export const calculatePercentage = (
+  prevValue: number,
+  inititalValue: number,
+) => {
+  if (prevValue === inititalValue) {
+    return 0;
+  }
+  if (prevValue === 0) {
+    return 100;
+  }
+  if (inititalValue === 0) {
+    return -100;
+  }
+
+  const max = Math.max(prevValue, inititalValue);
+  const min = Math.min(prevValue, inititalValue);
+  if (prevValue < inititalValue) {
+    const diff = (max * 100) / min - 100;
+    return Math.round(diff);
+  }
+
+  const diff = (min * 100) / -max;
+  return Math.round(diff);
+};
+
 export const createObjForAreaChart = (
   dates: Date[],
-  type: number,
+  type: PERIODS,
   gteValue: Date,
   lteValue: Date | undefined,
 ) => {
@@ -56,7 +105,7 @@ export const createObjForAreaChart = (
 };
 
 const createEmptyObjectForType = (
-  type: number,
+  type: PERIODS,
   gteValue: Date,
   lteValue: Date | undefined,
 ) => {
@@ -108,7 +157,7 @@ const createEmptyObjectForType = (
   return obj;
 };
 
-const formatDateByType = (type: number, date: Date) => {
+const formatDateByType = (type: PERIODS, date: Date) => {
   if (type === PERIODS.past24h) {
     return moment(date).format('HH:mm');
   } else {

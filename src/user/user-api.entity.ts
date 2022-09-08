@@ -62,6 +62,10 @@ export class ApproveDenyUserAPI {
   @IsString()
   @IsNotEmpty()
   insID: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isInvite?: boolean;
 }
 
 export class SetLastNotificationAPI {

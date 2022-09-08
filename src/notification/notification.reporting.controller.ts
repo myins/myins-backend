@@ -28,7 +28,7 @@ export class NotificationReportingController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('notifications-reporting')
   async getNotifications(
-    @Query('type') type: number,
+    @Query('type') type: PERIODS,
     @Query('startDate') startDate: Date,
     @Query('endDate') endDate: Date,
     @PrismaUser() user: User,
@@ -63,37 +63,41 @@ export class NotificationReportingController {
       )[0].createdAt;
     }
 
-    const createdAtQuery = {
-      gte: dates.gteValue,
-      lte: dates.lteValue,
-    };
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: dates.gteValue,
+        lte: dates.lteValue,
+      };
 
-    const notificationsGroupByCreatedFrom =
-      await this.notificationService.groupBy(['source'], {
-        createdAt: createdAtQuery,
+      const notificationsGroupByCreatedFrom =
+        await this.notificationService.groupBy(['source'], {
+          createdAt: createdAtQuery,
+        });
+
+      const response = notificationsGroupByCreatedFrom.map(
+        (notificationGroupBy) => {
+          return {
+            type: notificationGroupBy.source,
+            value: notificationGroupBy._count?._all ?? 0,
+          };
+        },
+      );
+      Object.keys(NotificationSource).map((source) => {
+        if (!response.find((notif) => notif.type === source)) {
+          response.push({
+            type: <NotificationSource>source,
+            value: 0,
+          });
+        }
       });
 
-    const response = notificationsGroupByCreatedFrom.map(
-      (notificationGroupBy) => {
-        return {
-          type: notificationGroupBy.source,
-          value: notificationGroupBy._count?._all ?? 0,
-        };
-      },
-    );
-    Object.keys(NotificationSource).map((source) => {
-      if (!response.find((notif) => notif.type === source)) {
-        response.push({
-          type: <NotificationSource>source,
-          value: 0,
-        });
-      }
-    });
+      const responseSort = response.sort((a, b) => {
+        return a.type.localeCompare(b.type);
+      });
 
-    const responseSort = response.sort((a, b) => {
-      return a.type.localeCompare(b.type);
-    });
+      return responseSort;
+    }
 
-    return responseSort;
+    return 0;
   }
 }

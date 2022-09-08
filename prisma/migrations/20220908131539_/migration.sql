@@ -1,0 +1,12 @@
+-- CreateEnum
+CREATE TYPE "AnalyticsType" AS ENUM ('DELETED_ACCOUNT', 'INVITE_MYINS_USER', 'INVITE_NON_USER', 'ACCEPTED_MYINS_USER', 'ACCEPTED_NON_USER');
+
+-- CreateTable
+CREATE TABLE "Analytics" (
+    "id" TEXT NOT NULL,
+    "type" "AnalyticsType" NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "count" INTEGER NOT NULL DEFAULT 1,
+
+    CONSTRAINT "Analytics_pkey" PRIMARY KEY ("id")
+);

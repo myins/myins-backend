@@ -26,7 +26,7 @@ export class PostReportingController {
   @UseGuards(JwtAuthGuard)
   @ApiTags('posts-reporting')
   async getTotalPosts(
-    @Query('type') type: number,
+    @Query('type') type: PERIODS,
     @Query('startDate') startDate: Date,
     @Query('endDate') endDate: Date,
     @PrismaUser() user: User,

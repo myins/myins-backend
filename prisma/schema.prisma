@@ -282,6 +282,13 @@ model CurrentVersions {
   link      String       @default("")
 }
 
+model Analytics {
+  id        String        @id @default(uuid())
+  type      AnalyticsType
+  createdAt DateTime      @default(now())
+  count     Int           @default(1)
+}
+
 enum DocumentType {
   PRIVACY_POLICY
   TERMS_AND_CONDITIONS
@@ -319,4 +326,12 @@ enum PostCreatedFrom {
   HOME
   INS
   STORY
+}
+
+enum AnalyticsType {
+  DELETED_ACCOUNT
+  INVITE_MYINS_USER
+  INVITE_NON_USER
+  ACCEPTED_MYINS_USER
+  ACCEPTED_NON_USER
 }
