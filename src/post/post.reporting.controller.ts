@@ -1,4 +1,3 @@
-import { User } from '.prisma/client';
 import {
   BadRequestException,
   Controller,
@@ -9,39 +8,24 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
-import { UserService } from 'src/user/user.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PERIODS } from 'src/util/enums';
-import { UserReportingService } from './user.reporting.service';
+import { User } from 'stream-chat';
+import { PostReportingService } from './post.reporting.service';
 
-@Controller('user/reporting')
+@Controller('post/reporting')
 @UseInterceptors(NotFoundInterceptor)
-export class UserReportingController {
-  private readonly logger = new Logger(UserReportingController.name);
+export class PostReportingController {
+  private readonly logger = new Logger(PostReportingController.name);
 
-  constructor(
-    private readonly userService: UserService,
-    private readonly userReportingService: UserReportingService,
-  ) {}
+  constructor(private readonly postReportingService: PostReportingService) {}
 
-  @Get('/all-time')
-  @ApiTags('users-reporting')
+  @Get('total')
   @UseGuards(JwtAuthGuard)
-  async getAllTimeCountUsers(@PrismaUser() user: User) {
-    if (!user) {
-      this.logger.error("You're not allowed to get reports!");
-      throw new BadRequestException("You're not allowed to get reports!");
-    }
-
-    return this.userService.countUsers({});
-  }
-
-  @Get('/new-accounts')
-  @ApiTags('users-reporting')
-  @UseGuards(JwtAuthGuard)
-  async getNewAccounts(
+  @ApiTags('posts-reporting')
+  async getTotalPosts(
     @Query('type') type: number,
     @Query('startDate') startDate: Date,
     @Query('endDate') endDate: Date,
@@ -65,6 +49,6 @@ export class UserReportingController {
       throw new BadRequestException('Invalid range values!');
     }
 
-    return this.userReportingService.getNewAccounts(type, startDate, endDate);
+    return this.postReportingService.getTotalPosts(type, startDate, endDate);
   }
 }

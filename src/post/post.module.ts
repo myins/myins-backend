@@ -14,6 +14,8 @@ import { PostFeedController } from './post.feed.controller';
 import { PostFeedService } from './post.feed.service';
 import { PostLikeController } from './post.like.controller';
 import { PostLikeService } from './post.like.service';
+import { PostReportingController } from './post.reporting.controller';
+import { PostReportingService } from './post.reporting.service';
 import { PostService } from './post.service';
 
 @Module({
@@ -33,8 +35,14 @@ import { PostService } from './post.service';
     PostLikeController,
     PostController,
     PostCreateController,
+    PostReportingController,
   ],
-  providers: [PostService, PostFeedService, PostLikeService],
+  providers: [
+    PostService,
+    PostFeedService,
+    PostLikeService,
+    PostReportingService,
+  ],
   exports: [PostService, PostLikeService],
 })
 export class PostModule {}

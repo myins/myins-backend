@@ -184,6 +184,19 @@ export class NotificationService {
     };
   }
 
+  async groupBy(
+    byParam: Prisma.NotificationScalarFieldEnum[],
+    whereParam: Prisma.NotificationWhereInput,
+  ) {
+    return this.prisma.notification.groupBy({
+      by: byParam,
+      where: whereParam,
+      _count: {
+        _all: true,
+      },
+    });
+  }
+
   async deleteNotifications(where: Prisma.NotificationWhereInput) {
     return this.prisma.notification.deleteMany({
       where: where,

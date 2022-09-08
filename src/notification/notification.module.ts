@@ -9,6 +9,7 @@ import { PostModule } from 'src/post/post.module';
 import { CommentModule } from 'src/comment/comment.module';
 import { StoryModule } from 'src/story/story.module';
 import { NotificationCacheService } from './notification.cache.service';
+import { NotificationReportingController } from './notification.reporting.controller';
 
 @Module({
   imports: [
@@ -19,8 +20,12 @@ import { NotificationCacheService } from './notification.cache.service';
     forwardRef(() => CommentModule),
     StoryModule,
   ],
-  providers: [NotificationCacheService, NotificationPushService, NotificationService],
-  controllers: [NotificationController],
+  providers: [
+    NotificationCacheService,
+    NotificationPushService,
+    NotificationService,
+  ],
+  controllers: [NotificationController, NotificationReportingController],
   exports: [NotificationService, NotificationPushService],
 })
 export class NotificationModule {}

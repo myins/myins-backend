@@ -20,6 +20,7 @@ import {
   Post as PostModel,
   Prisma,
   StoryStickers,
+  PostCreatedFrom,
 } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ChatService } from 'src/chat/chat.service';
@@ -104,6 +105,7 @@ export class PostCreateController {
               id: insID,
             },
           },
+          createdFrom: postData.from,
         });
       }),
     );
@@ -193,6 +195,7 @@ export class PostCreateController {
               id: insID,
             },
           },
+          createdFrom: PostCreatedFrom.STORY,
         });
       }),
     );
@@ -310,7 +313,7 @@ export class PostCreateController {
     @PrismaUser('id') userID: string,
     @Body() shareData: SharePostAPI,
   ) {
-    const { ins } = shareData;
+    const { ins, from } = shareData;
     this.logger.log(`Sharing post ${postID} in inses ${ins} by user ${userID}`);
     const post = await this.postService.post(
       {
@@ -378,6 +381,7 @@ export class PostCreateController {
               };
             }),
           },
+          createdFrom: from,
         });
       }),
     );

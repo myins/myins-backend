@@ -22,10 +22,8 @@ export class InviteReportingController {
   @UseGuards(JwtAuthGuard)
   async getInvites(@PrismaUser() user: User) {
     if (!user) {
-      this.logger.error("You're not allowed to get total users count!");
-      throw new BadRequestException(
-        "You're not allowed to get total users count!",
-      );
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
     }
 
     return {};

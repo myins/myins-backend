@@ -30,10 +30,8 @@ export class InsReportingController {
   @UseGuards(JwtAuthGuard)
   async getAvgGroupsPerUser(@PrismaUser() user: User) {
     if (!user) {
-      this.logger.error("You're not allowed to get total users count!");
-      throw new BadRequestException(
-        "You're not allowed to get total users count!",
-      );
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
     }
 
     const users = await this.userService.users({
@@ -62,10 +60,8 @@ export class InsReportingController {
   @UseGuards(JwtAuthGuard)
   async getAvgGroupMembersPerGroup(@PrismaUser() user: User) {
     if (!user) {
-      this.logger.error("You're not allowed to get total users count!");
-      throw new BadRequestException(
-        "You're not allowed to get total users count!",
-      );
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
     }
 
     const inses = await this.insService.inses({
@@ -100,10 +96,8 @@ export class InsReportingController {
   @UseGuards(JwtAuthGuard)
   async getGroupsWithUsersCount(@PrismaUser() user: User) {
     if (!user) {
-      this.logger.error("You're not allowed to get total users count!");
-      throw new BadRequestException(
-        "You're not allowed to get total users count!",
-      );
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
     }
 
     const inses = await this.insService.inses({
@@ -141,10 +135,8 @@ export class InsReportingController {
   @UseGuards(JwtAuthGuard)
   async getUsersWithGroupsCount(@PrismaUser() user: User) {
     if (!user) {
-      this.logger.error("You're not allowed to get total users count!");
-      throw new BadRequestException(
-        "You're not allowed to get total users count!",
-      );
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
     }
 
     const users = await this.userService.users({

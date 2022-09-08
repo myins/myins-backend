@@ -1,6 +1,26 @@
 import * as moment from 'moment';
 import { PERIODS } from './enums';
 
+export const getDatesByType = (
+  type: number,
+  startDate: Date,
+  endDate: Date,
+) => {
+  let currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() - type);
+  if (type === PERIODS.past7d || type === PERIODS.past30d) {
+    currentDate = moment(currentDate).startOf('day').toDate();
+  }
+  const gteValue =
+    type === PERIODS.range
+      ? moment(startDate).startOf('day').toDate()
+      : currentDate;
+  const lteValue =
+    type === PERIODS.range ? moment(endDate).endOf('day').toDate() : undefined;
+
+  return { gteValue, lteValue };
+};
+
 export const createObjForAreaChart = (
   dates: Date[],
   type: number,

@@ -10,6 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { PostCreatedFrom } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { CreateINSAPI } from 'src/ins/ins-api.entity';
@@ -89,6 +90,7 @@ export class OnboardingController {
           id: ins.id,
         },
       },
+      createdFrom: PostCreatedFrom.INS,
     });
 
     this.logger.log('Signing with very quick expiration');

@@ -1,5 +1,7 @@
+import { PostCreatedFrom } from '@prisma/client';
 import {
   ArrayNotEmpty,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -22,6 +24,10 @@ export class CreatePostAPI extends CreatePostMainAPI {
   @Min(1)
   @Max(20)
   totalMediaContent: number;
+
+  @IsEnum(PostCreatedFrom)
+  @IsNotEmpty()
+  from: PostCreatedFrom;
 }
 
 export class CreatePostFromLinksAPI extends CreatePostMainAPI {
@@ -38,6 +44,10 @@ export class AttachCoverAPI {
 export class SharePostAPI {
   @ArrayNotEmpty()
   ins: string[];
+
+  @IsEnum(PostCreatedFrom)
+  @IsNotEmpty()
+  from: PostCreatedFrom;
 }
 
 export class DeletePostsAPI {

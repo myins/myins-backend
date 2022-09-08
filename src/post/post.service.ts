@@ -78,6 +78,19 @@ export class PostService {
     return this.prisma.post.count(params);
   }
 
+  async groupBy(
+    byParam: Prisma.PostScalarFieldEnum[],
+    whereParam: Prisma.PostWhereInput,
+  ) {
+    return this.prisma.post.groupBy({
+      by: byParam,
+      where: whereParam,
+      _count: {
+        _all: true,
+      },
+    });
+  }
+
   async createPost(data: Prisma.PostCreateInput): Promise<Post> {
     return this.prisma.post.create({
       data,

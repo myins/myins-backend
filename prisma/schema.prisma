@@ -85,8 +85,9 @@ model Post {
   insId        String
   comments     Comment[]
 
-  pending           Boolean @default(true)
+  pending           Boolean         @default(true)
   totalMediaContent Int
+  createdFrom       PostCreatedFrom @default(HOME)
 
   notifications Notification[]
   likes         UserPostLikeConnection[]
@@ -312,4 +313,10 @@ enum StoryStickerType {
   TEXT
   LOCATION
   IMAGE
+}
+
+enum PostCreatedFrom {
+  HOME
+  INS
+  STORY
 }
