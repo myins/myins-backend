@@ -27,6 +27,7 @@ export class CreatePostAPI extends CreatePostMainAPI {
 
   @IsEnum(PostCreatedFrom)
   @IsNotEmpty()
+  @IsOptional()
   from: PostCreatedFrom;
 }
 
@@ -47,6 +48,7 @@ export class SharePostAPI {
 
   @IsEnum(PostCreatedFrom)
   @IsNotEmpty()
+  @IsOptional()
   from: PostCreatedFrom;
 }
 
