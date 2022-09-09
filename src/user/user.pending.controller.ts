@@ -222,10 +222,12 @@ export class UserPendingController {
       );
       await this.userService.approveUser(data.userID, data.insID);
 
-      this.logger.log(`Adding analytic because accepting myins users`);
-      await this.analyticsService.createAnalytic({
-        type: AnalyticsType.ACCEPTED_MYINS_USER,
-      });
+      if (data.isInvite) {
+        this.logger.log(`Adding analytic because accepting myins users`);
+        await this.analyticsService.createAnalytic({
+          type: AnalyticsType.ACCEPTED_MYINS_USER,
+        });
+      }
     }
 
     this.logger.log('User successfully approved');
