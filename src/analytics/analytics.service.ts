@@ -188,7 +188,12 @@ export class AnalyticsService {
     }
 
     if (analyticTypes.includes(AnalyticsType.DELETED_ACCOUNT)) {
-      return 0;
+      return [
+        {
+          date: '',
+          value: 0,
+        },
+      ];
     }
 
     return {

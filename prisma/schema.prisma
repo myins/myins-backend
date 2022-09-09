@@ -34,7 +34,8 @@ model User {
   likedStories  UserStoryMediaLikeConnection[]
   viewedStories UserStoryMediaViewConnection[]
 
-  inses UserInsConnection[]
+  inses    UserInsConnection[]
+  sessions Session[]
 
   lastAcceptedTermsAndConditionsVersion DateTime?
   lastAcceptedPrivacyPolicyVersion      DateTime?
@@ -287,6 +288,13 @@ model Analytics {
   type      AnalyticsType
   createdAt DateTime      @default(now())
   count     Int           @default(1)
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
 }
 
 enum DocumentType {

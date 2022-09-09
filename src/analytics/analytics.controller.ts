@@ -30,8 +30,8 @@ export class AnalyticsController {
     @PrismaUser() user: User,
   ) {
     if (!user) {
-      this.logger.error("You're not allowed to get reports!");
-      throw new BadRequestException("You're not allowed to get reports!");
+      this.logger.error("You're not allowed to get analytics!");
+      throw new BadRequestException("You're not allowed to get analytics!");
     }
 
     if (!analyticTypes?.length) {

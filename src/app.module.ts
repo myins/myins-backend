@@ -24,6 +24,7 @@ import { InteractionModule } from './interaction/interaction.module';
 import { MediaModule } from './media/media.module';
 import { StoryModule } from './story/story.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { SessionModule } from './session/session.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     MediaModule,
     StoryModule,
     AnalyticsModule,
+    SessionModule,
   ],
   providers: [
     {

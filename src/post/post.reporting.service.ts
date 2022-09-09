@@ -63,6 +63,11 @@ export class PostReportingService {
       };
     }
 
-    return 0;
+    return [
+      {
+        date: '',
+        value: 0,
+      },
+    ];
   }
 }

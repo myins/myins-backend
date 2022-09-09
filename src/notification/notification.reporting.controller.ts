@@ -98,6 +98,11 @@ export class NotificationReportingController {
       return responseSort;
     }
 
-    return 0;
+    return [
+      {
+        date: '',
+        value: 0,
+      },
+    ];
   }
 }
