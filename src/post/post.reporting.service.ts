@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PostCreatedFrom } from '@prisma/client';
 import { PERIODS } from 'src/util/enums';
-import { getDatesByType } from 'src/util/reporting';
+import {
+  calculatePercentage,
+  getDatesByType,
+  getPrevDatesByType,
+} from 'src/util/reporting';
 import { PostService } from './post.service';
 
 @Injectable()
@@ -46,7 +50,7 @@ export class PostReportingService {
         },
       );
 
-      return {
+      const dataRes = {
         total: postsCount,
         home:
           postsGroupByCreatedFrom.find(
@@ -60,7 +64,48 @@ export class PostReportingService {
           postsGroupByCreatedFrom.find(
             (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.STORY,
           )?._count._all ?? 0,
+        homePercent: 0,
+        insPercent: 0,
+        storyPercent: 0,
       };
+
+      if (type !== PERIODS.allTime) {
+        const newDates = getPrevDatesByType(
+          type,
+          dates.gteValue,
+          dates.lteValue,
+        );
+        const createdAtQueryPrev = {
+          gte: newDates.gteValue,
+          lte: newDates.lteValue,
+        };
+        const prevPostsGroupByCreatedFrom = await this.postService.groupBy(
+          ['createdFrom'],
+          {
+            createdAt: createdAtQueryPrev,
+            pending: false,
+          },
+        );
+
+        const homePrev =
+          prevPostsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.HOME,
+          )?._count._all ?? 0;
+        const insPrev =
+          prevPostsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.INS,
+          )?._count._all ?? 0;
+        const storyPrev =
+          prevPostsGroupByCreatedFrom.find(
+            (postGroupBy) => postGroupBy.createdFrom === PostCreatedFrom.STORY,
+          )?._count._all ?? 0;
+
+        dataRes.homePercent = calculatePercentage(homePrev, dataRes.home);
+        dataRes.insPercent = calculatePercentage(insPrev, dataRes.ins);
+        dataRes.storyPercent = calculatePercentage(storyPrev, dataRes.story);
+      }
+
+      return dataRes;
     }
 
     return [
