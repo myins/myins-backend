@@ -131,9 +131,6 @@ const createEmptyObjectForType = (
       });
     }
   } else {
-    if (type !== PERIODS.allTime && type !== PERIODS.range) {
-      gteValue.setDate(gteValue.getDate() + 1);
-    }
     gteValue.setHours(0);
     gteValue.setMinutes(0);
     gteValue.setSeconds(0);
