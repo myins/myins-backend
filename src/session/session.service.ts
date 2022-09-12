@@ -35,38 +35,46 @@ export class SessionService {
       )[0]?.createdAt;
     }
 
-    const sessions = await this.sessions({
-      where: {
-        createdAt: {
-          gte: dates.gteValue,
-          lte: dates.lteValue,
+    if (dates.gteValue) {
+      const sessions = await this.sessions({
+        where: {
+          createdAt: {
+            gte: dates.gteValue,
+            lte: dates.lteValue,
+          },
         },
-      },
-    });
+      });
 
-    const responseTotalSessions = createObjForAreaChart(
-      sessions.map((session) => session.createdAt),
-      type,
-      dates.gteValue,
-      dates.lteValue,
-    );
+      const responseTotalSessions = createObjForAreaChart(
+        sessions.map((session) => session.createdAt),
+        type,
+        dates.gteValue,
+        dates.lteValue,
+      );
 
-    const uniqueSessions = [
-      ...new Set(sessions.map((session) => session.userId)),
-    ].length;
+      const uniqueSessions = [
+        ...new Set(sessions.map((session) => session.userId)),
+      ].length;
 
-    const totalUsers = await this.userService.countUsers({
-      where: {
-        createdAt: {
-          lte: dates.lteValue ?? undefined,
+      const totalUsers = await this.userService.countUsers({
+        where: {
+          createdAt: {
+            lte: dates.lteValue ?? undefined,
+          },
         },
-      },
-    });
+      });
+
+      return {
+        totalSessions: responseTotalSessions,
+        activeUsers: uniqueSessions,
+        inactiveUsers: totalUsers - uniqueSessions,
+      };
+    }
 
     return {
-      totalSessions: responseTotalSessions,
-      activeUsers: uniqueSessions,
-      inactiveUsers: totalUsers - uniqueSessions,
+      totalSessions: 0,
+      activeUsers: 0,
+      inactiveUsers: 0,
     };
   }
 }
