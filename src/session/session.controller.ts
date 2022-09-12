@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Logger,
@@ -8,10 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { PERIODS } from 'src/util/enums';
 import { User } from 'stream-chat';
+import { CreateSessionAPI } from './session-api.entity';
 import { SessionService } from './session.service';
 
 @Controller('session')
@@ -22,20 +25,17 @@ export class SessionController {
 
   @Post('/')
   @ApiTags('session')
-  @UseGuards(JwtAuthGuard)
-  async createSession(@PrismaUser() user: User) {
-    if (!user) {
-      this.logger.error("You're not allowed to create session!");
-      throw new BadRequestException("You're not allowed to create session!");
-    }
-
-    return this.sessionService.createSession({
-      user: {
+  async createSession(@Body() data: CreateSessionAPI) {
+    const { userID } = data;
+    const dataSession: Prisma.SessionCreateInput = {};
+    if (userID) {
+      dataSession.user = {
         connect: {
-          id: user.id,
+          id: userID,
         },
-      },
-    });
+      };
+    }
+    return this.sessionService.createSession(dataSession);
   }
 
   @Get('/')
