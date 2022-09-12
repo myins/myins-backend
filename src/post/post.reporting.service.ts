@@ -27,7 +27,7 @@ export class PostReportingService {
           },
           take: 1,
         })
-      )[0].createdAt;
+      )[0]?.createdAt;
     }
 
     if (dates.gteValue) {

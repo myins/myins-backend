@@ -32,7 +32,7 @@ export class SessionService {
           },
           take: 1,
         })
-      )[0].createdAt;
+      )[0]?.createdAt;
     }
 
     const sessions = await this.sessions({

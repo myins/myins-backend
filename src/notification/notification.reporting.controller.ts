@@ -60,7 +60,7 @@ export class NotificationReportingController {
           },
           take: 1,
         })
-      )[0].createdAt;
+      )[0]?.createdAt;
     }
 
     if (dates.gteValue) {
