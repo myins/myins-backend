@@ -14,7 +14,7 @@ export class PostReportingService {
 
   constructor(private readonly postService: PostService) {}
 
-  async getTotalPosts(type: PERIODS, startDate: Date, endDate: Date) {
+  async getTotalPosts(type: PERIODS, startDate: string, endDate: string) {
     const dates = getDatesByType(type, startDate, endDate);
     console.log('dates.gteValue ------------------------ ', dates.gteValue);
     console.log('dates.lteValue ------------------------ ', dates.lteValue);

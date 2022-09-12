@@ -3,8 +3,8 @@ import { PERIODS } from './enums';
 
 export const getDatesByType = (
   type: PERIODS,
-  startDate: Date,
-  endDate: Date,
+  startDate: string,
+  endDate: string,
 ) => {
   let currentDate = new Date();
   currentDate.setDate(currentDate.getDate() - type);

@@ -22,7 +22,7 @@ export class SessionService {
     return this.prisma.session.findMany(params);
   }
 
-  async getSessionDetails(type: number, startDate: Date, endDate: Date) {
+  async getSessionDetails(type: number, startDate: string, endDate: string) {
     const dates = getDatesByType(type, startDate, endDate);
     if (type === PERIODS.allTime) {
       dates.gteValue = (

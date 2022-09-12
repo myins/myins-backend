@@ -24,8 +24,8 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard)
   async getAnalytics(
     @Query('type') type: PERIODS,
-    @Query('startDate') startDate: Date,
-    @Query('endDate') endDate: Date,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @Query('analyticTypes') analyticTypes: AnalyticsType[],
     @PrismaUser() user: User,
   ) {

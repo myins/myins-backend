@@ -29,8 +29,8 @@ export class NotificationReportingController {
   @ApiTags('notifications-reporting')
   async getNotifications(
     @Query('type') type: PERIODS,
-    @Query('startDate') startDate: Date,
-    @Query('endDate') endDate: Date,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @PrismaUser() user: User,
   ) {
     if (!user) {

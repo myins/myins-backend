@@ -38,8 +38,8 @@ export class AnalyticsService {
 
   async getAnalytics(
     type: PERIODS,
-    startDate: Date,
-    endDate: Date,
+    startDate: string,
+    endDate: string,
     analyticTypes: AnalyticsType[],
   ) {
     const dates = getDatesByType(type, startDate, endDate);

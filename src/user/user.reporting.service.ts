@@ -7,7 +7,7 @@ import { UserService } from './user.service';
 export class UserReportingService {
   constructor(private readonly userService: UserService) {}
 
-  async getNewAccounts(type: PERIODS, startDate: Date, endDate: Date) {
+  async getNewAccounts(type: PERIODS, startDate: string, endDate: string) {
     const dates = getDatesByType(type, startDate, endDate);
     if (type === PERIODS.allTime) {
       dates.gteValue = (
