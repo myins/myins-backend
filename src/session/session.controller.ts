@@ -41,6 +41,7 @@ export class SessionController {
 
   @Put(':id')
   @ApiTags('session')
+  @UseGuards(JwtAuthGuard)
   async updateSession(
     @PrismaUser('id') userID: string,
     @Param('id') sessionID: string,
