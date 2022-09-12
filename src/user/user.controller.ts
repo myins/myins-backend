@@ -248,11 +248,13 @@ export class UserController {
         }),
       );
 
-      this.logger.log(`Adding analytic because accepting non users`);
-      await this.analyticsService.createAnalytic({
-        type: AnalyticsType.ACCEPTED_NON_USER,
-        count: inses.length,
-      });
+      if (inses.length) {
+        this.logger.log(`Adding analytic because accepting non users`);
+        await this.analyticsService.createAnalytic({
+          type: AnalyticsType.ACCEPTED_NON_USER,
+          count: inses.length,
+        });
+      }
 
       return createdUser;
     } catch (error) {
