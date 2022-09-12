@@ -49,9 +49,6 @@ export class PostReportingController {
       throw new BadRequestException('Invalid range values!');
     }
 
-    console.log('startDate ------------------------ ', startDate);
-    console.log('endDate ------------------------ ', endDate);
-
     return this.postReportingService.getTotalPosts(type, startDate, endDate);
   }
 }
