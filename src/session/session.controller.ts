@@ -27,7 +27,9 @@ export class SessionController {
   @ApiTags('session')
   async createSession(@Body() data: CreateSessionAPI) {
     const { userID } = data;
-    const dataSession: Prisma.SessionCreateInput = {};
+    const dataSession: Prisma.SessionCreateInput = {
+      user: undefined,
+    };
     if (userID) {
       dataSession.user = {
         connect: {
