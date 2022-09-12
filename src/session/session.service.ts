@@ -62,7 +62,11 @@ export class SessionService {
       );
 
       const uniqueSessions = [
-        ...new Set(sessions.map((session) => session.userId)),
+        ...new Set(
+          sessions
+            .filter((session) => session.userId !== null)
+            .map((session) => session.userId),
+        ),
       ].length;
 
       const totalUsers = await this.userService.countUsers({
