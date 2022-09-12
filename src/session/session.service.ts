@@ -72,10 +72,12 @@ export class SessionService {
     }
 
     return {
-      totalSessions: {
-        date: '',
-        value: 0,
-      },
+      totalSessions: [
+        {
+          date: '',
+          value: 0,
+        },
+      ],
       activeUsers: 0,
       inactiveUsers: 0,
     };
