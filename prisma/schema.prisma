@@ -292,8 +292,8 @@ model Analytics {
 
 model Session {
   id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String?
   createdAt DateTime @default(now())
 }
 
