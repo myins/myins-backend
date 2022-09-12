@@ -16,6 +16,8 @@ export class PostReportingService {
 
   async getTotalPosts(type: PERIODS, startDate: Date, endDate: Date) {
     const dates = getDatesByType(type, startDate, endDate);
+    console.log('dates.gteValue ------------------------ ', dates.gteValue);
+    console.log('dates.lteValue ------------------------ ', dates.lteValue);
     if (type === PERIODS.allTime) {
       dates.gteValue = (
         await this.postService.posts({
