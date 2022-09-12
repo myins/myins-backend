@@ -18,6 +18,15 @@ export class SessionService {
     });
   }
 
+  async updateSession(sessionID: string, data: Prisma.SessionUpdateInput) {
+    return this.prisma.session.update({
+      where: {
+        id: sessionID,
+      },
+      data: data,
+    });
+  }
+
   async sessions(params: Prisma.SessionFindManyArgs) {
     return this.prisma.session.findMany(params);
   }

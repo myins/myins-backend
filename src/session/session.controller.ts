@@ -4,12 +4,13 @@ import {
   Controller,
   Get,
   Logger,
+  Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { PERIODS } from 'src/util/enums';
@@ -26,18 +27,31 @@ export class SessionController {
   @Post('/')
   @ApiTags('session')
   async createSession(@Body() data: CreateSessionAPI) {
-    const { userID } = data;
-    const dataSession: Prisma.SessionCreateInput = {
-      user: undefined,
-    };
-    if (userID) {
-      dataSession.user = {
+    if (data.userID) {
+      return this.sessionService.createSession({
+        user: {
+          connect: {
+            id: data.userID,
+          },
+        },
+      });
+    }
+    return this.sessionService.createSession({});
+  }
+
+  @Put(':id')
+  @ApiTags('session')
+  async updateSession(
+    @PrismaUser('id') userID: string,
+    @Param('id') sessionID: string,
+  ) {
+    return this.sessionService.updateSession(sessionID, {
+      user: {
         connect: {
           id: userID,
         },
-      };
-    }
-    return this.sessionService.createSession(dataSession);
+      },
+    });
   }
 
   @Get('/')
