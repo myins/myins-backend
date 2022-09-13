@@ -45,11 +45,6 @@ export class AttachCoverAPI {
 export class SharePostAPI {
   @ArrayNotEmpty()
   ins: string[];
-
-  @IsEnum(PostCreatedFrom)
-  @IsNotEmpty()
-  @IsOptional()
-  from: PostCreatedFrom;
 }
 
 export class DeletePostsAPI {

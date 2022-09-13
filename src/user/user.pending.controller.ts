@@ -146,7 +146,9 @@ export class UserPendingController {
           createdAt: connection.insCreatedAt,
         };
         return {
-          authorId: connection.invitedBy ?? connection.userId,
+          authorId: all
+            ? connection.userId
+            : connection.invitedBy ?? connection.userId,
           author: connection.invitedBy
             ? await this.userService.shallowUser({ id: connection.invitedBy })
             : user,

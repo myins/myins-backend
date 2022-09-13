@@ -313,7 +313,7 @@ export class PostCreateController {
     @PrismaUser('id') userID: string,
     @Body() shareData: SharePostAPI,
   ) {
-    const { ins, from } = shareData;
+    const { ins } = shareData;
     this.logger.log(`Sharing post ${postID} in inses ${ins} by user ${userID}`);
     const post = await this.postService.post(
       {
@@ -381,7 +381,7 @@ export class PostCreateController {
               };
             }),
           },
-          createdFrom: from,
+          createdFrom: PostCreatedFrom.HOME,
         });
       }),
     );
