@@ -78,12 +78,48 @@ export class SessionController {
 
     if (
       type === PERIODS.range &&
-      (!Date.parse(startDate.toString()) || !Date.parse(endDate.toString()))
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
     ) {
       this.logger.error('Invalid range values!');
       throw new BadRequestException('Invalid range values!');
     }
 
     return this.sessionService.getSessionDetails(type, startDate, endDate);
+  }
+
+  @Get('avg-weekly-active-user')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('session')
+  async getAvgWeeklyActiveUser(
+    @Query('type') type: PERIODS,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @PrismaUser() user: User,
+  ) {
+    if (!user) {
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
+    }
+
+    if (Number.isNaN(type)) {
+      this.logger.error('Invalid type value!');
+      throw new BadRequestException('Invalid type value!');
+    }
+
+    if (
+      type === PERIODS.range &&
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
+    ) {
+      this.logger.error('Invalid range values!');
+      throw new BadRequestException('Invalid range values!');
+    }
+
+    return this.sessionService.getAvgWeeklyActiveUser(type, startDate, endDate);
   }
 }

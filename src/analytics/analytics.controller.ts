@@ -54,7 +54,10 @@ export class AnalyticsController {
 
     if (
       type === PERIODS.range &&
-      (!Date.parse(startDate.toString()) || !Date.parse(endDate.toString()))
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
     ) {
       this.logger.error('Invalid range values!');
       throw new BadRequestException('Invalid range values!');

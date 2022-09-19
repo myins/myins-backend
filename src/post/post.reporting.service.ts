@@ -115,4 +115,72 @@ export class PostReportingService {
       },
     ];
   }
+
+  async getPercentDisplayOfAllPosts(
+    type: PERIODS,
+    startDate: string,
+    endDate: string,
+  ) {
+    const dates = getDatesByType(type, startDate, endDate);
+    if (type === PERIODS.allTime) {
+      dates.gteValue = (
+        await this.postService.posts({
+          where: {
+            pending: false,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        })
+      )[0]?.createdAt;
+    }
+
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: dates.gteValue,
+        lte: dates.lteValue,
+      };
+      const postsCount = await this.postService.count({
+        where: {
+          createdAt: createdAtQuery,
+          pending: false,
+        },
+      });
+      const postsTotalCount = await this.postService.count({});
+
+      const dataRes = {
+        posts: ((postsCount * 100) / postsTotalCount).toFixed(2),
+        postsPercent: 0,
+      };
+
+      if (type !== PERIODS.allTime) {
+        const newDates = getPrevDatesByType(
+          type,
+          dates.gteValue,
+          dates.lteValue,
+        );
+        const createdAtQueryPrev = {
+          gte: newDates.gteValue,
+          lte: newDates.lteValue,
+        };
+        const postsCountPrev = await this.postService.count({
+          where: {
+            createdAt: createdAtQueryPrev,
+            pending: false,
+          },
+        });
+
+        const postsPrev = (postsCountPrev * 100) / postsTotalCount;
+        dataRes.postsPercent = calculatePercentage(
+          postsPrev,
+          parseFloat(dataRes.posts),
+        );
+      }
+
+      return dataRes;
+    }
+
+    return 0;
+  }
 }

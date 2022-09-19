@@ -33,14 +33,14 @@ export const getPrevDatesByType = (
       gteValue.getDate() - (lteValue.getDate() - gteValue.getDate()),
     );
   } else {
-    newGteDate.setDate(gteValue.getDate() - type);
+    newGteDate.setDate(gteValue.getDate() - type - 1);
   }
   const newLteDate =
     type === PERIODS.range
       ? new Date(gteValue.setSeconds(gteValue.getSeconds() - 1))
       : type === PERIODS.past24h
       ? moment().add(-type, 'days').toDate()
-      : moment().startOf('day').add(-type, 'days').toDate();
+      : moment().startOf('day').add(-type, 'days').add(-1, 'seconds').toDate();
 
   return { gteValue: newGteDate, lteValue: newLteDate };
 };
@@ -66,7 +66,7 @@ export const calculatePercentage = (
     return Math.round(diff);
   }
 
-  const diff = (min * 100) / -max;
+  const diff = ((max - min) * 100) / -max;
   return Math.round(diff);
 };
 
