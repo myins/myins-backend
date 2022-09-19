@@ -193,11 +193,13 @@ export class SessionService {
       }
 
       const dataRes = {
-        postsActiveUsers:
-          postsCountArray.reduce((a, b) => a + b, 0) / postsCountArray.length,
-        storiesActiveUsers:
+        postsActiveUsers: (
+          postsCountArray.reduce((a, b) => a + b, 0) / postsCountArray.length
+        ).toFixed(2),
+        storiesActiveUsers: (
           storiesCountArray.reduce((a, b) => a + b, 0) /
-          storiesCountArray.length,
+          storiesCountArray.length
+        ).toFixed(2),
         postsActiveUsersPercent: 0,
         storiesActiveUsersPercent: 0,
       };
@@ -245,7 +247,7 @@ export class SessionService {
           postsCountPrevArray.length;
         dataRes.postsActiveUsersPercent = calculatePercentage(
           postsActiveUsersPrev,
-          dataRes.postsActiveUsers,
+          parseFloat(dataRes.postsActiveUsers),
         );
 
         const storiesActiveUsersPrev =
@@ -253,7 +255,7 @@ export class SessionService {
           storiesCountPrevArray.length;
         dataRes.storiesActiveUsersPercent = calculatePercentage(
           storiesActiveUsersPrev,
-          dataRes.storiesActiveUsers,
+          parseFloat(dataRes.storiesActiveUsers),
         );
       }
 
