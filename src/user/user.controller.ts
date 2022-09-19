@@ -375,8 +375,12 @@ export class UserController {
     await this.userService.deleteUser({ id: userId });
 
     this.logger.log(`Adding analytic because deleting user ${user.id}`);
+    const metadata = {
+      createdAtAccUser: user.createdAt.toISOString(),
+    } as Prisma.JsonObject;
     await this.analyticsService.createAnalytic({
       type: AnalyticsType.DELETED_ACCOUNT,
+      metadata,
     });
 
     this.logger.log('User successfully deleted');
@@ -426,8 +430,12 @@ export class UserController {
     await this.chatService.deleteStreamUser(user.id);
 
     this.logger.log(`Adding analytic because deleting user ${user.id}`);
+    const metadata = {
+      createdAtAccUser: user.createdAt.toISOString(),
+    } as Prisma.JsonObject;
     await this.analyticsService.createAnalytic({
       type: AnalyticsType.DELETED_ACCOUNT,
+      metadata,
     });
 
     this.logger.log('Successfully updated user as a MyINS user');

@@ -288,6 +288,8 @@ model Analytics {
   type      AnalyticsType
   createdAt DateTime      @default(now())
   count     Int           @default(1)
+
+  metadata Json?
 }
 
 model Session {

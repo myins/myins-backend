@@ -209,4 +209,52 @@ export class AnalyticsService {
       totalAcceptedPercent: 0,
     };
   }
+
+  async getAvgTimeToAccDelete(
+    type: PERIODS,
+    startDate: string,
+    endDate: string,
+  ) {
+    const dates = getDatesByType(type, startDate, endDate);
+    if (type === PERIODS.allTime) {
+      dates.gteValue = (
+        await this.analytics({
+          where: {
+            type: AnalyticsType.DELETED_ACCOUNT,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        })
+      )[0]?.createdAt;
+    }
+
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: dates.gteValue,
+        lte: dates.lteValue,
+      };
+      const analyticsDeletedAccount = await this.analytics({
+        where: {
+          createdAt: createdAtQuery,
+          type: AnalyticsType.DELETED_ACCOUNT,
+        },
+      });
+      const createdAtAccUserArray = analyticsDeletedAccount.map((analytic) => {
+        const metadata = analytic.metadata as Prisma.JsonObject;
+        const time = metadata?.createdAtAccUser
+          ? new Date(<string>metadata.createdAtAccUser)
+          : analytic.createdAt;
+        return analytic.createdAt.getTime() - time.getTime();
+      });
+
+      return (
+        createdAtAccUserArray.reduce((a, b) => a + b, 0) /
+        createdAtAccUserArray.length
+      );
+    }
+
+    return 0;
+  }
 }
