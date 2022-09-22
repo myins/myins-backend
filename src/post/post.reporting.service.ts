@@ -150,7 +150,7 @@ export class PostReportingService {
       const postsTotalCount = await this.postService.count({});
 
       const dataRes = {
-        posts: ((postsCount * 100) / postsTotalCount).toFixed(2),
+        posts: Math.round((postsCount * 100) / postsTotalCount),
         postsPercent: 0,
       };
 
@@ -172,10 +172,7 @@ export class PostReportingService {
         });
 
         const postsPrev = (postsCountPrev * 100) / postsTotalCount;
-        dataRes.postsPercent = calculatePercentage(
-          postsPrev,
-          parseFloat(dataRes.posts),
-        );
+        dataRes.postsPercent = calculatePercentage(postsPrev, dataRes.posts);
       }
 
       return dataRes;
