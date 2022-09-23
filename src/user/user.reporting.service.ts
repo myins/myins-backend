@@ -29,13 +29,13 @@ export class UserReportingService {
       },
     });
 
-    const response = createObjForAreaChart(
+    const toRet = createObjForAreaChart(
       users.map((user) => user.createdAt),
       type,
       dates.gteValue,
       dates.lteValue,
     );
 
-    return response;
+    return toRet;
   }
 }
