@@ -1,4 +1,4 @@
-import { isProd } from './is-prod';
+import { isProd } from './checks';
 
 export const isTestNumber = (phone: string) => {
   if (!isProd() && phone.endsWith('1234')) {

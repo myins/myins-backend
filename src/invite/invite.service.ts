@@ -22,7 +22,7 @@ import {
   PushNotificationSource,
 } from 'src/notification/notification.push.service';
 import { NotificationService } from 'src/notification/notification.service';
-import { isProd } from 'src/util/is-prod';
+import { isProd } from 'src/util/checks';
 import { AnalyticsService } from 'src/analytics/analytics.service';
 
 @Injectable()

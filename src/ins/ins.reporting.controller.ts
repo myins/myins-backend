@@ -13,6 +13,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
+import { isAdmin } from 'src/util/checks';
 import { InsService } from './ins.service';
 
 @Controller('ins/reporting')
@@ -29,7 +30,7 @@ export class InsReportingController {
   @ApiTags('ins-reporting')
   @UseGuards(JwtAuthGuard)
   async getAvgGroupsPerUser(@PrismaUser() user: User) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }
@@ -59,7 +60,7 @@ export class InsReportingController {
   @ApiTags('ins-reporting')
   @UseGuards(JwtAuthGuard)
   async getAvgGroupMembersPerGroup(@PrismaUser() user: User) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }
@@ -95,7 +96,7 @@ export class InsReportingController {
   @ApiTags('ins-reporting')
   @UseGuards(JwtAuthGuard)
   async getGroupsWithUsersCount(@PrismaUser() user: User) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }
@@ -134,7 +135,7 @@ export class InsReportingController {
   @ApiTags('ins-reporting')
   @UseGuards(JwtAuthGuard)
   async getUsersWithGroupsCount(@PrismaUser() user: User) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }

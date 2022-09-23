@@ -12,8 +12,9 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PERIODS } from 'src/util/enums';
-import { User } from 'stream-chat';
 import { PostReportingService } from './post.reporting.service';
+import { isAdmin } from 'src/util/checks';
+import { User } from '@prisma/client';
 
 @Controller('post/reporting')
 @UseInterceptors(NotFoundInterceptor)
@@ -31,7 +32,7 @@ export class PostReportingController {
     @Query('endDate') endDate: string,
     @PrismaUser() user: User,
   ) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }
@@ -64,7 +65,7 @@ export class PostReportingController {
     @Query('endDate') endDate: string,
     @PrismaUser() user: User,
   ) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }

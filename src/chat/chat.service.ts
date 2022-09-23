@@ -14,7 +14,7 @@ import { Cron } from '@nestjs/schedule';
 import { MediaService } from 'src/media/media.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { SendMessageToStoryAPI } from './chat-api.entity';
-import { isProd } from 'src/util/is-prod';
+import { isProd } from 'src/util/checks';
 
 @Injectable()
 export class ChatService {

@@ -26,7 +26,7 @@ import {
   NotificationCache,
   NotificationCacheService,
 } from './notification.cache.service';
-import { isProd } from 'src/util/is-prod';
+import { isProd } from 'src/util/checks';
 
 export enum PushNotificationSource {
   REQUEST_FOR_OTHER_USER = 'REQUEST_FOR_OTHER_USER',

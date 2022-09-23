@@ -14,6 +14,7 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
 import { PERIODS } from 'src/util/enums';
+import { isAdmin } from 'src/util/checks';
 import { UserReportingService } from './user.reporting.service';
 
 @Controller('user/reporting')
@@ -30,7 +31,7 @@ export class UserReportingController {
   @ApiTags('users-reporting')
   @UseGuards(JwtAuthGuard)
   async getAllTimeCountUsers(@PrismaUser() user: User) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }
@@ -47,7 +48,7 @@ export class UserReportingController {
     @Query('endDate') endDate: string,
     @PrismaUser() user: User,
   ) {
-    if (!user) {
+    if (!user || !isAdmin(user.phoneNumber)) {
       this.logger.error("You're not allowed to get reports!");
       throw new BadRequestException("You're not allowed to get reports!");
     }

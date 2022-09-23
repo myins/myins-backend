@@ -6,6 +6,7 @@ import {
   Body,
   Get,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -13,6 +14,7 @@ import { User } from '@prisma/client';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { SjwtService } from 'src/sjwt/sjwt.service';
 import { UpdatePushTokenAPI } from 'src/user/user-api.entity';
+import { isAdmin } from 'src/util/checks';
 import {
   ChangePasswordAPI,
   CodePhoneAPI,
@@ -32,6 +34,22 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly jwtService: SjwtService,
   ) {}
+
+  @UseGuards(AuthGuard('local'))
+  @ApiTags('auth')
+  @Post('login/admin')
+  async adminLogin(
+    @Request() req: { user: User },
+    @Body() tokenData: UpdatePushTokenAPI,
+  ) {
+    if (!isAdmin(req.user.phoneNumber)) {
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
+    }
+
+    this.logger.log(`Login user ${req.user.id}`);
+    return this.authService.login(req.user, tokenData);
+  }
 
   @UseGuards(AuthGuard('local'))
   @ApiTags('auth')
