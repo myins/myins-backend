@@ -107,4 +107,41 @@ export class AnalyticsController {
       endDate,
     );
   }
+
+  @Get('/downloads-uninstalls')
+  @ApiTags('analytics')
+  @UseGuards(JwtAuthGuard)
+  async getDownloadsAndUninstalls(
+    @Query('type') type: PERIODS,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @PrismaUser() user: User,
+  ) {
+    if (!user) {
+      this.logger.error("You're not allowed to get analytics!");
+      throw new BadRequestException("You're not allowed to get analytics!");
+    }
+
+    if (Number.isNaN(type)) {
+      this.logger.error('Invalid type value!');
+      throw new BadRequestException('Invalid type value!');
+    }
+
+    if (
+      type === PERIODS.range &&
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
+    ) {
+      this.logger.error('Invalid range values!');
+      throw new BadRequestException('Invalid range values!');
+    }
+
+    return this.analyticsService.getDownloadsAndUninstalls(
+      type,
+      startDate,
+      endDate,
+    );
+  }
 }

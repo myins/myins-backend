@@ -8,6 +8,8 @@ import {
   getDatesByType,
   getPrevDatesByType,
 } from 'src/util/reporting';
+import fetch from 'node-fetch';
+import * as moment from 'moment';
 
 @Injectable()
 export class AnalyticsService {
@@ -253,6 +255,96 @@ export class AnalyticsService {
         createdAtAccUserArray.reduce((a, b) => a + b, 0) /
         createdAtAccUserArray.length
       );
+    }
+
+    return 0;
+  }
+
+  async getDownloadsAndUninstalls(
+    type: PERIODS,
+    startDate: string,
+    endDate: string,
+  ) {
+    const dates = getDatesByType(type, startDate, endDate);
+    if (type === PERIODS.allTime) {
+      dates.gteValue = new Date('03/19/2022');
+    }
+
+    if (dates.gteValue) {
+      const username = process.env.APP_FIGURES_USERNAME;
+      const password = process.env.APP_FIGURES_PASSWORD;
+      const authAppFigures =
+        'Basic ' + Buffer.from(username + ':' + password).toString('base64');
+
+      const startFormat = moment(dates.gteValue).format('yyyy-MM-DDTHH');
+      const endFormat = moment(dates.lteValue).format('yyyy-MM-DDTHH');
+      let url = `https://api.appfigures.com/v2/reports/sales?products=${process.env.APP_FIGURES_PRODUCT_ID}&start_date=${startFormat}&end_date=${endFormat}`;
+      if (
+        (type !== PERIODS.past24h && type !== PERIODS.range) ||
+        (type === PERIODS.range &&
+          dates.lteValue &&
+          dates.lteValue.toDateString() !== dates.gteValue.toDateString())
+      ) {
+        url = url + '&group_by=dates';
+      }
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Client-Key': process.env.APP_FIGURES_X_CLIENT_KEY ?? '',
+          Authorization: authAppFigures,
+        },
+      });
+      const data = await response.json();
+
+      let downloads: {
+        date: string;
+        value: number;
+      }[] = [];
+      let uninstalls: {
+        date: string;
+        value: number;
+      }[] = [];
+      if (
+        (type !== PERIODS.past24h && type !== PERIODS.range) ||
+        (type === PERIODS.range &&
+          dates.lteValue &&
+          dates.lteValue.toDateString() !== dates.gteValue.toDateString())
+      ) {
+        downloads = Object.keys(data).map((key) => {
+          return {
+            date: moment(key).format('MM/DD'),
+            value: data[key].downloads,
+          };
+        });
+        uninstalls = Object.keys(data).map((key) => {
+          return {
+            date: moment(key).format('MM/DD'),
+            value: data[key].uninstalls,
+          };
+        });
+      } else {
+        downloads = [
+          {
+            date: moment(
+              type === PERIODS.past24h ? new Date() : dates.gteValue,
+            ).format('MM/DD'),
+            value: data.downloads,
+          },
+        ];
+        uninstalls = [
+          {
+            date: moment(
+              type === PERIODS.past24h ? new Date() : dates.gteValue,
+            ).format('MM/DD'),
+            value: data.uninstalls,
+          },
+        ];
+      }
+
+      return {
+        downloads,
+        uninstalls,
+      };
     }
 
     return 0;
