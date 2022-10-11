@@ -10,6 +10,7 @@ export const isAdmin = (number: string) => {
     '+447522723741',
     '+447557121310',
     '+40724098717',
+    '+447725940430',
   ];
   return adminNumbers.includes(number);
 };
