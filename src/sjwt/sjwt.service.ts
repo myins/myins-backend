@@ -32,7 +32,7 @@ export class SjwtService {
 
   getCloudfrontToken(toSign: JwtStrategyPayload) {
     return this.jwtService.sign(toSign, {
-      expiresIn: '30s',
+      expiresIn: '1h',
       secret: process.env.CLOUDFRONT_JWT_KEY,
     });
   }
