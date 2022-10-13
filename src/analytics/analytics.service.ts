@@ -38,6 +38,14 @@ export class AnalyticsService {
     });
   }
 
+  async getDeletedAccount() {
+    return this.analytics({
+      where: {
+        type: AnalyticsType.DELETED_ACCOUNT,
+      },
+    });
+  }
+
   async getAnalytics(
     type: PERIODS,
     startDate: string,
