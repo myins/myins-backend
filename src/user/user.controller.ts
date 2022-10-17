@@ -374,14 +374,20 @@ export class UserController {
     this.logger.log(`Deleting user ${userId}`);
     await this.userService.deleteUser({ id: userId });
 
-    this.logger.log(`Adding analytic because deleting user ${user.id}`);
-    const metadata = {
-      createdAtAccUser: user.createdAt.toISOString(),
-    } as Prisma.JsonObject;
-    await this.analyticsService.createAnalytic({
-      type: AnalyticsType.DELETED_ACCOUNT,
-      metadata,
-    });
+    if (
+      user.phoneNumberVerified &&
+      !!user.lastAcceptedTermsAndConditionsVersion &&
+      !!user.lastAcceptedPrivacyPolicyVersion
+    ) {
+      this.logger.log(`Adding analytic because deleting user ${user.id}`);
+      const metadata = {
+        createdAtAccUser: user.createdAt.toISOString(),
+      } as Prisma.JsonObject;
+      await this.analyticsService.createAnalytic({
+        type: AnalyticsType.DELETED_ACCOUNT,
+        metadata,
+      });
+    }
 
     this.logger.log('User successfully deleted');
     return {
@@ -429,14 +435,20 @@ export class UserController {
     this.logger.log(`Removing user stream ${user.id}`);
     await this.chatService.deleteStreamUser(user.id);
 
-    this.logger.log(`Adding analytic because deleting user ${user.id}`);
-    const metadata = {
-      createdAtAccUser: user.createdAt.toISOString(),
-    } as Prisma.JsonObject;
-    await this.analyticsService.createAnalytic({
-      type: AnalyticsType.DELETED_ACCOUNT,
-      metadata,
-    });
+    if (
+      user.phoneNumberVerified &&
+      !!user.lastAcceptedTermsAndConditionsVersion &&
+      !!user.lastAcceptedPrivacyPolicyVersion
+    ) {
+      this.logger.log(`Adding analytic because deleting user ${user.id}`);
+      const metadata = {
+        createdAtAccUser: user.createdAt.toISOString(),
+      } as Prisma.JsonObject;
+      await this.analyticsService.createAnalytic({
+        type: AnalyticsType.DELETED_ACCOUNT,
+        metadata,
+      });
+    }
 
     this.logger.log('Successfully updated user as a MyINS user');
     return {
