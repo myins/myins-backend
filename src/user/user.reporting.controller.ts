@@ -36,7 +36,11 @@ export class UserReportingController {
       throw new BadRequestException("You're not allowed to get reports!");
     }
 
-    return this.userService.countUsers({});
+    return this.userService.countUsers({
+      where: {
+        isDeleted: false,
+      },
+    });
   }
 
   @Get('/new-accounts')
