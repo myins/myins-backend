@@ -30,11 +30,7 @@ export class SessionController {
   async createSession(@Body() data: CreateSessionAPI) {
     if (data.userID) {
       return this.sessionService.createSession({
-        user: {
-          connect: {
-            id: data.userID,
-          },
-        },
+        userId: data.userID,
       });
     }
     return this.sessionService.createSession({});
@@ -48,11 +44,7 @@ export class SessionController {
     @Param('id') sessionID: string,
   ) {
     return this.sessionService.updateSession(sessionID, {
-      user: {
-        connect: {
-          id: userID,
-        },
-      },
+      userId: userID,
     });
   }
 
