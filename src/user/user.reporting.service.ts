@@ -31,6 +31,13 @@ export class UserReportingService {
           gte: dates.gteValue,
           lte: dates.lteValue,
         },
+        phoneNumberVerified: true,
+        lastAcceptedTermsAndConditionsVersion: {
+          not: null,
+        },
+        lastAcceptedPrivacyPolicyVersion: {
+          not: null,
+        },
       },
     });
 
