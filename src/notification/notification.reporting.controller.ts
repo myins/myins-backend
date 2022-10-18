@@ -103,7 +103,7 @@ export class NotificationReportingController {
 
     return [
       {
-        date: '',
+        type: '',
         value: 0,
       },
     ];
