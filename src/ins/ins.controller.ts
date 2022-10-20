@@ -19,6 +19,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { StoryInsConnection } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -321,6 +322,21 @@ export class InsController {
                 },
               },
             },
+            stories: {
+              where: {
+                story: {
+                  mediaContent: {
+                    some: {
+                      views: {
+                        none: {
+                          id: userID,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -335,6 +351,7 @@ export class InsController {
       UserInsConnection & {
         ins: INS & {
           members: UserInsConnection[];
+          stories: StoryInsConnection[];
         };
       }
     >connections[0];
@@ -343,6 +360,7 @@ export class InsController {
       _count: {
         members: connection.ins.members.length,
       },
+      newStories: connection.ins.stories.length > 0,
       userRole: connection.role,
       isMute: !!connection.muteUntil,
     };

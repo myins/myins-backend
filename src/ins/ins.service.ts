@@ -4,6 +4,7 @@ import {
   Post,
   PostContent,
   Prisma,
+  StoryInsConnection,
   User,
   UserInsConnection,
   UserRole,
@@ -90,6 +91,21 @@ export class InsService {
             members: true,
           },
         },
+        stories: {
+          where: {
+            story: {
+              mediaContent: {
+                some: {
+                  views: {
+                    none: {
+                      id: userID,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -126,6 +142,8 @@ export class InsService {
           _count: {
             members: number;
           };
+          stories: StoryInsConnection[];
+          newStories: boolean;
         }
       >each;
       const theCount = castedIns._count;
@@ -133,18 +151,28 @@ export class InsService {
         theCount.members -= pendingCountPerINS[each.id];
         castedIns._count = theCount;
       }
+      castedIns.newStories = castedIns.stories.length > 0;
     });
 
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {
         const theRightINS = toRet.find((each2) => each2.id == each.insId);
-        return {
-          ...theRightINS,
-          userRole: each.role,
-          pinned: each.pinned,
-          isMute: !!each.muteUntil,
-        };
+        if (theRightINS) {
+          return {
+            ...omit(
+              <
+                INS & {
+                  stories: StoryInsConnection[];
+                }
+              >theRightINS,
+              'stories',
+            ),
+            userRole: each.role,
+            pinned: each.pinned,
+            isMute: !!each.muteUntil,
+          };
+        }
       })
       .filter((each) => {
         return each !== undefined;
