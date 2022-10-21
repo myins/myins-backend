@@ -334,6 +334,9 @@ export class InsController {
                       },
                     },
                   },
+                  authorId: {
+                    not: userID,
+                  },
                 },
               },
             },

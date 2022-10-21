@@ -103,6 +103,9 @@ export class InsService {
                   },
                 },
               },
+              authorId: {
+                not: userID,
+              },
             },
           },
         },
