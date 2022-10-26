@@ -19,7 +19,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { StoryInsConnection } from '@prisma/client';
+import {
+  PostContent,
+  Story,
+  StoryInsConnection,
+  UserStoryMediaViewConnection,
+} from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -301,6 +306,8 @@ export class InsController {
     }
 
     const insWithoutInvitedPhoneNumbers = omit(ins, 'invitedPhoneNumbers');
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const connections = await this.userConnectionService.getConnections({
       where: {
         insId: insWithoutInvitedPhoneNumbers.id,
@@ -327,15 +334,24 @@ export class InsController {
                 story: {
                   mediaContent: {
                     some: {
-                      views: {
-                        none: {
-                          id: userID,
-                        },
+                      createdAt: {
+                        gt: date,
                       },
                     },
                   },
                   authorId: {
                     not: userID,
+                  },
+                },
+              },
+              include: {
+                story: {
+                  include: {
+                    mediaContent: {
+                      include: {
+                        views: true,
+                      },
+                    },
                   },
                 },
               },
@@ -354,16 +370,39 @@ export class InsController {
       UserInsConnection & {
         ins: INS & {
           members: UserInsConnection[];
-          stories: StoryInsConnection[];
+          stories: (StoryInsConnection & {
+            story: Story & {
+              mediaContent: (PostContent & {
+                views: UserStoryMediaViewConnection[];
+              })[];
+            };
+          })[];
         };
       }
     >connections[0];
+
+    const goodStories = connection.ins.stories.filter((story) => {
+      const goodViewsMedias = story.story.mediaContent.filter((media) => {
+        const checkViews = media.views.filter(
+          (view) =>
+            view.id === userID &&
+            view.insId === insWithoutInvitedPhoneNumbers.id,
+        );
+        return checkViews.length === 0;
+      });
+      const goodMedias = goodViewsMedias.filter(
+        (media) =>
+          !media.excludedInses.includes(insWithoutInvitedPhoneNumbers.id),
+      );
+      return goodMedias.length > 0;
+    });
+
     const toRet = {
       ...insWithoutInvitedPhoneNumbers,
       _count: {
         members: connection.ins.members.length,
       },
-      newStories: connection.ins.stories.length > 0,
+      newStories: goodStories.length > 0,
       userRole: connection.role,
       isMute: !!connection.muteUntil,
     };
