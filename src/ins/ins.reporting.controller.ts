@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Logger,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,6 +15,8 @@ import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserService } from 'src/user/user.service';
 import { isAdmin } from 'src/util/checks';
+import { PERIODS } from 'src/util/enums';
+import { calculateMostUsedWorlds, getDatesByType } from 'src/util/reporting';
 import { InsService } from './ins.service';
 
 @Controller('ins/reporting')
@@ -168,5 +171,65 @@ export class InsReportingController {
     });
 
     return countUsersRes;
+  }
+
+  @Get('/most-used-words')
+  @ApiTags('ins-reporting')
+  @UseGuards(JwtAuthGuard)
+  async getMostUsedWords(
+    @Query('type') type: PERIODS,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @PrismaUser() user: User,
+  ) {
+    if (!user || !isAdmin(user.phoneNumber)) {
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
+    }
+
+    if (Number.isNaN(type)) {
+      this.logger.error('Invalid type value!');
+      throw new BadRequestException('Invalid type value!');
+    }
+
+    if (
+      type === PERIODS.range &&
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
+    ) {
+      this.logger.error('Invalid range values!');
+      throw new BadRequestException('Invalid range values!');
+    }
+
+    const dates = getDatesByType(type, startDate, endDate);
+    if (type === PERIODS.allTime) {
+      dates.gteValue = (
+        await this.insService.inses({
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        })
+      )[0]?.createdAt;
+    }
+
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: dates.gteValue,
+        lte: dates.lteValue,
+      };
+      const inses = await this.insService.inses({
+        where: {
+          createdAt: createdAtQuery,
+        },
+      });
+      const insesName = inses.map((ins) => ins.name);
+
+      return calculateMostUsedWorlds(insesName);
+    }
+
+    return 0;
   }
 }

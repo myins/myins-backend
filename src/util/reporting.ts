@@ -161,3 +161,38 @@ const formatDateByType = (type: PERIODS, date: Date) => {
     return moment(date).format('MM/DD');
   }
 };
+
+export const calculateMostUsedWorlds = (sentences: string[]) => {
+  sentences = sentences.map((sentence) =>
+    sentence
+      .split(' ')
+      .filter((word) => word.length > 2)
+      .join('\n'),
+  );
+  const sentence = sentences.map((word) => word.toLowerCase()).join('\n');
+  const arrayWorlds = sentence.split('\n');
+
+  let topWords: {
+    word: string;
+    value: number;
+  }[] = [];
+  arrayWorlds.forEach((word) => {
+    if (word.length > 0) {
+      const topWord = topWords.find((t) => t.word === word);
+      if (topWord) {
+        topWord.value++;
+      } else {
+        const newTopWord = {
+          word,
+          value: 1,
+        };
+        topWords.push(newTopWord);
+      }
+    }
+  });
+  topWords = topWords
+    .sort((a, b) => b.value - a.value || a.word.localeCompare(b.word))
+    .slice(0, 20);
+
+  return topWords;
+};
