@@ -262,6 +262,7 @@ export class MediaConnectionsController {
     }
 
     if (castedMedia.views.length) {
+      this.logger.log(`Return story because is already viewed`);
       return omit(castedMedia, 'views', 'story');
     } else {
       if (castedMedia.story.authorId !== userID) {

@@ -4,9 +4,12 @@ import {
   Post,
   PostContent,
   Prisma,
+  Story,
+  StoryInsConnection,
   User,
   UserInsConnection,
   UserRole,
+  UserStoryMediaViewConnection,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { retry } from 'ts-retry-promise';
@@ -78,6 +81,8 @@ export class InsService {
 
     // Now get all the inses, using the in query
     this.logger.log(`Getting all inses where user ${userID} is a member`);
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
     const toRet = await this.inses({
       where: {
         id: {
@@ -88,6 +93,34 @@ export class InsService {
         _count: {
           select: {
             members: true,
+          },
+        },
+        stories: {
+          where: {
+            story: {
+              mediaContent: {
+                some: {
+                  createdAt: {
+                    gt: date,
+                  },
+                },
+              },
+              authorId: {
+                not: userID,
+              },
+              pending: false,
+            },
+          },
+          include: {
+            story: {
+              include: {
+                mediaContent: {
+                  include: {
+                    views: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -126,6 +159,14 @@ export class InsService {
           _count: {
             members: number;
           };
+          stories: (StoryInsConnection & {
+            story: Story & {
+              mediaContent: (PostContent & {
+                views: UserStoryMediaViewConnection[];
+              })[];
+            };
+          })[];
+          newStories: boolean;
         }
       >each;
       const theCount = castedIns._count;
@@ -133,18 +174,41 @@ export class InsService {
         theCount.members -= pendingCountPerINS[each.id];
         castedIns._count = theCount;
       }
+
+      const goodStories = castedIns.stories.filter((story) => {
+        const goodViewsMedias = story.story.mediaContent.filter((media) => {
+          const checkViews = media.views.filter(
+            (view) => view.id === userID && view.insId === castedIns.id,
+          );
+          return checkViews.length === 0;
+        });
+        const goodMedias = goodViewsMedias.filter(
+          (media) => !media.excludedInses.includes(castedIns.id),
+        );
+        return goodMedias.length > 0;
+      });
+      castedIns.newStories = goodStories.length > 0;
     });
 
     // And finally sort the received inses by their position in the onlyIDs array
     const orderedByIDs = connectionQuery
       .map((each) => {
         const theRightINS = toRet.find((each2) => each2.id == each.insId);
-        return {
-          ...theRightINS,
-          userRole: each.role,
-          pinned: each.pinned,
-          isMute: !!each.muteUntil,
-        };
+        if (theRightINS) {
+          return {
+            ...omit(
+              <
+                INS & {
+                  stories: StoryInsConnection[];
+                }
+              >theRightINS,
+              'stories',
+            ),
+            userRole: each.role,
+            pinned: each.pinned,
+            isMute: !!each.muteUntil,
+          };
+        }
       })
       .filter((each) => {
         return each !== undefined;

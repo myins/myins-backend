@@ -308,6 +308,31 @@ export class MediaService {
             castedTransactionEntityWithCount._count?.mediaContent ?? 0;
           const isReady = realMediaCount >= transactionEntity.totalMediaContent;
 
+          if (
+            postInfo.setCover &&
+            !postInfo.isVideo &&
+            transactionEntity.authorId &&
+            !isStoryEntity
+          ) {
+            const castedUpdatedStoryEntity = <
+              Post & {
+                ins: INS;
+              }
+            >transactionEntity;
+
+            this.logger.log(
+              `Updating ins ${castedUpdatedStoryEntity.insId}. Setting cover '${dataURL}'`,
+            );
+            await this.insService.update({
+              where: {
+                id: castedUpdatedStoryEntity.insId,
+              },
+              data: {
+                cover: dataURL,
+              },
+            });
+          }
+
           if (!isReady) {
             this.logger.log(
               `${
@@ -471,24 +496,6 @@ export class MediaService {
             }
           }
         });
-
-        if (postInfo.setCover && !postInfo.isVideo) {
-          this.logger.log(
-            `Updating inses ${inses.map(
-              (ins) => ins.id,
-            )}. Setting cover '${dataURL}'`,
-          );
-          for (const eachINS of inses) {
-            await this.insService.update({
-              where: {
-                id: eachINS.id,
-              },
-              data: {
-                cover: dataURL,
-              },
-            });
-          }
-        }
       }),
     );
 
