@@ -27,8 +27,15 @@ export class ChatSearchService {
     userID: string,
     data: SearchMessgesAPI,
     lastClearedAt: Date | null | undefined,
+    allMessages?: true,
+    createdAtQuery?: {
+      gte: Date | undefined;
+      lte: Date | undefined;
+    },
   ) {
-    const channelFilters: ChannelFilters = data.channelId
+    const channelFilters: ChannelFilters = allMessages
+      ? { created_at: { $lte: new Date().toISOString() } }
+      : data.channelId
       ? {
           id: { $eq: data.channelId },
         }
@@ -57,17 +64,50 @@ export class ChatSearchService {
           },
         }
       : messageFilters;
+    if (allMessages) {
+      const filterCreatedAt = {
+        ...messageFilters,
+      };
+      if (createdAtQuery?.lte && createdAtQuery?.gte) {
+        filterCreatedAt.$and = [
+          {
+            created_at: {
+              $lte: createdAtQuery?.lte
+                ? createdAtQuery?.lte.toISOString()
+                : null,
+            },
+          },
+          {
+            created_at: {
+              $gte: createdAtQuery?.gte
+                ? createdAtQuery?.gte.toISOString()
+                : null,
+            },
+          },
+        ];
+      } else if (createdAtQuery?.lte) {
+        filterCreatedAt.created_at = {
+          $lte: createdAtQuery.lte.toISOString(),
+        };
+      } else if (createdAtQuery?.gte) {
+        filterCreatedAt.created_at = {
+          $gte: createdAtQuery.gte.toISOString(),
+        };
+      }
+      messageFilters = filterCreatedAt;
+    }
     if (
       !messageFilters['attachments.type'] &&
       !messageFilters.text &&
-      !messageFilters.user_id
+      !messageFilters.user_id &&
+      !(messageFilters.$and || messageFilters.created_at)
     ) {
       messageFilters = { created_at: { $lte: new Date().toISOString() } };
     }
 
     const options: SearchOptions = {
       sort: { created_at: -1 },
-      limit: data.limit,
+      limit: data.limit ?? 100,
     };
     if (data.next) {
       options.next = data.next;
@@ -88,57 +128,63 @@ export class ChatSearchService {
         options,
       );
 
-      search.results.map((message) => {
-        if (message.message.attachments?.length) {
-          if (lastClearedAt) {
-            const createdAtDate = message.message.created_at
-              ? new Date(message.message.created_at)
-              : null;
-            if (createdAtDate && createdAtDate < lastClearedAt) {
+      if (!allMessages) {
+        search.results.map((message) => {
+          if (message.message.attachments?.length) {
+            if (lastClearedAt) {
+              const createdAtDate = message.message.created_at
+                ? new Date(message.message.created_at)
+                : null;
+              if (createdAtDate && createdAtDate < lastClearedAt) {
+                message.message.args = 'shouldDelete';
+                return;
+              }
+            }
+
+            message.message.attachments = message.message.attachments?.filter(
+              (attachment) => !attachment.title_link,
+            );
+            if (!message.message.attachments.length) {
               message.message.args = 'shouldDelete';
-              return;
             }
           }
-
-          message.message.attachments = message.message.attachments?.filter(
-            (attachment) => !attachment.title_link,
-          );
-          if (!message.message.attachments.length) {
-            message.message.args = 'shouldDelete';
-          }
-        }
-      });
-      search.results = search.results.filter(
-        (message) => message.message.args !== 'shouldDelete',
-      );
-
-      if (data.unwrappedAttachments) {
-        search.results.forEach((message, index) => {
-          if (message.message.args === 'isAdded') {
-            return;
-          }
-          if (
-            message.message.attachments?.length &&
-            message.message.attachments?.length > 1
-          ) {
-            message.message.attachments.forEach(
-              (attachment, indexAttachments) => {
-                const newMessage = {
-                  message: {
-                    ...message.message,
-                    attachments: [attachment],
-                    args: 'isAdded',
-                  },
-                };
-                search?.results.splice(index + indexAttachments, 0, newMessage);
-              },
-            );
-            search?.results.splice(
-              index + message.message.attachments.length,
-              1,
-            );
-          }
         });
+        search.results = search.results.filter(
+          (message) => message.message.args !== 'shouldDelete',
+        );
+
+        if (data.unwrappedAttachments) {
+          search.results.forEach((message, index) => {
+            if (message.message.args === 'isAdded') {
+              return;
+            }
+            if (
+              message.message.attachments?.length &&
+              message.message.attachments?.length > 1
+            ) {
+              message.message.attachments.forEach(
+                (attachment, indexAttachments) => {
+                  const newMessage = {
+                    message: {
+                      ...message.message,
+                      attachments: [attachment],
+                      args: 'isAdded',
+                    },
+                  };
+                  search?.results.splice(
+                    index + indexAttachments,
+                    0,
+                    newMessage,
+                  );
+                },
+              );
+              search?.results.splice(
+                index + message.message.attachments.length,
+                1,
+              );
+            }
+          });
+        }
       }
     } catch (e) {
       const stringErr: string = <string>e;
@@ -148,7 +194,11 @@ export class ChatSearchService {
 
     return {
       next: search.next ?? null,
-      result: search.results,
+      result: allMessages
+        ? search.results
+            .map((message) => message.message.text ?? '')
+            .filter((message) => message.length > 2)
+        : search.results,
     };
   }
 }

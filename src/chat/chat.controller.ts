@@ -7,13 +7,18 @@ import {
   Post,
   Body,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { InsService } from 'src/ins/ins.service';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
 import { UserConnectionService } from 'src/user/user.connection.service';
+import { isAdmin } from 'src/util/checks';
+import { PERIODS } from 'src/util/enums';
+import { calculateMostUsedWorlds, getDatesByType } from 'src/util/reporting';
 import {
   ClearedHistoryAPI,
   SearchMessgesAPI,
@@ -111,6 +116,71 @@ export class ChatController {
       data,
       connection?.lastClearedAt,
     );
+  }
+
+  @Get('/most-used-words')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('chat')
+  async getMessages(
+    @PrismaUser() user: User,
+    @Query('type') type: PERIODS,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    if (!user || !isAdmin(user.phoneNumber)) {
+      this.logger.error("You're not allowed to get reports!");
+      throw new BadRequestException("You're not allowed to get reports!");
+    }
+
+    if (Number.isNaN(type)) {
+      this.logger.error('Invalid type value!');
+      throw new BadRequestException('Invalid type value!');
+    }
+
+    if (
+      type === PERIODS.range &&
+      (!startDate ||
+        !endDate ||
+        !Date.parse(startDate.toString()) ||
+        !Date.parse(endDate.toString()))
+    ) {
+      this.logger.error('Invalid range values!');
+      throw new BadRequestException('Invalid range values!');
+    }
+
+    const dates = getDatesByType(type, startDate, endDate);
+
+    if (dates.gteValue) {
+      const createdAtQuery = {
+        gte: type === PERIODS.allTime ? undefined : dates.gteValue,
+        lte: type === PERIODS.allTime ? new Date() : dates.lteValue,
+      };
+      let sentences: string[] = [];
+      let response = await this.chatSearchService.searchMessages(
+        user.id,
+        {} as SearchMessgesAPI,
+        null,
+        true,
+        createdAtQuery,
+      );
+      sentences = sentences.concat(<string[]>response.result);
+      while (response.next) {
+        response = await this.chatSearchService.searchMessages(
+          user.id,
+          {
+            next: response.next,
+          } as SearchMessgesAPI,
+          null,
+          true,
+          createdAtQuery,
+        );
+        sentences = sentences.concat(<string[]>response.result);
+      }
+
+      return calculateMostUsedWorlds(sentences);
+    }
+
+    return 0;
   }
 
   @Post('story-message')

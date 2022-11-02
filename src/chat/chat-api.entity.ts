@@ -21,7 +21,7 @@ export class SearchMessgesAPI {
   autocomplete: string;
 
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   limit: number;
 
   @IsString()
