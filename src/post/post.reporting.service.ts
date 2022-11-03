@@ -154,7 +154,7 @@ export class PostReportingService {
       });
 
       const dataRes = {
-        displayPosts: Math.round((postsCount * 100) / postsTotalCount),
+        displayPosts: ((postsCount * 100) / postsTotalCount).toFixed(2),
         displayPostsPercent: 0,
       };
 
@@ -178,7 +178,7 @@ export class PostReportingService {
         const postsPrev = (postsCountPrev * 100) / postsTotalCount;
         dataRes.displayPostsPercent = calculatePercentage(
           postsPrev,
-          dataRes.displayPosts,
+          parseFloat(dataRes.displayPosts),
         );
       }
 
