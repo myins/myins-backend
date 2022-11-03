@@ -166,7 +166,7 @@ export const calculateMostUsedWorlds = (sentences: string[]) => {
   sentences = sentences.map((sentence) =>
     sentence
       .split(' ')
-      .filter((word) => word.length > 2)
+      .filter((word) => word.length > 3)
       .join('\n'),
   );
   const sentence = sentences.map((word) => word.toLowerCase()).join('\n');
