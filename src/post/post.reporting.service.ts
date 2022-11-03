@@ -147,7 +147,11 @@ export class PostReportingService {
           pending: false,
         },
       });
-      const postsTotalCount = await this.postService.count({});
+      const postsTotalCount = await this.postService.count({
+        where: {
+          pending: false,
+        },
+      });
 
       const dataRes = {
         displayPosts: Math.round((postsCount * 100) / postsTotalCount),

@@ -9,7 +9,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { INS, UserInsConnection } from '@prisma/client';
+import { INS, UserInsConnection, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaUser } from 'src/decorators/user.decorator';
 import { NotFoundInterceptor } from 'src/interceptors/notfound.interceptor';
@@ -40,23 +40,32 @@ export class InsReportingController {
 
     const users = await this.userService.users({
       include: {
-        inses: true,
+        inses: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
       },
     });
 
-    let totalCountGroups = 0;
+    const totalCountGroups: number[] = [];
     const castedUsers = <
       (User & {
         inses: UserInsConnection[];
       })[]
     >users;
     castedUsers.forEach((user) => {
-      totalCountGroups += user.inses.length;
+      if (user.inses.length > 0) {
+        totalCountGroups.push(user.inses.length);
+      }
     });
 
-    const countUsers = await this.userService.countUsers({});
-
-    return (totalCountGroups / countUsers).toFixed(2);
+    return (
+      totalCountGroups.reduce((sum, value) => (sum = sum + value), 0) /
+      totalCountGroups.length
+    ).toFixed(2);
   }
 
   @Get('/avg-group-members-per-group')
@@ -70,29 +79,32 @@ export class InsReportingController {
 
     const inses = await this.insService.inses({
       include: {
-        _count: {
-          select: {
-            members: true,
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
           },
         },
       },
     });
 
-    let totalCountGroupMembers = 0;
+    const totalCountGroupMembers: number[] = [];
     const castedInses = <
       (INS & {
-        _count: {
-          members: number;
-        };
+        members: UserInsConnection[];
       })[]
     >inses;
     castedInses.forEach((ins) => {
-      totalCountGroupMembers += ins._count.members;
+      if (ins.members.length > 0) {
+        totalCountGroupMembers.push(ins.members.length);
+      }
     });
 
-    const countInses = await this.insService.countINS({});
-
-    return (totalCountGroupMembers / countInses).toFixed(2);
+    return (
+      totalCountGroupMembers.reduce((sum, value) => (sum = sum + value), 0) /
+      totalCountGroupMembers.length
+    ).toFixed(2);
   }
 
   @Get('/groups-with-users-count')
@@ -106,7 +118,13 @@ export class InsReportingController {
 
     const inses = await this.insService.inses({
       include: {
-        members: true,
+        members: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
       },
     });
 
@@ -118,10 +136,12 @@ export class InsReportingController {
     >inses;
     castedInses.forEach((ins) => {
       let index = ins.members.length;
-      if (index > 10) {
-        index = 10;
+      if (index > 0) {
+        if (index > 10) {
+          index = 10;
+        }
+        countGroups[index - 1]++;
       }
-      countGroups[index - 1]++;
     });
 
     const countGroupsRes = countGroups.map((groupCount, index) => {
@@ -145,7 +165,13 @@ export class InsReportingController {
 
     const users = await this.userService.users({
       include: {
-        inses: true,
+        inses: {
+          where: {
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        },
       },
     });
 
@@ -157,10 +183,12 @@ export class InsReportingController {
     >users;
     castedUsers.forEach((user) => {
       let index = user.inses.length;
-      if (index > 10) {
-        index = 10;
+      if (index > 0) {
+        if (index > 10) {
+          index = 10;
+        }
+        countUsers[index - 1]++;
       }
-      countUsers[index - 1]++;
     });
 
     const countUsersRes = countUsers.map((userCount, index) => {
