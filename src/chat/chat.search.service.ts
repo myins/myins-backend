@@ -50,7 +50,12 @@ export class ChatSearchService {
           'attachments.type': { $in: data.mediaTypes },
         }
       : {};
-    messageFilters = data.autocomplete?.length
+    messageFilters = allMessages
+      ? {
+          ...messageFilters,
+          text: { $ne: '' },
+        }
+      : data.autocomplete?.length
       ? {
           ...messageFilters,
           text: { $autocomplete: data.autocomplete },
