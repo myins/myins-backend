@@ -39,6 +39,13 @@ export class UserReportingController {
     return this.userService.countUsers({
       where: {
         isDeleted: false,
+        phoneNumberVerified: true,
+        lastAcceptedTermsAndConditionsVersion: {
+          not: null,
+        },
+        lastAcceptedPrivacyPolicyVersion: {
+          not: null,
+        },
       },
     });
   }

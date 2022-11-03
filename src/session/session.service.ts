@@ -64,6 +64,7 @@ export class SessionService {
             lte: dates.lteValue,
           },
         },
+        distinct: ['userId'],
       });
 
       const responseTotalSessions = createObjForAreaChart(
@@ -73,13 +74,9 @@ export class SessionService {
         dates.lteValue,
       );
 
-      const uniqueSessions = [
-        ...new Set(
-          sessions
-            .filter((session) => session.userId !== null)
-            .map((session) => session.userId),
-        ),
-      ].length;
+      const uniqueSessions = sessions.filter(
+        (session) => session.userId !== null,
+      ).length;
 
       const totalUsers = await this.userService.countUsers({
         where: {
@@ -87,6 +84,13 @@ export class SessionService {
             lte: dates.lteValue ?? undefined,
           },
           isDeleted: false,
+          phoneNumberVerified: true,
+          lastAcceptedTermsAndConditionsVersion: {
+            not: null,
+          },
+          lastAcceptedPrivacyPolicyVersion: {
+            not: null,
+          },
         },
       });
 
