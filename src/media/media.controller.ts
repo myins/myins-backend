@@ -35,7 +35,7 @@ import { isVideo, photoOrVideoInterceptor } from 'src/util/multer';
 import { omit } from 'src/util/omit';
 import {
   AttachMediaAPI,
-  DeleteStoryMediasAPI,
+  DeleteStoryMediaAPI,
   SetHighlightAPI,
 } from './media-api.entity';
 import { MediaConnectionsService } from './media.connections.service';
@@ -368,7 +368,7 @@ export class MediaController {
   @ApiTags('media')
   async deleteStoryMedias(
     @PrismaUser('id') userID: string,
-    @Body() data: DeleteStoryMediasAPI,
+    @Body() data: DeleteStoryMediaAPI,
   ) {
     const storyMediaIDs = data.storyIDs;
     const medias = await this.mediaService.getMedias({

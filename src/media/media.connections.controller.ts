@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Logger,
@@ -28,6 +29,7 @@ import { NotificationService } from 'src/notification/notification.service';
 import { ShallowUserSelect } from 'src/prisma-queries-helper/shallow-user-select';
 import { UserConnectionService } from 'src/user/user.connection.service';
 import { omit } from 'src/util/omit';
+import { LikeStoryMediaAPI } from './media-api.entity';
 import { MediaConnectionsService } from './media.connections.service';
 import { MediaService } from './media.service';
 
@@ -122,6 +124,68 @@ export class MediaConnectionsController {
     return castedViews.map((view) => view.user);
   }
 
+  @Get(':id/ins/:insId/likes-count')
+  @UseGuards(JwtAuthGuard)
+  @ApiTags('media')
+  async getLikesCount(
+    @PrismaUser('id') userID: string,
+    @Param('id') mediaID: string,
+    @Param('insId') insId: string,
+  ) {
+    this.logger.log(
+      `Getting likes count for story media ${mediaID} in ins ${insId} by user ${userID}`,
+    );
+    const media = await this.mediaService.getMediaById(
+      {
+        id: mediaID,
+      },
+      {
+        story: {
+          select: {
+            authorId: true,
+          },
+        },
+      },
+    );
+    if (!media || !media.storyId) {
+      this.logger.error(`Could not find story media ${mediaID}!`);
+      throw new NotFoundException('Could not find this story media!');
+    }
+
+    const castedMedia = <
+      PostContent & {
+        story: Story;
+      }
+    >media;
+    if (!castedMedia.story?.authorId || castedMedia.story.authorId !== userID) {
+      this.logger.error('Not your story!');
+      throw new NotFoundException('Not your story!');
+    }
+
+    let myInsID: string | undefined = insId;
+    const ins = await this.insService.ins({
+      id: insId,
+    });
+    if (!ins) {
+      myInsID = undefined;
+    }
+
+    const likes = await this.mediaConnectionsService.groupBy(
+      ['reaction_type'],
+      {
+        insId: myInsID,
+      },
+    );
+
+    return [
+      ...likes,
+      {
+        reaction_type: 'ALL',
+        _count: likes.reduce((a, b) => a + b._count, 0),
+      },
+    ];
+  }
+
   @Get(':id/ins/:insId/likes')
   @UseGuards(JwtAuthGuard)
   @ApiTags('media')
@@ -187,6 +251,7 @@ export class MediaConnectionsController {
         user: {
           select: ShallowUserSelect,
         },
+        reaction_type: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -194,11 +259,16 @@ export class MediaConnectionsController {
     });
 
     const castedLikes = <
-      (UserStoryMediaViewConnection & {
+      (UserStoryMediaLikeConnection & {
         user: User;
       })[]
-    >likes;
-    return castedLikes.map((like) => like.user);
+    >(<unknown>likes);
+    return castedLikes.map((like) => {
+      return {
+        ...like.user,
+        reaction_type: like.reaction_type,
+      };
+    });
   }
 
   @Post(':id/ins/:insId/view')
@@ -293,6 +363,7 @@ export class MediaConnectionsController {
     @PrismaUser('id') userID: string,
     @Param('id') mediaID: string,
     @Param('insId') insId: string,
+    @Body() data: LikeStoryMediaAPI,
   ) {
     this.logger.log(
       `Like story media ${mediaID} in ins ${insId} by user ${userID}`,
@@ -358,6 +429,7 @@ export class MediaConnectionsController {
             create: {
               id: userID,
               insId: insId,
+              reaction_type: data.reaction_type,
             },
           },
         },
