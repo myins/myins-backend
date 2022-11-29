@@ -175,6 +175,7 @@ export class MediaConnectionsController {
       ['reaction_type'],
       {
         insId: myInsID,
+        storyMediaId: mediaID,
       },
     );
 
