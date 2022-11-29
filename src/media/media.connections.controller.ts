@@ -416,13 +416,36 @@ export class MediaConnectionsController {
       );
     }
 
+    let toRet;
     if (castedMedia.likes.length) {
-      return omit(castedMedia, 'likes');
+      this.logger.log(
+        `Updating story media ${mediaID}. Adding like connection with user ${userID}`,
+      );
+      toRet = await this.mediaService.updateMedia({
+        where: { id: mediaID },
+        data: {
+          likes: {
+            update: {
+              where: {
+                id_storyMediaId_insId: {
+                  id: userID,
+                  insId: insId,
+                  storyMediaId: mediaID,
+                },
+              },
+              data: {
+                reaction_type: data.reaction_type,
+                createdAt: new Date(),
+              },
+            },
+          },
+        },
+      });
     } else {
       this.logger.log(
         `Updating story media ${mediaID}. Adding like connection with user ${userID}`,
       );
-      const toRet = await this.mediaService.updateMedia({
+      toRet = await this.mediaService.updateMedia({
         where: { id: mediaID },
         data: {
           likes: {
@@ -434,58 +457,58 @@ export class MediaConnectionsController {
           },
         },
       });
-
-      if (toRet.storyId) {
-        this.logger.log(
-          `Creating notification for liking story media ${toRet.id} by user ${userID}`,
-        );
-
-        const targetIDs = (
-          await this.userConnectionService.getConnections({
-            where: {
-              insId: insId,
-              userId: {
-                not: userID,
-              },
-              role: {
-                not: UserRole.PENDING,
-              },
-            },
-          })
-        ).map((connection) => {
-          return { id: connection.userId };
-        });
-
-        await this.notificationService.createNotification({
-          source: NotificationSource.LIKE_STORY,
-          targets: {
-            connect: targetIDs,
-          },
-          author: {
-            connect: {
-              id: userID,
-            },
-          },
-          storyMedia: {
-            connect: {
-              id: toRet.id,
-            },
-          },
-          story: {
-            connect: {
-              id: toRet.storyId,
-            },
-          },
-          ins: {
-            connect: {
-              id: insId,
-            },
-          },
-        });
-      }
-
-      return toRet;
     }
+
+    if (toRet.storyId) {
+      this.logger.log(
+        `Creating notification for liking story media ${toRet.id} by user ${userID}`,
+      );
+
+      const targetIDs = (
+        await this.userConnectionService.getConnections({
+          where: {
+            insId: insId,
+            userId: {
+              not: userID,
+            },
+            role: {
+              not: UserRole.PENDING,
+            },
+          },
+        })
+      ).map((connection) => {
+        return { id: connection.userId };
+      });
+
+      await this.notificationService.createNotification({
+        source: NotificationSource.LIKE_STORY,
+        targets: {
+          connect: targetIDs,
+        },
+        author: {
+          connect: {
+            id: userID,
+          },
+        },
+        storyMedia: {
+          connect: {
+            id: toRet.id,
+          },
+        },
+        story: {
+          connect: {
+            id: toRet.storyId,
+          },
+        },
+        ins: {
+          connect: {
+            id: insId,
+          },
+        },
+      });
+    }
+
+    return toRet;
   }
 
   @Post(':id/ins/:insId/unlike')
