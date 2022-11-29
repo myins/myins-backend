@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import {
   NotificationSource,
   PostContent,
+  ReactionsType,
   Story,
   StoryInsConnection,
   User,
@@ -195,6 +196,7 @@ export class MediaConnectionsController {
     @Param('insId') insId: string,
     @Query('take') take: number,
     @Query('skip') skip: number,
+    @Query('reaction_type') reaction_type: ReactionsType,
   ) {
     if (Number.isNaN(take) || Number.isNaN(skip)) {
       this.logger.error('Invalid skip / take!');
@@ -246,6 +248,7 @@ export class MediaConnectionsController {
         user: {
           isDeleted: false,
         },
+        reaction_type: reaction_type ?? undefined,
       },
       select: {
         user: {
