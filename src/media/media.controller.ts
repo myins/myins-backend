@@ -86,9 +86,6 @@ export class MediaController {
             id: userID,
             insId: insID,
           },
-          select: {
-            id: true,
-          },
         },
         stickers: true,
         story: {
