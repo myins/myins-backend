@@ -135,13 +135,12 @@ model UserStoryMediaViewConnection {
 }
 
 model UserStoryMediaLikeConnection {
-  user          User          @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  id            String
-  storyMedia    PostContent   @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  storyMediaId  String
-  ins           INS           @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  insId         String
-  reaction_type ReactionsType @default(LIKE)
+  user         User        @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id           String
+  storyMedia   PostContent @relation(fields: [storyMediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storyMediaId String
+  ins          INS         @relation(fields: [insId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  insId        String
 
   createdAt DateTime @default(now())
 
@@ -343,14 +342,4 @@ enum AnalyticsType {
   INVITE_NON_USER
   ACCEPTED_MYINS_USER
   ACCEPTED_NON_USER
-}
-
-enum ReactionsType {
-  LIKE
-  LAUGH
-  HAPPY
-  ANGRY
-  APPLAUSE
-  SAD
-  SHY
 }

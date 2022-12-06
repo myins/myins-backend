@@ -282,7 +282,6 @@ export class InsService {
     take?: number,
     filter?: string,
     without?: boolean,
-    pending?: boolean,
   ) {
     const whereQuery: Prisma.UserWhereInput = {
       id: without
@@ -293,11 +292,9 @@ export class InsService {
       inses: {
         some: {
           insId: insID,
-          role: pending
-            ? undefined
-            : {
-                not: UserRole.PENDING,
-              },
+          role: {
+            not: UserRole.PENDING,
+          },
           user: {
             isDeleted: false,
           },

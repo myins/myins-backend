@@ -25,15 +25,4 @@ export class MediaConnectionsService {
   ): Promise<number> {
     return this.prismaService.userStoryMediaLikeConnection.count(params);
   }
-
-  async groupBy(
-    byParam: Prisma.UserStoryMediaLikeConnectionScalarFieldEnum[],
-    whereParam: Prisma.UserStoryMediaLikeConnectionWhereInput,
-  ) {
-    return this.prismaService.userStoryMediaLikeConnection.groupBy({
-      by: byParam,
-      where: whereParam,
-      _count: true,
-    });
-  }
 }

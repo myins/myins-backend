@@ -370,7 +370,7 @@ export class NotificationPushService {
         >storyLikeStory;
         body = `${authorLikeStory?.firstName} ${
           authorLikeStory?.lastName
-        } reacted to ${
+        } liked ${
           castedStoryLikeStory.author.id === target.id
             ? 'your'
             : `${castedStoryLikeStory.author.firstName} ${castedStoryLikeStory.author.lastName}'s`
