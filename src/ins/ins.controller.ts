@@ -258,6 +258,7 @@ export class InsController {
     @Query('take') take: number,
     @Query('filter') filter: string,
     @Query('without') without?: boolean,
+    @Query('pending') pending?: boolean,
   ) {
     if (Number.isNaN(skip) || Number.isNaN(take)) {
       this.logger.error('Invalid skip / take values!');
@@ -290,6 +291,7 @@ export class InsController {
       take,
       filter,
       without,
+      pending,
     );
   }
 

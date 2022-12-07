@@ -1,7 +1,9 @@
+import { ReactionsType } from '@prisma/client';
 import {
   ArrayMinSize,
   ArrayNotEmpty,
   IsBoolean,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -48,7 +50,13 @@ export class SetHighlightAPI {
   isHighlight: boolean;
 }
 
-export class DeleteStoryMediasAPI {
+export class DeleteStoryMediaAPI {
   @ArrayNotEmpty()
   storyIDs: string[];
+}
+
+export class LikeStoryMediaAPI {
+  @IsEnum(ReactionsType)
+  @IsNotEmpty()
+  reaction_type: ReactionsType;
 }
