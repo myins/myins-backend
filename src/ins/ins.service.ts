@@ -346,7 +346,9 @@ export class InsService {
       };
     });
 
-    return usersWithRole;
+    return usersWithRole.sort((user1, user2) =>
+      user1.userRole.toString().localeCompare(user2.userRole.toString()),
+    );
   }
 
   async addAsInvitedPhoneNumbers(
